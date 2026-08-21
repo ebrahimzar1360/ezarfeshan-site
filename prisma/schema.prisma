@@ -1,0 +1,215 @@
+// Data model for the site.
+//
+// All DateTime columns are timestamptz. Prisma defaults to timestamp WITHOUT
+// time zone, which stores a naive local wall-clock: raw SQL comparing such a
+// column against NOW() is silently wrong by the server offset, and a scheduled
+// article surfaced hours early in search because of exactly that.
+//
+// Conventions:
+//  - snake_case table/column names via @map, so raw SQL and psql stay readable
+//  - every mutable row carries createdAt/updatedAt
+//  - no cascade deletes onto content; unpublishing is a status change, not a DELETE
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url moved to prisma.config.ts (Prisma 7)
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+enum ArticleStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+}
+
+enum SubscriberStatus {
+  PENDING
+  CONFIRMED
+  UNSUBSCRIBED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CLOSED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String   @map("password_hash")
+  role         Role     @default(EDITOR)
+  totpSecret   String?  @map("totp_secret")
+  lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz(3)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  articles Article[]
+
+  @@map("users")
+}
+
+model Article {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  excerpt        String
+  /// MDX source. Rendered with an allowlisted component set — never raw HTML.
+  body           String
+  coverImage     String?       @map("cover_image")
+  status         ArticleStatus @default(DRAFT)
+  publishedAt    DateTime?     @map("published_at") @db.Timestamptz(3)
+  readingMinutes Int           @default(0) @map("reading_minutes")
+  featured       Boolean       @default(false)
+
+  seoTitle       String? @map("seo_title")
+  seoDescription String? @map("seo_description")
+  ogImage        String? @map("og_image")
+
+  /// Denormalised counter. Incremented from the analytics route, never trusted
+  /// for anything but display ordering.
+  views Int @default(0)
+
+  authorId String?  @map("author_id")
+  author   User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  topics   Topic[]  @relation("ArticleTopics")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  // the listing query is always "published, newest first"
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([featured, publishedAt(sort: Desc)])
+  @@map("articles")
+}
+
+model Topic {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String?
+
+  articles Article[] @relation("ArticleTopics")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("topics")
+}
+
+model Resource {
+  id            String  @id @default(cuid())
+  slug          String  @unique
+  title         String
+  description   String
+  fileUrl       String  @map("file_url")
+  coverImage    String? @map("cover_image")
+  requiresEmail Boolean @default(true) @map("requires_email")
+  published     Boolean @default(false)
+  downloads     Int     @default(0)
+
+  downloadRecords Download[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("resources")
+}
+
+model Subscriber {
+  id     String           @id @default(cuid())
+  email  String           @unique
+  name   String?
+  status SubscriberStatus @default(PENDING)
+
+  /// Single-use, hashed before storage. Confirm and unsubscribe use separate tokens
+  /// so a leaked confirm link cannot be replayed to unsubscribe someone.
+  confirmTokenHash     String?   @unique @map("confirm_token_hash")
+  unsubscribeTokenHash String?   @unique @map("unsubscribe_token_hash")
+  confirmedAt          DateTime? @map("confirmed_at") @db.Timestamptz(3)
+  unsubscribedAt       DateTime? @map("unsubscribed_at") @db.Timestamptz(3)
+
+  /// Where the signup came from: 'home', 'article:<slug>', 'resource:<slug>' …
+  source String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([status])
+  @@map("subscribers")
+}
+
+model Lead {
+  id          String     @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  company     String?
+  teamSize    String?    @map("team_size")
+  challenge   String
+  budgetRange String?    @map("budget_range")
+  status      LeadStatus @default(NEW)
+  note        String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@map("leads")
+}
+
+model Download {
+  id         String   @id @default(cuid())
+  resourceId String   @map("resource_id")
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  email      String
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([resourceId, createdAt(sort: Desc)])
+  @@map("downloads")
+}
+
+/// Cookie-free analytics. sessionHash is a daily-rotating hash of IP + UA, so a
+/// visitor cannot be followed across days and no raw address is ever stored.
+model PageView {
+  id          String   @id @default(cuid())
+  path        String
+  referrer    String?
+  country     String?
+  sessionHash String   @map("session_hash")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([path, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("page_views")
+}
+
+/// Fixed-window rate limiting, kept in the database so no Redis is required.
+/// key is "<route>:<ip>" or "<route>:<email>"; expired rows are swept on write.
+model RateLimit {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  count       Int      @default(0)
+  windowStart DateTime @map("window_start") @db.Timestamptz(3)
+
+  @@index([windowStart])
+  @@map("rate_limits")
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("settings")
+}

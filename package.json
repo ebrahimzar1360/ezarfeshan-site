@@ -1,0 +1,53 @@
+{
+  "name": "ezarfeshan",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "fonts": "node tools/fonts/fetch-fonts.js",
+    "logo": "node tools/logo/build-logo.js",
+    "photos": "powershell -ExecutionPolicy Bypass -File tools/photos/build-photos.ps1",
+    "db": "powershell -ExecutionPolicy Bypass -File tools/db/pg.ps1",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "node --experimental-strip-types prisma/seed.mts",
+    "db:studio": "prisma studio",
+    "admin:create": "node tools/db/create-admin.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
+    "@node-rs/argon2": "^2.1.0",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "next": "^15.5.23",
+    "next-auth": "^5.0.0-beta.32",
+    "next-mdx-remote": "^6.0.0",
+    "nodemailer": "^8.0.11",
+    "pg": "^8.23.0",
+    "prisma": "^7.9.1",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-hook-form": "^7.85.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.10.7",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^6.1.0",
+    "lighthouse": "^13.4.1",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.11"
+  }
+}

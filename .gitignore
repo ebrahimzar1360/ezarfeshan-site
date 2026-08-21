@@ -1,0 +1,22 @@
+node_modules/
+.next/
+out/
+build/
+.env
+.env.local
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+Thumbs.db
+
+# لاگ سرور توسعه
+server.log
+dev.log
+
+# خروجی تست
+/test-results/
+/playwright-report/
+
+# پیکربندی MCP ابزار توسعه — به این پروژه ربطی ندارد و
+# شناسهٔ یک پروژهٔ خارجی را در خود دارد
+.mcp.json

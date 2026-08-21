@@ -1,0 +1,19 @@
+# Automatic HTTPS. Caddy requests and renews the certificate itself, so the only
+# prerequisite is that SITE_DOMAIN already points at this machine.
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# The app sets its own security headers in next.config.ts. These are the two
+	# that belong at the edge, where the TLS terminates.
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		-Server
+	}
+
+	# Immutable build assets: hashed filenames, so they can be cached forever.
+	@static path /_next/static/* /fonts/* /brand/*
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	reverse_proxy app:3000
+}

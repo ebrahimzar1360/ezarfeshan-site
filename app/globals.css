@@ -1,0 +1,424 @@
+@import 'tailwindcss';
+@import './fonts.css';
+
+/* Tailwind's stock `dark:` only reads prefers-color-scheme, which would ignore an
+   explicit toggle. Rebind it to the same three-state logic the tokens use:
+   data-theme="dark" wins, system preference applies only when nothing is set. */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']) *, :root:not([data-theme='light'])) {
+      @slot;
+    }
+  }
+}
+
+/* ============================================================
+   1. BRAND CONSTANTS
+   These never change between themes. @theme also generates the
+   matching Tailwind utilities (bg-ink, text-gold, p-6, text-700 ...).
+   ============================================================ */
+@theme {
+  /* palette — exactly the five from the brand guide, nothing invented */
+  --color-ink: #1a1a1a;
+  --color-paper: #f5f5f0;
+  --color-gold: #c8a84b;
+  --color-forest: #1a3d2b;
+  --color-emerald: #2d6a4f;
+
+  /* the one derived colour: emerald is 2.85:1 on the dark ground and fails AA,
+     so dark mode links use this lightened tint (6.46:1). */
+  --color-emerald-300: #5fa88a;
+  --color-emerald-200: #7dbfa2;
+
+  --font-sans: 'Vazirmatn', 'Segoe UI', system-ui, sans-serif;
+  --font-latin: 'Inter', 'Vazirmatn', system-ui, sans-serif;
+
+  /* type scale — ratio 1.25 (major third) anchored at 1rem */
+  --text-200: 0.8rem;
+  --text-300: 1rem;
+  --text-400: 1.125rem; /* off-ratio on purpose: 18px is the prose floor */
+  --text-500: 1.25rem;
+  --text-600: 1.5625rem;
+  --text-700: 1.953rem;
+  --text-800: 2.441rem;
+  --text-900: 3.052rem;
+  --text-1000: 3.815rem;
+
+  --leading-tight: 1.35;
+  --leading-snug: 1.5;
+  --leading-normal: 1.7;
+  --leading-prose: 1.9;
+
+  --spacing: 0.25rem; /* Tailwind v4 spacing base: p-4 = 1rem, p-16 = 4rem */
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --container-measure: 38rem; /* ~68 Persian characters at 18px */
+  --container-page: 76rem;
+}
+
+/* ============================================================
+   2. SEMANTIC ROLES — these flip with the theme
+   ============================================================ */
+:root {
+  color-scheme: light;
+
+  --ink-90: color-mix(in oklab, var(--color-ink) 90%, transparent);
+  --ink-70: color-mix(in oklab, var(--color-ink) 70%, transparent);
+  /* 65%, not 55%. The design plan checked the five brand colours but never the
+     tints derived from them: 55% ink on paper measures 3.78:1 and fails AA for
+     body text. 65% is 5.18:1. Lighthouse found it on every article date. */
+  --ink-55: color-mix(in oklab, var(--color-ink) 65%, transparent);
+  --ink-30: color-mix(in oklab, var(--color-ink) 30%, transparent);
+  --ink-12: color-mix(in oklab, var(--color-ink) 12%, transparent);
+  --ink-06: color-mix(in oklab, var(--color-ink) 6%, transparent);
+
+  --bg: var(--color-paper);
+  --bg-raised: #ffffff;
+  --bg-sunken: color-mix(in oklab, var(--color-paper) 94%, var(--color-ink));
+  --bg-inverse: var(--color-forest);
+  --text: var(--color-ink);
+  --text-muted: var(--ink-70);
+  --text-subtle: var(--ink-55);
+  --text-on-inverse: var(--color-paper);
+  --border: var(--ink-12);
+  --border-strong: var(--ink-30);
+  --link: var(--color-emerald);
+  --link-hover: var(--color-forest);
+  --accent: var(--color-gold);
+  --focus: var(--color-emerald);
+  --shadow: 0 1px 2px var(--ink-06), 0 8px 24px var(--ink-06);
+
+  /* Solid controls invert against the page, so they need their own pair rather
+     than a `dark:` override scattered through components. */
+  --solid-bg: var(--color-ink);
+  --solid-text: var(--color-paper);
+  --solid-bg-hover: var(--color-forest);
+}
+
+/* system preference, only when the user has not chosen explicitly */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --ink-90: color-mix(in oklab, #edede8 90%, transparent);
+    --ink-70: color-mix(in oklab, #edede8 72%, transparent);
+    --ink-55: color-mix(in oklab, #edede8 55%, transparent);
+    --ink-30: color-mix(in oklab, #edede8 28%, transparent);
+    --ink-12: color-mix(in oklab, #edede8 14%, transparent);
+    --ink-06: color-mix(in oklab, #edede8 8%, transparent);
+
+    --bg: #141613;
+    --bg-raised: #1c1f1c;
+    --bg-sunken: #101210;
+    --bg-inverse: var(--color-forest);
+    --text: #edede8;
+    --text-muted: var(--ink-70);
+    --text-subtle: var(--ink-55);
+    --border: var(--ink-12);
+    --border-strong: var(--ink-30);
+    --link: var(--color-emerald-300);
+    --link-hover: var(--color-emerald-200);
+    --focus: var(--color-emerald-300);
+    --solid-bg: #edede8;
+    --solid-text: #141613;
+    --solid-bg-hover: var(--color-emerald-200);
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.3);
+  }
+}
+
+/* explicit choice always wins, in both directions */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ink-90: color-mix(in oklab, #edede8 90%, transparent);
+  --ink-70: color-mix(in oklab, #edede8 72%, transparent);
+  --ink-55: color-mix(in oklab, #edede8 55%, transparent);
+  --ink-30: color-mix(in oklab, #edede8 28%, transparent);
+  --ink-12: color-mix(in oklab, #edede8 14%, transparent);
+  --ink-06: color-mix(in oklab, #edede8 8%, transparent);
+
+  --bg: #141613;
+  --bg-raised: #1c1f1c;
+  --bg-sunken: #101210;
+  --text: #edede8;
+  --text-muted: var(--ink-70);
+  --text-subtle: var(--ink-55);
+  --border: var(--ink-12);
+  --border-strong: var(--ink-30);
+  --link: var(--color-emerald-300);
+  --link-hover: var(--color-emerald-200);
+  --focus: var(--color-emerald-300);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.3);
+}
+
+/* expose the semantic roles as utilities. `inline` keeps them as var()
+   references so they follow the theme instead of being baked in. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-sunken: var(--bg-sunken);
+  --color-bg-inverse: var(--bg-inverse);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-text-on-inverse: var(--text-on-inverse);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
+  --color-accent: var(--accent);
+  --color-solid-bg: var(--solid-bg);
+  --color-solid-text: var(--solid-text);
+  --color-solid-bg-hover: var(--solid-bg-hover);
+}
+
+/* ============================================================
+   3. BASE
+   ============================================================ */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-size: var(--text-300);
+    line-height: var(--leading-normal);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    line-height: var(--leading-snug);
+    text-wrap: balance;
+  }
+  h1 { line-height: var(--leading-tight); }
+
+  p { text-wrap: pretty; }
+
+  a {
+    color: var(--link);
+    text-underline-offset: 0.25em;
+    text-decoration-thickness: from-font;
+  }
+  a:hover { color: var(--link-hover); }
+
+  /* visible focus everywhere, never removed */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-gold) 35%, transparent);
+    color: var(--text);
+  }
+
+  /* Latin runs inside Persian copy: digits, code, product names */
+  .latin, code, kbd, samp {
+    font-family: var(--font-latin);
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* Persian digits for narrative copy */
+  .fa-nums {
+    font-feature-settings: 'ss02' 1;
+  }
+
+  img, svg, video { max-width: 100%; height: auto; }
+}
+
+/* ============================================================
+   4. THE GOLD MARKER — the signature element
+   Recovered from the brand guide: every heading band carries a gold
+   bar on its inline-start edge. See docs/DESIGN-PLAN.md §6.
+   ============================================================ */
+@layer components {
+  /* Dark sections re-point the semantic roles instead of asking every child to
+     know what ground it sits on. Without this, `text-text-subtle` inside a
+     forest block resolves to 55% ink — near-invisible on dark green. */
+  .tone-inverse {
+    --text: var(--color-paper);
+    /* Without these the form controls inside a dark section keep the light
+       theme surfaces: the newsletter input rendered as a white box with
+       near-white text, measured at 1.09:1. */
+    --bg: var(--color-forest);
+    --bg-raised: color-mix(in oklab, var(--color-paper) 10%, var(--color-forest));
+    --bg-sunken: color-mix(in oklab, black 12%, var(--color-forest));
+    --text-muted: color-mix(in oklab, var(--color-paper) 75%, transparent);
+    /* 60%: 55% measures 4.49:1 on forest, a hair under AA */
+    --text-subtle: color-mix(in oklab, var(--color-paper) 60%, transparent);
+    --border: color-mix(in oklab, var(--color-paper) 18%, transparent);
+    --border-strong: color-mix(in oklab, var(--color-paper) 34%, transparent);
+    /* gold clears AA on forest (5.24:1), so it stays usable as text here */
+    --link: var(--color-gold);
+    --link-hover: color-mix(in oklab, var(--color-gold) 80%, white);
+    --focus: var(--color-gold);
+    --solid-bg: var(--color-paper);
+    --solid-text: var(--color-forest);
+    --solid-bg-hover: var(--color-gold);
+    color: var(--text);
+  }
+
+  .gold-marker {
+    padding-inline-start: --spacing(4);
+    border-inline-start: 4px solid var(--accent);
+  }
+
+  /* Reading progress: the same bar, running down the inline-start edge of the
+     article column and filling as you scroll. Pure CSS, zero JavaScript.
+     Browsers without scroll-driven animations get a static rail — nothing breaks. */
+  .reading-rail {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .reading-rail::after {
+    content: '';
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  @supports (animation-timeline: scroll()) {
+    .reading-rail::after {
+      /* Longhand on purpose: the `animation` shorthand resets duration to 0s,
+         which finishes a scroll-driven animation before first paint.
+
+         scroll(root block), not view(). Every view() form — anonymous, named on
+         the prose block, contain and cover ranges — left the bar frozen when
+         measured with tools/audit/rail.js; only the root scroll timeline
+         actually drives it. The cost is that progress tracks the whole document
+         rather than the article body, so the bar is not quite full when the
+         prose ends. Re-test with `node tools/audit/rail.js <url>` before
+         switching back. */
+      animation-name: rail-fill;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(root block);
+    }
+  }
+  /* Both ends written out. A `to`-only keyframe relies on an implicit `from`
+     taken from the underlying style, which did not resolve to scaleY(0) here —
+     the bar sat full at 0% progress with the timeline correctly attached. */
+  @keyframes rail-fill {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+
+  /* readable measure for long-form Persian */
+  .prose-measure {
+    max-width: var(--container-measure);
+    font-size: var(--text-400);
+    line-height: var(--leading-prose);
+  }
+
+  /* Article body. Written as element selectors rather than utilities because the
+     markup comes from MDX — there is no place to hang a class on a paragraph
+     that an editor typed. */
+  .prose {
+    max-width: var(--container-measure);
+    font-size: var(--text-400);
+    line-height: var(--leading-prose);
+    color: var(--text-muted);
+  }
+  .prose > * + * { margin-block-start: 1.4em; }
+
+  .prose h2 {
+    margin-block-start: 2.2em;
+    margin-block-end: 0.7em;
+    font-size: var(--text-600);
+    line-height: var(--leading-snug);
+    color: var(--text);
+    scroll-margin-block-start: 6rem; /* clears the sticky header on anchor jumps */
+  }
+  .prose h3 {
+    margin-block-start: 1.8em;
+    margin-block-end: 0.6em;
+    font-size: var(--text-500);
+    color: var(--text);
+    scroll-margin-block-start: 6rem;
+  }
+
+  .prose strong { color: var(--text); font-weight: 700; }
+
+  .prose ul, .prose ol { padding-inline-start: 1.4em; }
+  .prose ul { list-style: disc; }
+  .prose ol { list-style: decimal; }
+  .prose li + li { margin-block-start: 0.5em; }
+  .prose li::marker { color: var(--text-subtle); }
+
+  .prose hr {
+    margin-block: 2.5em;
+    border: 0;
+    border-block-start: 1px solid var(--border);
+  }
+
+  .prose th, .prose td {
+    padding: 0.7em 0.9em;
+    border-block-end: 1px solid var(--border);
+    text-align: start;
+  }
+  .prose th { color: var(--text); font-weight: 500; }
+
+  .prose code {
+    padding: 0.15em 0.4em;
+    border-radius: var(--radius-sm);
+    background: var(--bg-sunken);
+    font-size: 0.9em;
+  }
+}
+
+/* ============================================================
+   5. MOTION
+   One orchestrated moment in the hero; everything else under 200ms.
+   ============================================================ */
+@layer utilities {
+  .enter {
+    animation: enter 240ms var(--ease-brand) both;
+  }
+  .enter-bar {
+    animation: enter-bar 420ms var(--ease-brand) both;
+  }
+
+  @keyframes enter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes enter-bar {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+}
+
+/* Removed, not accelerated: reduced-motion users get the finished state at once. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reading-rail::after { transform: scaleY(1); }
+}
