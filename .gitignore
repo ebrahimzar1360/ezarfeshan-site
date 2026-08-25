@@ -23,3 +23,6 @@ dev.log
 
 # تنظیمات محلی Claude Code — مخصوص همین دستگاه
 .claude/settings.local.json
+
+.vercel
+.env*

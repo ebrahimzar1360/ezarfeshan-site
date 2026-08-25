@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate",
     "fonts": "node tools/fonts/fetch-fonts.js",
     "logo": "node tools/logo/build-logo.js",
     "photos": "powershell -ExecutionPolicy Bypass -File tools/photos/build-photos.ps1",

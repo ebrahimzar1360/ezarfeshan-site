@@ -1,0 +1,16 @@
+# Raw brand material: personal photos, the WhatsApp QR, the original logo sheet.
+# The processed portraits the site actually uses live in public/photos.
+brand-source/
+
+# Documentation, tests and audit tooling never run on the server.
+docs/
+e2e/
+tools/audit/
+playwright.config.ts
+vitest.config.mts
+**/*.test.ts
+
+# Local database cluster helper and the original brand guide.
+tools/db/pg.ps1
+BrandGuide_EbrahimZarfashan_Organized.md
+server.log
