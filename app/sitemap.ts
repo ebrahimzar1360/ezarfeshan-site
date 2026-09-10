@@ -22,10 +22,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/about`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/newsletter`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/consult`, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${base}/contact`, changeFrequency: 'yearly', priority: 0.5 },
+    { url: `${base}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${base}/terms`, changeFrequency: 'yearly', priority: 0.2 },
   ]
+
+  // /topics itself is only worth indexing once a topic has something to show
+  const topicsIndex: MetadataRoute.Sitemap = topics.some((t) => t._count.articles > 0)
+    ? [{ url: `${base}/topics`, changeFrequency: 'weekly', priority: 0.6 }]
+    : []
 
   return [
     ...staticPages,
+    ...topicsIndex,
     ...articles.map((a) => ({
       url: `${base}/articles/${a.slug}`,
       lastModified: a.publishedAt ?? undefined,

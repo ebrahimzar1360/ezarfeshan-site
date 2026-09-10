@@ -58,7 +58,7 @@ export function ConsultForm() {
       <div role="status" className="rounded-lg border border-border bg-bg-sunken px-6 py-8">
         <p className="text-500 font-bold text-text">درخواستت رسید</p>
         <p className="mt-3 text-300 leading-prose text-text-muted">
-          توضیحی که نوشتی را می‌خوانم و خودم جواب می‌دهم — معمولاً ظرف چند روز کاری.
+          توضیحی که نوشتی را می‌خوانم و خودم جواب می‌دهم — ظرف ۴۸ ساعت کاری.
           یک ایمیل تأیید هم برایت فرستاده شد.
         </p>
       </div>
@@ -162,13 +162,24 @@ export function ConsultForm() {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={status === 'sending'}
-        className="h-13 rounded-md bg-solid-bg px-8 text-500 font-medium text-solid-text transition-colors duration-150 hover:bg-solid-bg-hover disabled:opacity-60"
-      >
-        {status === 'sending' ? 'در حال ارسال…' : 'ارسال درخواست'}
-      </button>
+      {/* The promise sits under the button, not above it: it answers the question
+          that appears at the moment of clicking — "then what?". Uncertainty about
+          when a reply arrives is the last thing that stops a form being sent. The
+          same ۴۸ ساعت appears in the success state, on /contact and in /terms; if
+          it changes, it changes in all four. */}
+      <div>
+        <button
+          type="submit"
+          disabled={status === 'sending'}
+          className="h-13 rounded-md bg-solid-bg px-8 text-500 font-medium text-solid-text transition-colors duration-150 hover:bg-solid-bg-hover disabled:opacity-60"
+        >
+          {status === 'sending' ? 'در حال ارسال…' : 'ارسال درخواست'}
+        </button>
+        <p className="mt-3.5 text-200 leading-normal text-text-subtle">
+          ظرف ۴۸ ساعت کاری خودم جواب می‌دهم — حتی اگر جواب این باشد که کارِ تو در
+          حوزهٔ من نیست.
+        </p>
+      </div>
     </form>
   )
 }

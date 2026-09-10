@@ -26,6 +26,26 @@ export default function ConsultPage() {
             قرار می‌گذاریم. اگر فکر کنم نمی‌توانم، همان را می‌گویم.
           </p>
         </div>
+
+        {/* Silence about price is not neutrality — it makes the visitor guess, and
+            people guess high and leave. The bands here are the same ones the form
+            offers, so the page and the field cannot drift apart. No invented
+            number: the range is where the work has actually landed. */}
+        <div className="mt-10 rounded-lg border border-border bg-bg-sunken px-6 py-7">
+          <h2 className="text-400 font-bold text-text">هزینه چقدر است</h2>
+          <p className="mt-3 text-300 leading-prose text-text-muted">
+            رقم ثابتی ندارم، چون دامنهٔ کار ثابت نیست — بازطراحی یک فرایند با
+            سیستم‌سازی کل یک مجموعه فرق دارد. بیشتر پروژه‌ها در بازهٔ ۵۰ تا ۱۵۰ میلیون
+            تومان جمع می‌شوند؛ کارهای کوچک‌تر و محدودتر زیر آن، و مجموعه‌های بزرگ‌تر
+            بالای آن.
+          </p>
+          <p className="mt-3 text-300 leading-prose text-text-muted">
+            اولین گفت‌وگو هزینه‌ای ندارد. عدد دقیق بعد از آن نوشته می‌شود، وقتی هر دو
+            بدانیم دقیقاً قرار است چه کاری انجام شود. اگر هنوز تصوری از بودجه نداری،
+            در فرم «نمی‌دانم» را انتخاب کن — این گزینه هست چون جواب رایجی است، نه چون
+            تعارف است.
+          </p>
+        </div>
       </Container>
 
       <Container width="measure" className="pb-20">

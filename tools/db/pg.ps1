@@ -76,7 +76,11 @@ function Invoke-Start {
   # it inherits open for its whole life, so any form of waiting on this process
   # -- a pipe, a capture, -Wait -- hangs until the database shuts down.
   # Readiness is decided by the poll below instead.
-  $pgArgs = @('-D', $DATA, '-l', $LOG, '-o', "-p $PORT", '-W', 'start')
+  # The -o value must reach pg_ctl as ONE argument. Start-Process joins the
+  # ArgumentList with spaces and does not re-quote, so a bare "-p 55432" arrives
+  # as two words and pg_ctl reports: unrecognized operation mode "55432".
+  # The quotes have to be inside the string.
+  $pgArgs = @('-D', $DATA, '-l', $LOG, '-o', "`"-p $PORT`"", '-W', 'start')
   Start-Process -FilePath "$BIN\pg_ctl.exe" -ArgumentList $pgArgs -NoNewWindow `
     -RedirectStandardOutput "$env:TEMP\pgctl-out.log" -RedirectStandardError "$env:TEMP\pgctl-err.log"
 
