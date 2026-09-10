@@ -242,6 +242,28 @@
   img, svg, video { max-width: 100%; height: auto; }
 }
 
+/* Deliberately OUTSIDE @layer base.
+   An unlayered rule beats every layered rule regardless of specificity, and
+   browser extensions inject their stylesheets unlayered. One of them sets a
+   plain `html { font-family: ui-sans-serif, system-ui, … }`, which silently
+   replaced Vazirmatn with the system fallback — Tahoma on Windows — on every
+   page. `html` inside @layer base could not win that, no matter how specific.
+   Restating the family here, on `body` as well as `html`, puts it back:
+   a rule that matches body directly beats anything body merely inherits. */
+html,
+body {
+  font-family: var(--font-sans);
+}
+
+/* Same reason: a layered `.latin, code` loses to an unlayered `html`, so the
+   Latin face has to be restated out here too. */
+.latin,
+code,
+kbd,
+samp {
+  font-family: var(--font-latin);
+}
+
 /* ============================================================
    4. THE GOLD MARKER — the signature element
    Recovered from the brand guide: every heading band carries a gold
