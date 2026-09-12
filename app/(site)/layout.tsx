@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { PageViewTracker } from '@/components/site/PageViewTracker'
 import { PersonJsonLd, WebSiteJsonLd } from '@/components/seo/JsonLd'
+import { ChatWidget } from '@/components/site/ChatWidget'
 import { Footer } from '@/components/site/Footer'
 import { Header } from '@/components/site/Header'
 
@@ -23,6 +24,7 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
       <Footer />
+      <ChatWidget />
     </>
   )
 }

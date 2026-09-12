@@ -70,6 +70,23 @@ export const downloadSchema = z.object({
   website: honeypot,
 })
 
+export const chatMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().trim().min(1).max(2000),
+})
+
+export const chatSchema = z.object({
+  message: z
+    .string()
+    .trim()
+    .min(1, 'یک پیام بنویس.')
+    .max(1000, 'پیام بیش از حد طولانی است. کوتاه‌ترش کن.'),
+  /** Last few turns only — the client keeps the full transcript, the server
+   * only needs enough for the model to track the immediate thread. */
+  history: z.array(chatMessageSchema).max(8).optional(),
+})
+
 export type SubscribeInput = z.infer<typeof subscribeSchema>
 export type LeadInput = z.infer<typeof leadSchema>
 export type DownloadInput = z.infer<typeof downloadSchema>
+export type ChatInput = z.infer<typeof chatSchema>
