@@ -23,15 +23,30 @@ export const runtime = 'nodejs'
  */
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
+
 /**
- * DeepSeek V4 Flash: $0.04 / $0.08 per million tokens — a full conversation
- * turn costs a small fraction of a cent. Every free-tier model on OpenRouter
- * that could actually hold a conversation turned out to be gated to "agentic
- * harnesses" (coding-agent clients) and returns 403 on a plain chat request —
- * confirmed by hand against thinkingmachines/inkling:free before landing on
- * this one. Requires a positive OpenRouter credit balance to work at all.
+ * $0 forever, by design. A handful of OpenRouter's ":free" models are gated
+ * to "agentic harnesses" (coding-agent clients) and 403 on a plain chat
+ * request — confirmed by hand against thinkingmachines/inkling:free and
+ * every other Thinking Machines model. These three were confirmed by hand to
+ * answer plain chat completions, hold up a Persian system prompt, and use
+ * injected context correctly instead of paraphrasing around it.
+ * poolside/laguna and dots-studio/dots-3-note-preview were excluded even
+ * though they passed: dots-3-note-preview carries an announced removal date,
+ * and picking a model set that might vanish defeats "just make it free."
+ *
+ * Free tiers get rate-limited hard under shared load (google/gemma-4-31b-it
+ * returned 429 on nearly every call in testing), so this is a small chain,
+ * not a single model — a 429 or 5xx moves to the next entry instead of
+ * failing the request.
  */
-const DEFAULT_MODEL = 'deepseek/deepseek-v4-flash-0731'
+const FREE_MODEL_CHAIN = [
+  process.env.OPENROUTER_MODEL,
+  'nex-agi/nex-n2.5-pro:free',
+  'nex-agi/nex-n2.5-mini:free',
+  'inclusionai/ling-3.0-flash-fin:free',
+].filter((m): m is string => Boolean(m))
+
 const REQUEST_TIMEOUT_MS = 20_000
 
 function systemPrompt(context: string): string {
@@ -45,6 +60,7 @@ function systemPrompt(context: string): string {
 ۵. اگر سؤال کاملاً بی‌ربط به این سایت بود (مثل کدنویسی، هوای امروز، مسائل شخصی کاربر که ربطی به کسب‌وکار ندارد)، مؤدبانه بگو کارت محدود به راهنمایی دربارهٔ این سایت است و موضوع را به کارهای ${site.name} برگردان.
 ۶. همیشه فارسی و محاوره‌ای-حرفه‌ای بنویس، کوتاه و مستقیم — نه رسمی و خشک، نه پرحرف.
 ۷. هرگز وانمود نکن جای فرم مشاوره یا تماس مستقیم با ${site.name} را می‌گیری؛ برای قرار گذاشتن واقعی، همیشه به فرم /consult ارجاع بده.
+۸. متن ساده بنویس — بدون قالب‌بندی مارکداون (بدون **، بدون #، بدون لیست با -)، چون این پیام در یک حباب گفت‌وگوی ساده نمایش داده می‌شود.
 
 زمینه (تنها منبع مجاز برای جواب دادن):
 ${context}`
@@ -77,46 +93,76 @@ export async function POST(request: NextRequest) {
       { role: 'user', content: message },
     ]
 
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    let reply: string | undefined
+    let lastError: string | undefined
 
-    let completion: { choices?: { message?: { content?: string } }[] }
-    try {
-      const upstream = await fetch(OPENROUTER_URL, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-          // OpenRouter uses these to attribute traffic on its public leaderboard.
-          // X-Title must be a valid HTTP header value (ISO-8859-1 bytes only),
-          // so the Latin form of the name goes here — fetch throws a ByteString
-          // conversion error on the Persian one.
-          'HTTP-Referer': site.url,
-          'X-Title': site.nameLatin,
-        },
-        body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL ?? DEFAULT_MODEL,
-          messages,
-          temperature: 0.3,
-          max_tokens: 600,
-        }),
-      })
+    // Free-tier endpoints get rate-limited (429) or occasionally 5xx under
+    // shared load — one bad model must not fail the whole request while the
+    // next one in the chain would have answered fine.
+    for (const model of FREE_MODEL_CHAIN) {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
-      if (!upstream.ok) {
-        const detail = await upstream.text().catch(() => '')
-        console.error('[api:chat] upstream error', upstream.status, detail.slice(0, 500))
-        return failUnexpected('chat', new Error(`openrouter ${upstream.status}`))
+      try {
+        const upstream = await fetch(OPENROUTER_URL, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+            // OpenRouter uses these to attribute traffic on its public leaderboard.
+            // X-Title must be a valid HTTP header value (ISO-8859-1 bytes only),
+            // so the Latin form of the name goes here — fetch throws a ByteString
+            // conversion error on the Persian one.
+            'HTTP-Referer': site.url,
+            'X-Title': site.nameLatin,
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            temperature: 0.3,
+            max_tokens: 600,
+            // Several free models on the chain are reasoning models that, left
+            // to default, put their chain-of-thought straight into `content`
+            // instead of the final answer — confirmed by hand against
+            // nvidia/nemotron-3-super. This keeps every model in the chain
+            // returning just the answer.
+            reasoning: { enabled: false },
+          }),
+        })
+
+        if (!upstream.ok) {
+          const detail = await upstream.text().catch(() => '')
+          lastError = `${model} ${upstream.status}`
+          console.error('[api:chat] upstream error', model, upstream.status, detail.slice(0, 500))
+          // 429 (rate-limited) and 5xx are the transient, worth-a-retry cases.
+          // Anything else (400 bad request, 401/403 auth/gating) will fail
+          // identically on the next model too if it's a request-shape issue,
+          // but a gated or misconfigured single model shouldn't be fatal
+          // either — keep falling through the chain regardless of status.
+          continue
+        }
+
+        const completion: { choices?: { message?: { content?: string } }[] } =
+          await upstream.json()
+        const content = completion.choices?.[0]?.message?.content?.trim()
+        if (content) {
+          reply = content
+          break
+        }
+        lastError = `${model} empty completion`
+      } catch (cause) {
+        lastError =
+          cause instanceof Error && cause.name === 'AbortError'
+            ? `${model} timeout`
+            : `${model} ${String(cause)}`
+      } finally {
+        clearTimeout(timeout)
       }
-
-      completion = await upstream.json()
-    } finally {
-      clearTimeout(timeout)
     }
 
-    const reply = completion.choices?.[0]?.message?.content?.trim()
     if (!reply) {
-      return failUnexpected('chat', new Error('empty completion'))
+      return failUnexpected('chat', new Error(lastError ?? 'all free models exhausted'))
     }
 
     return ok({ reply })
