@@ -39,6 +39,16 @@ export function PersonJsonLd() {
         description: site.description,
         url: site.url,
         image: `${site.url}/photos/portrait-about.jpg`,
+        // Same three facts /contact shows a reader — nothing asserted here that
+        // is not visible on the page.
+        telephone: site.phone.e164,
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: site.address.street,
+          addressLocality: site.address.city,
+          addressRegion: site.address.region,
+          addressCountry: site.address.country,
+        },
         // only the destinations lib/site.ts actually confirms
         sameAs: socials.map((s) => s.href),
         knowsAbout: ['سیستم‌سازی', 'مدیریت عملیات', 'هوش مصنوعی کاربردی', 'مدیریت تیم'],

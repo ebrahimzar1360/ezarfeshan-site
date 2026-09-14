@@ -18,6 +18,39 @@ export const site = {
 
   email: 'ebrahimzarfeshan@gmail.com',
 
+  /**
+   * Confirmed 1405/06/24. Three separate forms because three consumers need
+   * different ones and none may be derived at the call site:
+   *   - `display` is what a Persian reader sees, in Persian digits
+   *   - `href` is the tel: target, which must be E.164 Latin or iOS ignores it
+   *   - `e164` is what schema.org/telephone expects
+   * A component that formats its own phone number is a component that will
+   * disagree with the next one.
+   */
+  phone: {
+    display: '۰۷۱–۵۲۳۴۸۸۸۳',
+    href: 'tel:+987152348883',
+    e164: '+987152348883',
+  },
+
+  address: {
+    display: 'فارس، لار، شهر قدیم، بلوار خلیج فارس',
+    city: 'لار',
+    region: 'فارس',
+    country: 'IR',
+    street: 'شهر قدیم، بلوار خلیج فارس',
+  },
+
+  /**
+   * `display` is the human line; `schema` is the schema.org openingHours
+   * syntax, which only accepts English day abbreviations and 24-hour times.
+   * Saturday–Thursday is the Iranian working week.
+   */
+  hours: {
+    display: 'شنبه تا پنج‌شنبه، ۹ تا ۱۷',
+    schema: 'Sa,Su,Mo,Tu,We,Th 09:00-17:00',
+  },
+
   locale: 'fa-IR',
   dir: 'rtl',
 } as const

@@ -10,6 +10,16 @@
  * The password is taken as an argument rather than prompted because this shell
  * runs non-interactively. That puts it in shell history — change it after first
  * login if that matters, or clear the history line.
+ *
+ * Targets whatever DATABASE_URL resolves to. An already-exported variable beats
+ * the one in .env (Node's loadEnvFile does not overwrite the environment), so
+ * production is reached without editing any file:
+ *
+ *   $env:DATABASE_URL="<production connection string>"
+ *   npm run admin:create -- you@example.com "نام" "گذرواژه"
+ *
+ * The host is echoed before anything is written, because "created the admin"
+ * against the wrong database looks identical to success until you try to log in.
  */
 
 import { hash } from '@node-rs/argon2'
@@ -42,6 +52,18 @@ if (password.length < 12) {
   )
   process.exit(1)
 }
+
+// Host only — never the credentials. Enough to tell local from production.
+const target = (() => {
+  try {
+    const u = new URL(connectionString)
+    return `${u.hostname}${u.port ? `:${u.port}` : ''}${u.pathname}`
+  } catch {
+    return '(نامشخص)'
+  }
+})()
+const isLocal = target.startsWith('localhost') || target.startsWith('127.0.0.1')
+console.log(`دیتابیس هدف: ${target}  ${isLocal ? '— محلی' : '— غیرمحلی (پروداکشن؟)'}`)
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 

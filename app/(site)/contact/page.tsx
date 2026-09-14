@@ -56,6 +56,17 @@ export default function ContactPage() {
           <h2 className="text-600">مستقیم</h2>
           <ul className="mt-6">
             <li className="border-t border-border py-5">
+              <p className="text-200 text-text-subtle">تلفن</p>
+              <a href={site.phone.href} className="mt-1.5 block text-400">
+                {site.phone.display}
+              </a>
+              <p className="mt-1.5 text-200 text-text-subtle">{site.hours.display}</p>
+            </li>
+            <li className="border-t border-border py-5">
+              <p className="text-200 text-text-subtle">نشانی</p>
+              <p className="mt-1.5 text-400">{site.address.display}</p>
+            </li>
+            <li className="border-t border-border py-5">
               <p className="text-200 text-text-subtle">ایمیل</p>
               <a href={`mailto:${site.email}`} className="latin mt-1.5 block text-400">
                 {site.email}
@@ -76,8 +87,8 @@ export default function ContactPage() {
             ))}
           </ul>
           <p className="mt-8 text-300 leading-prose text-text-muted">
-            واتس‌اپ و ایمیل را روزانه می‌بینم. اینستاگرام و لینکدین کندتر — اگر جواب
-            فوری می‌خواهی، ایمیل بزن.
+            تلفن فقط در ساعت کاری بالا جواب داده می‌شود. واتس‌اپ و ایمیل را روزانه
+            می‌بینم. اینستاگرام و لینکدین کندتر — اگر جواب فوری می‌خواهی، ایمیل بزن.
           </p>
         </Container>
       </section>
