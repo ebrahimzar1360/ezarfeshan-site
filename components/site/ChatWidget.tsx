@@ -60,6 +60,23 @@ export function ChatWidget() {
   const listRef = useRef<HTMLDivElement>(null)
   const panelId = useId()
 
+  /**
+   * Nothing renders until React has hydrated.
+   *
+   * The launcher used to be server-rendered, so it was on screen and looking
+   * clickable while its onClick handler did not exist yet — the first click
+   * landed on markup and vanished, and the widget read as broken until you
+   * clicked a second time. Reproduced on both localhost and production, so it
+   * is a real race and not a slow connection.
+   *
+   * Returning null is the fix rather than a disabled button: a button that
+   * looks identical whether or not it works is the same trap in a different
+   * costume. The widget is `position: fixed`, so appearing a beat later shifts
+   * no layout, and a visitor who never sees the bubble never clicks a dead one.
+   */
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => setHydrated(true), [])
+
   useEffect(() => {
     if (!listRef.current) return
     listRef.current.scrollTop = listRef.current.scrollHeight
@@ -160,6 +177,9 @@ export function ChatWidget() {
   }
 
   const showStarters = messages.length === 1 && !sending && !leadOpen
+
+  // After every hook, so the hook order never changes between renders.
+  if (!hydrated) return null
 
   return (
     <div className="fixed bottom-5 end-5 z-40 flex flex-col items-end gap-3">
