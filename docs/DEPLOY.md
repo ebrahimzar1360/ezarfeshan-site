@@ -160,6 +160,29 @@ gunzip -c backup-1405-05-30.sql.gz | docker compose exec -T db psql -U ezarfesha
 - **افزونهٔ `pg_trgm` را دستی روی آن دیتابیس بساز**، وگرنه جست‌وجو کار نمی‌کند
 - `output: 'standalone'` روی Vercel نادیده گرفته می‌شود و مشکلی ایجاد نمی‌کند
 
+### ساختن حساب مدیر روی Vercel
+
+روی Vercel جایی برای `docker compose exec` نیست — دستور از همین کامپیوتر اجرا
+می‌شود و به دیتابیس پروداکشن وصل می‌گردد. `process.loadEnvFile` متغیرِ از قبل
+صادرشده را بازنویسی نمی‌کند، پس `.env` دست‌نخورده می‌ماند:
+
+```powershell
+# رشتهٔ اتصال پروداکشن را بیاور (در .env.production.local می‌نشیند، gitignore شده)
+npx vercel env pull .env.production.local --environment=production
+
+# یا همان مقدار DATABASE_URL را از داشبورد Vercel کپی کن
+$env:DATABASE_URL = "<رشتهٔ اتصال پروداکشن>"
+npm run admin:create -- you@example.com "ابراهیم زرفشان" "<گذرواژهٔ ۱۲+ کاراکتری>"
+```
+
+دستور قبل از نوشتن، هاست مقصد را چاپ می‌کند. اگر `localhost` دیدی یعنی متغیر
+اعمال نشده و داری روی دیتابیس محلی حساب می‌سازی — که تا لحظهٔ ورود دقیقاً شبیه
+موفقیت به نظر می‌رسد.
+
+بعد از آن: `<دامنه>/admin/login`.
+
+`$env:DATABASE_URL` فقط در همان پنجرهٔ PowerShell زنده است؛ با بستنش پاک می‌شود.
+
 ## چه چیزی روی سرور نیست و نباید باشد
 
 `brand-source/` (فایل‌های خام برند)، `docs/`، `e2e/`، `tools/audit/` — همه در
