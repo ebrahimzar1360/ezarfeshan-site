@@ -107,6 +107,11 @@ export function ChatWidget() {
       const body = await res.json()
       if (!res.ok || !body.ok) {
         setError(body?.error?.message ?? 'ارسال نشد. دوباره تلاش کن.')
+        // 503 means the assistant is out for hours, not for a moment — the
+        // daily model quota. Telling someone to go find a form while the form
+        // sits one click away inside this very widget wastes the one visitor
+        // who was already asking. Open it, pre-filled from what they typed.
+        if (res.status === 503) openLead()
         return
       }
       setMessages((cur) => [...cur, { role: 'assistant', content: body.data.reply }])

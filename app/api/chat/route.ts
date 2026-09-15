@@ -239,7 +239,8 @@ export async function POST(request: NextRequest) {
         // way forward is what actually loses the visitor.
         return fail(
           'دستیار گفت‌وگو فعلاً در دسترس نیست (سقف روزانهٔ سرویس پر شده). ' +
-            'برای درخواست مشاوره از فرم صفحهٔ /consult استفاده کن، یا از صفحهٔ /contact مستقیم تماس بگیر.',
+            'همین‌جا فرم درخواست مشاوره را برایت باز کردم — پرش کن تا مستقیم به دست ابراهیم برسد. ' +
+            'یا از صفحهٔ /contact مستقیم تماس بگیر.',
           503
         )
       }
