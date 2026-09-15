@@ -81,9 +81,10 @@ export const chatSchema = z.object({
     .trim()
     .min(1, 'یک پیام بنویس.')
     .max(1000, 'پیام بیش از حد طولانی است. کوتاه‌ترش کن.'),
-  /** Last few turns only — the client keeps the full transcript, the server
-   * only needs enough for the model to track the immediate thread. */
-  history: z.array(chatMessageSchema).max(8).optional(),
+  /** A window over the transcript, not the whole of it — see lib/chat/history.ts
+   * for what it keeps and why. This cap is the ceiling packHistory packs to;
+   * lowering it without lowering MAX_TURNS there 422s a long conversation. */
+  history: z.array(chatMessageSchema).max(20).optional(),
 })
 
 export type SubscribeInput = z.infer<typeof subscribeSchema>

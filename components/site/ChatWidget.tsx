@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
+import { packHistory, type ChatTurn } from '@/lib/chat/history'
+import { extractLeadHints } from '@/lib/chat/lead-hints'
 import { site } from '@/lib/site'
 
-type Message = { role: 'user' | 'assistant'; content: string }
+type Message = ChatTurn
 
 const GREETING: Message = {
   role: 'assistant',
@@ -22,10 +24,6 @@ const STARTERS = [
   'دقیقاً چه کمکی می‌کنی؟',
   'چه سابقه‌ای داری؟',
 ] as const
-
-/** Only role+content travels to the server, and only the last few turns —
- * enough for the model to track the thread, not a full transcript archive. */
-const HISTORY_TURNS = 6
 
 /** leadSchema.challenge demands 30 characters; prefilling from the visitor's
  * own words usually clears it, and they can edit before sending. */
@@ -98,10 +96,12 @@ export function ChatWidget() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmed,
-          history: next
-            .slice(0, -1)
-            .slice(-HISTORY_TURNS)
-            .map((m) => ({ role: m.role, content: m.content })),
+          // The greeting is ours, not the visitor's, and re-sending it every
+          // turn spends head budget on text the model already has in its
+          // system prompt.
+          history: packHistory(
+            next.slice(0, -1).filter((m) => m.content !== GREETING.content)
+          ),
         }),
       })
       const body = await res.json()
@@ -117,18 +117,25 @@ export function ChatWidget() {
     }
   }
 
-  /** Seeds the challenge field with what the visitor already typed, so they are
-   * not asked to explain their problem a second time. */
+  /**
+   * Seeds the form from what the visitor already typed, so they are not asked
+   * to repeat their name, their number, or their problem a second time.
+   *
+   * Only empty fields are filled — once they have edited something, their
+   * version wins over anything extracted from the transcript.
+   */
   function openLead() {
     setLeadError(null)
-    setLead((cur) => {
-      if (cur.challenge.trim()) return cur
-      const said = messages
-        .filter((m) => m.role === 'user')
-        .map((m) => m.content)
-        .join('\n')
-      return { ...cur, challenge: said }
-    })
+    const said = messages.filter((m) => m.role === 'user').map((m) => m.content)
+    const hints = extractLeadHints(said)
+
+    setLead((cur) => ({
+      ...cur,
+      name: cur.name.trim() || hints.name || '',
+      email: cur.email.trim() || hints.email || '',
+      phone: cur.phone.trim() || hints.phone || '',
+      challenge: cur.challenge.trim() || said.join('\n'),
+    }))
     setLeadOpen(true)
   }
 
