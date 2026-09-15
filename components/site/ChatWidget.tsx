@@ -111,7 +111,10 @@ export function ChatWidget() {
         // daily model quota. Telling someone to go find a form while the form
         // sits one click away inside this very widget wastes the one visitor
         // who was already asking. Open it, pre-filled from what they typed.
-        if (res.status === 503) openLead()
+        // `next`, not the `messages` closure: that still holds the array from
+        // before this send, so the message the visitor just typed — the one
+        // carrying their name and number — would not be in it.
+        if (res.status === 503) openLead(next)
         return
       }
       setMessages((cur) => [...cur, { role: 'assistant', content: body.data.reply }])
@@ -129,9 +132,9 @@ export function ChatWidget() {
    * Only empty fields are filled — once they have edited something, their
    * version wins over anything extracted from the transcript.
    */
-  function openLead() {
+  function openLead(from: ChatTurn[] = messages) {
     setLeadError(null)
-    const said = messages.filter((m) => m.role === 'user').map((m) => m.content)
+    const said = from.filter((m) => m.role === 'user').map((m) => m.content)
     const hints = extractLeadHints(said)
 
     setLead((cur) => ({
@@ -398,7 +401,7 @@ export function ChatWidget() {
                 <div className="px-3 pb-3">
                   <button
                     type="button"
-                    onClick={openLead}
+                    onClick={() => openLead()}
                     className="w-full rounded-md border border-border px-3 py-2 text-200 text-text-muted transition-colors duration-150 hover:border-focus hover:text-text"
                   >
                     ثبت درخواست مشاوره
