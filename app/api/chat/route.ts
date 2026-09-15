@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { buildSiteContext } from '@/lib/chat/knowledge'
 import { toPlainText } from '@/lib/chat/plain-text'
-import { failRateLimit, failUnexpected, failValidation, ok } from '@/lib/api/respond'
+import { fail, failRateLimit, failUnexpected, failValidation, ok } from '@/lib/api/respond'
 import { clientIp, rateLimit, sweepRateLimits } from '@/lib/rate-limit'
 import { site } from '@/lib/site'
 import { chatSchema } from '@/lib/validation'
@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
 
     let reply: string | undefined
     let lastError: string | undefined
+    let dailyQuotaExhausted = false
 
     // Free-tier endpoints get rate-limited (429) or occasionally 5xx under
     // shared load — one bad model must not fail the whole request while the
@@ -188,6 +189,19 @@ export async function POST(request: NextRequest) {
           const detail = await upstream.text().catch(() => '')
           lastError = `${model} ${upstream.status}`
           console.error('[api:chat] upstream error', model, upstream.status, detail.slice(0, 500))
+
+          // OpenRouter's free tier is capped per *day*, not per minute — 50
+          // requests across every free model on the account. Once it is spent
+          // no model in the chain can answer until the UTC-midnight reset, so
+          // "try again in a moment" is a lie we already know the answer to.
+          // Flagged here so the visitor gets the truth and a way through.
+          if (upstream.status === 429 && /free-models-per-day|free_tier_daily/.test(detail)) {
+            // The quota is per account, not per model, so the rest of the
+            // chain will return the same 429. Stop rather than spend the
+            // visitor's time proving it.
+            dailyQuotaExhausted = true
+            break
+          }
           // 429 (rate-limited) and 5xx are the transient, worth-a-retry cases.
           // Anything else (400 bad request, 401/403 auth/gating) will fail
           // identically on the next model too if it's a request-shape issue,
@@ -217,6 +231,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (!reply) {
+      if (dailyQuotaExhausted) {
+        console.error('[api:chat] OpenRouter daily free-tier quota exhausted')
+        // 503, not 500: this is a known capacity limit, not a defect. The
+        // message points at the form and the phone for the same reason the
+        // assistant does when it does not know something — a dead end with no
+        // way forward is what actually loses the visitor.
+        return fail(
+          'دستیار گفت‌وگو فعلاً در دسترس نیست (سقف روزانهٔ سرویس پر شده). ' +
+            'برای درخواست مشاوره از فرم صفحهٔ /consult استفاده کن، یا از صفحهٔ /contact مستقیم تماس بگیر.',
+          503
+        )
+      }
       return failUnexpected('chat', new Error(lastError ?? 'all free models exhausted'))
     }
 

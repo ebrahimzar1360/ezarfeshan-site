@@ -94,6 +94,16 @@ async function ask(message) {
   // /api/chat allows 20 requests per IP per 10 minutes. Running this audit
   // twice in a row hits that, and the empty replies look exactly like model
   // failures — say so plainly instead of reporting ten content failures.
+  // OpenRouter's free tier allows 50 requests per day across the whole
+  // account. Running this audit five times spends it, and every check then
+  // fails for a reason that has nothing to do with the code.
+  if (res.status === 503) {
+    console.error(
+      `\n⛔ سقف روزانهٔ OpenRouter (۵۰ درخواست) پر شده. تا نیمه‌شب UTC صبر کن یا اعتبار اضافه کن.\n   پیام سرور: ${body?.error?.message ?? ''}`
+    )
+    process.exit(2)
+  }
+
   if (res.status === 429) {
     console.error(
       '\n⛔ محدودیت نرخ /api/chat (۲۰ درخواست در ۱۰ دقیقه). چند دقیقه صبر کن و دوباره اجرا کن.'
