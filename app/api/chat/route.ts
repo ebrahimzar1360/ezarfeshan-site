@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server'
 import { buildSiteContext } from '@/lib/chat/knowledge'
+import { toPlainText } from '@/lib/chat/plain-text'
 import { failRateLimit, failUnexpected, failValidation, ok } from '@/lib/api/respond'
 import { clientIp, rateLimit, sweepRateLimits } from '@/lib/rate-limit'
 import { site } from '@/lib/site'
@@ -42,12 +43,48 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
  */
 const FREE_MODEL_CHAIN = [
   process.env.OPENROUTER_MODEL,
-  'nex-agi/nex-n2.5-pro:free',
-  'nex-agi/nex-n2.5-mini:free',
   'inclusionai/ling-3.0-flash-fin:free',
+  'nex-agi/nex-n2.5-pro:free',
 ].filter((m): m is string => Boolean(m))
 
-const REQUEST_TIMEOUT_MS = 20_000
+/**
+ * Order is the whole performance story, and it was wrong.
+ *
+ * The chain used to lead with nex-n2.5-pro and carry nex-n2.5-mini second.
+ * Measured against a real prompt — the full site context, not a one-line test —
+ * pro takes 20-58s and mini returns a 504 after five minutes. Both therefore
+ * blew the per-model timeout on every single request, and ling answered every
+ * question on the site after ~40s of waiting for two models that were never
+ * going to reply. The visitor paid 40 seconds for a 2-second answer.
+ *
+ * A short test prompt hides this completely: pro answers "say hello" in 7.9s.
+ * The context is what pushes it over. Measure with the real payload.
+ *
+ * ling-3.0-flash-fin now leads at 1.5-2.0s, and it is also the model whose
+ * answers tools/audit/chat.mjs already validates — it is what has been
+ * answering all along. pro stays as the fallback because it does work, just
+ * slowly. mini is gone: a model that 504s is not a fallback, it is a delay.
+ */
+
+/**
+ * Per-model ceiling. Above the fallback's slow-but-real 20s so a working model
+ * is not cut off, below the point where the chain cannot finish inside
+ * maxDuration.
+ */
+const REQUEST_TIMEOUT_MS = 25_000
+
+/**
+ * Whole-request ceiling. Vercel kills the function at maxDuration and the
+ * visitor gets a blank reply with no error — seen in production at 61s, where
+ * the old chain's two dead models ate the entire budget. No new model is
+ * started past this, so the last one always has room to answer or fail
+ * honestly.
+ */
+const TOTAL_DEADLINE_MS = 45_000
+
+/** Vercel's default (10s on Hobby) is below a single slow model, so the
+ * fallback could never run there. */
+export const maxDuration = 60
 
 function systemPrompt(context: string): string {
   return `تو دستیار گفت‌وگوی سایت شخصی «${site.name}» هستی.
@@ -104,9 +141,20 @@ export async function POST(request: NextRequest) {
     // Free-tier endpoints get rate-limited (429) or occasionally 5xx under
     // shared load — one bad model must not fail the whole request while the
     // next one in the chain would have answered fine.
+    const startedAt = Date.now()
+
     for (const model of FREE_MODEL_CHAIN) {
+      const left = TOTAL_DEADLINE_MS - (Date.now() - startedAt)
+      // Starting a model with two seconds left only guarantees a timeout —
+      // better to return the error we already have than to burn the budget
+      // and have Vercel kill the function mid-answer.
+      if (left < 5_000) {
+        lastError ??= 'deadline reached before any model answered'
+        break
+      }
+
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+      const timeout = setTimeout(() => controller.abort(), Math.min(REQUEST_TIMEOUT_MS, left))
 
       try {
         const upstream = await fetch(OPENROUTER_URL, {
@@ -150,7 +198,9 @@ export async function POST(request: NextRequest) {
 
         const completion: { choices?: { message?: { content?: string } }[] } =
           await upstream.json()
-        const content = completion.choices?.[0]?.message?.content?.trim()
+        // Rule ۸ asks for plain text; this enforces it. A model that obeys
+        // most of the time fails in front of a visitor and never in testing.
+        const content = toPlainText(completion.choices?.[0]?.message?.content ?? '')
         if (content) {
           reply = content
           break
