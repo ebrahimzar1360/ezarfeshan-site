@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "lint:brand": "node tools/audit/classes.mjs",
     "postinstall": "prisma generate",
     "fonts": "node tools/fonts/fetch-fonts.js",
     "logo": "node tools/logo/build-logo.js",

@@ -24,7 +24,7 @@ export function Hero() {
             and silently produce nothing. */}
         <span
           aria-hidden
-          className="enter-bar absolute inset-y-0 start-0 w-1 origin-top rounded-full bg-accent"
+          className="enter-bar absolute inset-y-0 start-0 w-1 origin-top rounded-sm bg-accent"
         />
         <h1 className="text-800 md:text-900 lg:text-1000">{site.tagline}</h1>
         <p

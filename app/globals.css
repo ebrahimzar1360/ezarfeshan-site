@@ -423,6 +423,26 @@ samp {
     animation: enter-bar 420ms var(--ease-brand) both;
   }
 
+  /* Toasts, skeleton swaps and panel entrances all want the same two moves the
+     hero already uses. Exposed as utilities rather than re-declared per
+     component so the reduce block below keeps catching every one of them.
+
+     Neither carries a horizontal offset on purpose. A `translateX` entrance
+     does not mirror under dir="rtl" — the keyframe moves in the physical +x
+     direction whatever the writing mode — so a panel written to slide in from
+     the inline-start edge arrives from the wrong side and nothing errors.
+     Vertical and opacity are direction-neutral. */
+  .fade-in {
+    animation: fade-in 150ms var(--ease-brand) both;
+  }
+  .rise-in {
+    animation: enter 180ms var(--ease-brand) both;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
   @keyframes enter {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: none; }

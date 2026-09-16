@@ -78,6 +78,13 @@ const PROBE = `(() => {
   });
 })()`
 
+// Chrome refuses to start its sandbox as uid 0, which is the normal case inside
+// a CI container and never the case on the developer machine. Only then, and
+// only for a browser that loads localhost pages we built ourselves, drop it.
+const ROOT_ARGS = typeof process.getuid === 'function' && process.getuid() === 0
+  ? ['--no-sandbox', '--disable-dev-shm-usage']
+  : []
+
 ;(async () => {
   if (!CHROME) throw new Error('no Chrome/Edge found; set CHROME_PATH')
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-'))
@@ -87,6 +94,7 @@ const PROBE = `(() => {
     `--user-data-dir=${profile}`,
     '--no-first-run',
     '--disable-gpu',
+    ...ROOT_ARGS,
     'about:blank',
   ])
   chrome.on('error', (e) => { throw e })
