@@ -4,57 +4,33 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import { inputClass } from '@/components/ui/FormField'
-
-type Result = { slug: string; title: string; excerpt: string }
+import { SEARCH_ERROR, useArticleSearch } from '@/lib/hooks/useArticleSearch'
 
 function Inner() {
   const router = useRouter()
   const params = useSearchParams()
   const initial = params.get('q') ?? ''
 
-  const [query, setQuery] = useState(initial)
-  const [results, setResults] = useState<Result[] | null>(null)
-  const [state, setState] = useState<'idle' | 'searching' | 'done' | 'error'>('idle')
+  const { query, setQuery, results, state } = useArticleSearch()
 
-  // Debounced. Firing on every keystroke would put a trigram scan on the
-  // database for each letter of a Persian word.
+  // Seed from ?q= once. The hook owns the query from then on; passing `initial`
+  // into it as an initial value would reset the box whenever the URL effect
+  // below rewrote the address.
+  const [seeded, setSeeded] = useState(false)
   useEffect(() => {
-    const q = query.trim()
-    if (q.length < 2) {
-      setResults(null)
-      setState('idle')
-      return
+    if (!seeded) {
+      if (initial) setQuery(initial)
+      setSeeded(true)
     }
-
-    const controller = new AbortController()
-    const timer = setTimeout(async () => {
-      setState('searching')
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
-          signal: controller.signal,
-        })
-        const body = await res.json()
-        if (!body.ok) throw new Error('search failed')
-        setResults(body.data.results)
-        setState('done')
-      } catch (err) {
-        if ((err as Error).name === 'AbortError') return
-        setState('error')
-      }
-    }, 300)
-
-    return () => {
-      clearTimeout(timer)
-      controller.abort()
-    }
-  }, [query])
+  }, [seeded, initial, setQuery])
 
   // keep the URL shareable without pushing a history entry per keystroke
   useEffect(() => {
+    if (!seeded) return
     const q = query.trim()
     const next = q ? `/search?q=${encodeURIComponent(q)}` : '/search'
     router.replace(next, { scroll: false })
-  }, [query, router])
+  }, [query, router, seeded])
 
   return (
     <div className="max-w-(--container-measure)">
@@ -77,7 +53,7 @@ function Inner() {
         {state === 'error' && (
           <p role="alert" className="text-300 font-medium text-text">
             <span aria-hidden className="me-1.5 text-accent">▲</span>
-            جست‌وجو انجام نشد. چند لحظه بعد دوباره تلاش کن.
+            {SEARCH_ERROR}
           </p>
         )}
 

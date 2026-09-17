@@ -1,8 +1,20 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+/** `/articles/page/1` and `/topics/<slug>/page/1`, which are page 1 spelled the long way. */
+const PAGE_ONE = /^(\/articles|\/topics\/[^/]+)\/page\/1$/
+
 /**
- * Gate for /admin.
+ * Two jobs.
+ *
+ * 1. Canonicalise page 1 of a paginated list. The page component calls
+ *    `redirect()` for this, but a redirect thrown from inside a page render
+ *    does not survive in this app — it comes back as a 200 carrying the 404
+ *    body, the same way `notFound()` does (docs/OPEN-QUESTIONS.md §16). A
+ *    middleware redirect is issued before any rendering starts and does emit a
+ *    real 307, which is why this lives here rather than in the route.
+ *
+ * 2. Gate for /admin.
  *
  * Only checks that a session cookie exists — it does not verify the signature.
  * That is deliberate: middleware runs on the edge runtime where the Argon2 and
@@ -12,6 +24,13 @@ import type { NextRequest } from 'next/server'
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  const pageOne = PAGE_ONE.exec(pathname)
+  if (pageOne) {
+    return NextResponse.redirect(new URL(pageOne[1] ?? '/articles', request.url), 308)
+  }
+
+  if (!pathname.startsWith('/admin')) return NextResponse.next()
 
   if (pathname === '/admin/login') return NextResponse.next()
 
@@ -29,5 +48,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/articles/page/:page', '/topics/:slug/page/:page'],
 }

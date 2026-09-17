@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
-import { ArticleJsonLd, BreadcrumbJsonLd } from '@/components/seo/JsonLd'
+import { ArticleJsonLd } from '@/components/seo/JsonLd'
 import { ArticleListItem } from '@/components/ui/ArticleCard'
+import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Container } from '@/components/ui/Container'
 import { DraftNotice } from '@/components/ui/DraftNotice'
 import { ReadingProgress } from '@/components/ui/ReadingProgress'
@@ -75,6 +76,16 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const related = await getRelatedArticles(article.slug, topicSlugs)
   const url = `${site.url}/articles/${article.slug}`
 
+  // One array drives both the visible trail and the BreadcrumbList JSON-LD, so
+  // the two can never drift apart.
+  const trail = [
+    { name: 'مقالات', path: '/articles' },
+    ...(article.topics[0]
+      ? [{ name: article.topics[0].name, path: `/topics/${article.topics[0].slug}` }]
+      : []),
+    { name: article.title, path: `/articles/${article.slug}` },
+  ]
+
   return (
     <article>
       <ArticleJsonLd
@@ -86,34 +97,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         readingMinutes={article.readingMinutes}
         topics={article.topics}
       />
-      <BreadcrumbJsonLd
-        trail={[
-          { name: 'مقالات', path: '/articles' },
-          ...(article.topics[0]
-            ? [{ name: article.topics[0].name, path: `/topics/${article.topics[0].slug}` }]
-            : []),
-          { name: article.title, path: `/articles/${article.slug}` },
-        ]}
-      />
       <Container className="py-14 md:py-20">
-        <nav aria-label="مسیر" className="mb-8 text-200 text-text-subtle">
-          <Link href="/articles" className="text-text-subtle no-underline hover:text-text">
-            مقالات
-          </Link>
-          {article.topics[0] && (
-            <>
-              <span className="mx-2" aria-hidden>
-                ›
-              </span>
-              <Link
-                href={`/topics/${article.topics[0].slug}`}
-                className="text-text-subtle no-underline hover:text-text"
-              >
-                {article.topics[0].name}
-              </Link>
-            </>
-          )}
-        </nav>
+        <Breadcrumb trail={trail} />
 
         <header className="max-w-(--container-measure)">
           <h1 className="text-800 md:text-900">{article.title}</h1>

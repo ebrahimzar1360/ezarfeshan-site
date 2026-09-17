@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ArticleListItem } from '@/components/ui/ArticleCard'
+import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Container } from '@/components/ui/Container'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { Pagination } from '@/components/ui/Pagination'
 import { SectionHead } from '@/components/ui/SectionHead'
-import { getArticlesByTopic, getTopicBySlug, getTopics } from '@/lib/content/queries'
+import { TopicChips } from '@/components/ui/TopicChips'
+import { pageCount } from '@/lib/content/pagination'
+import { getArticlesByTopicPage, getTopicBySlug, getTopics } from '@/lib/content/queries'
 
 export const revalidate = 3600
 
@@ -42,24 +46,53 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
   const topic = await getTopicBySlug(slug)
   if (!topic) notFound()
 
-  const articles = await getArticlesByTopic(slug)
+  const [{ items, total }, topics] = await Promise.all([
+    getArticlesByTopicPage(slug, 1),
+    getTopics(),
+  ])
+  const withArticles = topics
+    .filter((t) => t._count.articles > 0)
+    .map((t) => ({ slug: t.slug, name: t.name, count: t._count.articles }))
 
   return (
     <Container className="py-16 md:py-24">
-      <SectionHead as="h1" eyebrow="موضوع" title={topic.name} lead={topic.description ?? undefined} />
+      <Breadcrumb
+        trail={[
+          { name: 'موضوع‌ها', path: '/topics' },
+          { name: topic.name, path: `/topics/${topic.slug}` },
+        ]}
+      />
 
-      {articles.length === 0 ? (
+      <div className="mt-8">
+        <SectionHead
+          as="h1"
+          eyebrow="موضوع"
+          title={topic.name}
+          lead={topic.description ?? undefined}
+        />
+      </div>
+
+      <TopicChips topics={withArticles} activeSlug={topic.slug} />
+
+      {items.length === 0 ? (
         <EmptyState
           title="هنوز مقاله‌ای در این موضوع منتشر نشده"
           body="موضوع‌های دیگر را ببین یا از فهرست کامل شروع کن."
           action={{ label: 'همهٔ مقالات', href: '/articles' }}
         />
       ) : (
-        <div>
-          {articles.map((a) => (
-            <ArticleListItem key={a.slug} article={a} />
-          ))}
-        </div>
+        <>
+          <div>
+            {items.map((a) => (
+              <ArticleListItem key={a.slug} article={a} />
+            ))}
+          </div>
+          <Pagination
+            page={1}
+            count={pageCount(total)}
+            hrefFor={(n) => (n === 1 ? `/topics/${topic.slug}` : `/topics/${topic.slug}/page/${n}`)}
+          />
+        </>
       )}
     </Container>
   )

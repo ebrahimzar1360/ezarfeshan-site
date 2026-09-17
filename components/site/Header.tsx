@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { Container } from '@/components/ui/Container'
 import { Logo } from '@/components/ui/Logo'
 import { nav } from '@/lib/site'
+import { CommandPalette } from './CommandPalette'
+import { MobileNav } from './MobileNav'
 import { ThemeToggle } from './ThemeToggle'
 
 export function Header() {
@@ -30,38 +32,27 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* Two entry points, split by breakpoint. Below md the plain link to
+              /search: a ⌘K hint is meaningless on a phone, and the link is also
+              the no-JavaScript path. At md+ the palette button replaces it.
+              `md:hidden` is display:none, so exactly one of the two is in the
+              accessibility tree at any width — never both, which is what would
+              give the header two controls with the same purpose.
+
+              The palette's own Ctrl+K listener is on window and mounts at every
+              width, so a keyboard user on a small screen still gets it. */}
           <Link
             href="/search"
             aria-label="جست‌وجو"
-            className="inline-flex size-10 items-center justify-center rounded-md border border-border text-text-muted transition-colors duration-150 hover:border-accent hover:text-text"
+            className="inline-flex size-10 items-center justify-center rounded-md border border-border text-text-muted transition-colors duration-150 hover:border-accent hover:text-text md:hidden"
           >
             <span aria-hidden className="text-300">⌕</span>
           </Link>
+          <div className="hidden md:block">
+            <CommandPalette />
+          </div>
           <ThemeToggle />
-          {/* Mobile nav lives in a <details> so it works with JS disabled and
-              needs no client component. */}
-          <details className="relative md:hidden">
-            <summary
-              className="inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-md border border-border text-text-muted [&::-webkit-details-marker]:hidden"
-              aria-label="باز کردن منو"
-            >
-              <span aria-hidden>☰</span>
-            </summary>
-            <nav
-              aria-label="ناوبری موبایل"
-              className="absolute end-0 top-12 w-52 rounded-lg border border-border bg-bg-raised p-2 shadow-(--shadow)"
-            >
-              {nav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="block rounded-md px-3 py-2.5 text-300 text-text no-underline hover:bg-accent/10"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </details>
+          <MobileNav />
         </div>
       </Container>
     </header>

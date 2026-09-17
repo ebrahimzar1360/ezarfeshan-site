@@ -296,6 +296,50 @@ samp {
     color: var(--text);
   }
 
+  /* Native <dialog> as the modal primitive — see components/ui/Sheet.tsx for
+     why this beats pulling in Radix. Three things it does not give us: */
+
+  /* 1. Scroll lock. Done in CSS rather than an effect, so nothing has to
+        remember to undo it when a dialog unmounts mid-transition. */
+  body:has(dialog[open]) {
+    overflow: hidden;
+  }
+
+  /* 2. A styled backdrop. The UA default is a flat black wash that ignores the
+        theme; ink at 55% sits correctly under both grounds. */
+  .sheet::backdrop {
+    background: color-mix(in oklab, #1a1a1a 55%, transparent);
+  }
+
+  /* 3. An entrance. `display` is discrete, so the dialog cannot transition in
+        without allow-discrete; @starting-style gives it the frame to start from.
+        Vertical and opacity only — a translateX would arrive from the wrong edge
+        under dir="rtl". Browsers without either property just appear, which is
+        what a dialog did before this rule existed. */
+  .sheet[open] {
+    opacity: 1;
+    translate: 0 0;
+    /* 180ms literal rather than a --dur-* token: the design plan sketched a
+       duration scale that was never built, and inventing one for a single rule
+       adds a second vocabulary next to the duration-150 the components already
+       use. This matches .enter / .rise-in. */
+    transition:
+      opacity 180ms var(--ease-brand),
+      translate 180ms var(--ease-brand),
+      display 180ms allow-discrete,
+      overlay 180ms allow-discrete;
+  }
+  .sheet {
+    opacity: 0;
+    translate: 0 -8px;
+  }
+  @starting-style {
+    .sheet[open] {
+      opacity: 0;
+      translate: 0 -8px;
+    }
+  }
+
   .gold-marker {
     padding-inline-start: --spacing(4);
     border-inline-start: 4px solid var(--accent);
@@ -489,4 +533,8 @@ samp {
      Pin them to a resting frame instead. */
   .pulse { animation: none; opacity: 0.7; }
   .spin { animation: none; }
+  /* The blanket rule zeroes transition-duration, but the discrete `display`
+     transition still needs its start frame neutralised or the panel pops in from
+     8px up. Removed, not shortened. */
+  .sheet, .sheet[open] { translate: none; }
 }
