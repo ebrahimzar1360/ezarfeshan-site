@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import Image from 'next/image'
 import { ArticleListItem } from '@/components/ui/ArticleCard'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Container } from '@/components/ui/Container'
@@ -7,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { TopicChips } from '@/components/ui/TopicChips'
+import { COVER_RATIO, coverAlt, coverUrl } from '@/lib/content/cover'
 import { pageCount } from '@/lib/content/pagination'
 import { getArticlesByTopicPage, getTopicBySlug, getTopics } from '@/lib/content/queries'
 
@@ -73,6 +75,21 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
       </div>
 
       <TopicChips topics={withArticles} activeSlug={topic.slug} />
+
+      {/* The newest article's cover stands in as the topic's own image. The
+          brand has no topic artwork and inventing some would be decoration; this
+          at least points at what the topic currently contains. */}
+      {items[0] && (
+        <Image
+          src={coverUrl(items[0])}
+          alt={coverAlt(items[0])}
+          width={COVER_RATIO.width}
+          height={COVER_RATIO.height}
+          sizes="(min-width: 1216px) 76rem, 100vw"
+          priority
+          className="mb-12 w-full rounded-lg border border-border"
+        />
+      )}
 
       {items.length === 0 ? (
         <EmptyState

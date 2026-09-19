@@ -5,12 +5,16 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { ArticleJsonLd } from '@/components/seo/JsonLd'
 import { ArticleListItem } from '@/components/ui/ArticleCard'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
+import {
+  TableOfContentsInline,
+  TableOfContentsSticky,
+} from '@/components/ui/TableOfContents'
 import { Container } from '@/components/ui/Container'
 import { DraftNotice } from '@/components/ui/DraftNotice'
 import { ReadingProgress } from '@/components/ui/ReadingProgress'
 import { ShareRow } from '@/components/ui/ShareRow'
-import { mdxComponents } from '@/components/ui/mdx'
-import { hasDraftMarker, prepareMdx } from '@/lib/content/mdx'
+import { createMdxComponents } from '@/components/ui/mdx'
+import { extractHeadings, hasDraftMarker, prepareMdx } from '@/lib/content/mdx'
 import { getArticleBySlug, getPublishedArticles, getRelatedArticles } from '@/lib/content/queries'
 import { faNum, formatDate } from '@/lib/format'
 import { site } from '@/lib/site'
@@ -75,6 +79,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const topicSlugs = article.topics.map((t) => t.slug)
   const related = await getRelatedArticles(article.slug, topicSlugs)
   const url = `${site.url}/articles/${article.slug}`
+  const headings = extractHeadings(article.body)
 
   // One array drives both the visible trail and the BreadcrumbList JSON-LD, so
   // the two can never drift apart.
@@ -117,15 +122,25 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         </header>
       </Container>
 
-      {/* The rail is positioned against this wrapper, so it spans exactly the
-          body copy — not the header and not the footer blocks. */}
+      {/* Two columns from lg up. The contents sits in the *second* grid column,
+          which under dir="rtl" renders on the left — the arrangement
+          DESIGN-PLAN §8 drew, reached without a single `left` or `order`.
+
+          The body column keeps its own wrapper untouched: the gold reading rail
+          is positioned against that div, so moving or resizing it would stretch
+          the rail across the contents as well. */}
       <Container className="relative pb-16 md:pb-24">
-        <div className="relative ps-6 md:ps-8">
-          <ReadingProgress />
-          {hasDraftMarker(article.body) && <DraftNotice />}
-          <div className="prose">
-            <MDXRemote source={prepareMdx(article.body)} components={mdxComponents} />
+        <div className="lg:grid lg:grid-cols-[minmax(0,var(--container-measure))_1fr] lg:gap-16">
+          <div className="relative ps-6 md:ps-8">
+            <ReadingProgress />
+            {hasDraftMarker(article.body) && <DraftNotice />}
+            <TableOfContentsInline headings={headings} />
+            <div className="prose">
+              <MDXRemote source={prepareMdx(article.body)} components={createMdxComponents()} />
+            </div>
           </div>
+
+          <TableOfContentsSticky headings={headings} />
         </div>
       </Container>
 

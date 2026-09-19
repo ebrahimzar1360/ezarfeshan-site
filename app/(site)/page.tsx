@@ -42,7 +42,8 @@ export default async function HomePage() {
           />
 
           {featured ? (
-            <ArticleCard article={featured} />
+            // priority: this is the LCP element here and nowhere else
+            <ArticleCard article={featured} priority />
           ) : (
             <EmptyState
               title="هنوز مقاله‌ای منتشر نشده"

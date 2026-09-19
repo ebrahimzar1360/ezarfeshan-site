@@ -107,6 +107,24 @@ const RULES = [
     message: 'gradients are banned (DESIGN-PLAN §10, anti-pattern row 1)',
   },
   {
+    id: 'css-property-as-class',
+    /**
+     * `border-inline-start-4`, `inset-inline-start-0` and friends read like
+     * logical-property utilities and are not: Tailwind spells them border-s-*,
+     * start-*, ms-*, ps-*. They compile to nothing and fail silently, which is
+     * why CLAUDE.md calls it out by name — and why it has already shipped twice
+     * in this repo, once in Callout (taking its whole `tone` prop down with it)
+     * and once in a draft of TocActiveLink.
+     */
+    pattern: /(?<![\w-])(border|inset|margin|padding)-(inline|block)(-(start|end))?-(\d|\[)[\w[\]./%-]*/g,
+    message: 'CSS property name used as a class — Tailwind spells these border-s-*, start-*, ms-*, ps-*',
+    /* Only markup. The same words are legitimate CSS properties in a stylesheet
+       and in the inline styles that email HTML is obliged to use. The trailing
+       value must start with a digit or a bracket, so a bare `padding-inline-start`
+       inside a style string is not mistaken for a class. */
+    only: /\.tsx?$/,
+  },
+  {
     id: 'transition-all',
     pattern: /(?<![\w-])transition-all(?![\w-])/g,
     message: 'name the properties, as Button.tsx does',

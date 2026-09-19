@@ -340,9 +340,47 @@ samp {
     }
   }
 
+  /* --marker-color exists so a consumer can retint the bar without redefining
+     the class. Callout needs it: its `tone` prop used to set `border-accent`
+     next to a `border-inline-start-4` that compiled to nothing, so the colour
+     never applied and every tone looked the same. */
   .gold-marker {
     padding-inline-start: --spacing(4);
+    border-inline-start: 4px solid var(--marker-color, var(--accent));
+  }
+
+  /* Numbered steps for MDX <Steps>. The old component set counter-reset and then
+     never incremented or printed it, with list-none already suppressing the
+     browser's own numbering — an unnumbered, unindented list. The counter lives
+     here so the ::before that prints it can also carry the gold marker. */
+  .steps {
+    counter-reset: step;
+    list-style: none;
+    padding-inline-start: 0;
+  }
+  .steps > li {
+    position: relative;
+    counter-increment: step;
+    padding-inline-start: --spacing(10);
+  }
+  .steps > li + li {
+    margin-block-start: 1.1em;
+  }
+  .steps > li::before {
+    content: counter(step);
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 0.1em;
+    display: grid;
+    place-items: center;
+    inline-size: --spacing(7);
+    block-size: --spacing(7);
     border-inline-start: 4px solid var(--accent);
+    padding-inline-start: --spacing(2);
+    font-size: var(--text-300);
+    font-weight: 500;
+    font-feature-settings: 'ss02' 1; /* Persian digits, as everywhere else */
+    color: var(--text);
   }
 
   /* Reading progress: the same bar, running down the inline-start edge of the
@@ -424,6 +462,19 @@ samp {
     font-size: var(--text-500);
     color: var(--text);
     scroll-margin-block-start: 6rem;
+  }
+
+  /* Underlined, not just coloured.
+     Tailwind's preflight sets `a { text-decoration: inherit }`, and the base `a`
+     rule above only sets colour, underline-offset and thickness — so a link in
+     an article body inherited `none` and was distinguished by colour alone.
+     Measured in the browser: text-decoration-line `none`, link emerald
+     rgb(45,106,79) against body ink rgb(26,26,26) — 2.73:1, under the 3:1 that
+     WCAG 1.4.1 requires before colour may carry the distinction by itself.
+     Utilities beat this layer, so a `no-underline` (the heading anchors) still
+     wins. */
+  .prose a {
+    text-decoration: underline;
   }
 
   .prose strong { color: var(--text); font-weight: 700; }
