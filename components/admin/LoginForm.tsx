@@ -4,6 +4,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { FormField, inputClass } from '@/components/ui/FormField'
+import { Icon } from '@/components/ui/Icon'
 
 /**
  * The error message never says which half was wrong.
@@ -67,9 +68,7 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
 
       {error && (
         <p role="alert" className="text-300 font-medium text-text">
-          <span aria-hidden className="me-1.5 text-accent">
-            ▲
-          </span>
+          <Icon name="alert" className="me-1.5" />
           {error}
         </p>
       )}

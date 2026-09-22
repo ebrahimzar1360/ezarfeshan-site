@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { FormField, inputClass, textareaClass } from '@/components/ui/FormField'
 import { deleteTopic, saveTopic } from '@/lib/admin/actions'
+import { Icon } from '@/components/ui/Icon'
 
 type Topic = {
   id: string
@@ -162,7 +163,7 @@ export function TopicManager({ topics }: { topics: Topic[] }) {
             role="status"
             className={`mt-4 text-200 ${message.ok ? 'text-text-muted' : 'font-medium text-text'}`}
           >
-            {!message.ok && <span aria-hidden className="me-1.5 text-accent">▲</span>}
+            {!message.ok && <Icon name="alert" className="me-1.5" />}
             {message.text}
           </p>
         )}

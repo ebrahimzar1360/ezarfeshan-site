@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Icon } from '@/components/ui/Icon'
 
 type Status = 'idle' | 'sending' | 'done' | 'error'
 
@@ -55,7 +56,7 @@ export function UnsubscribeForm({ token }: { token: string }) {
       </button>
       {message && (
         <p role="alert" className="mt-4 text-200 font-medium text-text">
-          <span aria-hidden className="me-1.5 text-accent">▲</span>
+          <Icon name="alert" className="me-1.5" />
           {message}
         </p>
       )}

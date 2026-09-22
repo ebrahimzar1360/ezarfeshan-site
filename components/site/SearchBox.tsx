@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import { inputClass } from '@/components/ui/FormField'
 import { SEARCH_ERROR, useArticleSearch } from '@/lib/hooks/useArticleSearch'
+import { Icon } from '@/components/ui/Icon'
 
 function Inner() {
   const router = useRouter()
@@ -52,7 +53,7 @@ function Inner() {
 
         {state === 'error' && (
           <p role="alert" className="text-300 font-medium text-text">
-            <span aria-hidden className="me-1.5 text-accent">▲</span>
+            <Icon name="alert" className="me-1.5" />
             {SEARCH_ERROR}
           </p>
         )}

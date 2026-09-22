@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { packHistory, type ChatTurn } from '@/lib/chat/history'
 import { extractLeadHints } from '@/lib/chat/lead-hints'
 import { site } from '@/lib/site'
+import { Icon } from '@/components/ui/Icon'
 
 type Message = ChatTurn
 
@@ -216,7 +217,7 @@ export function ChatWidget() {
               aria-label="بستن گفت‌وگو"
               className="inline-flex size-8 items-center justify-center rounded-md text-text-muted transition-colors duration-150 hover:bg-bg-sunken hover:text-text"
             >
-              <span aria-hidden>✕</span>
+              <Icon name="close" />
             </button>
           </div>
 
@@ -277,7 +278,7 @@ export function ChatWidget() {
 
             {error && (
               <p role="alert" className="text-200 font-medium text-text">
-                <span aria-hidden className="me-1.5 text-accent">▲</span>
+                <Icon name="alert" className="me-1.5" />
                 {error}
               </p>
             )}
@@ -339,7 +340,7 @@ export function ChatWidget() {
 
               {leadError && (
                 <p role="alert" className="text-200 font-medium text-text">
-                  <span aria-hidden className="me-1.5 text-accent">▲</span>
+                  <Icon name="alert" className="me-1.5" />
                   {leadError}
                 </p>
               )}
@@ -421,7 +422,7 @@ export function ChatWidget() {
         aria-label={open ? 'بستن گفت‌وگو' : 'باز کردن گفت‌وگو با دستیار سایت'}
         className="inline-flex size-14 items-center justify-center rounded-full bg-solid-bg text-solid-text shadow-(--shadow) transition-transform duration-150 hover:scale-105"
       >
-        <span aria-hidden className="text-600">{open ? '✕' : '💬'}</span>
+        <Icon name={open ? 'close' : 'chat'} className="text-600" />
       </button>
     </div>
   )

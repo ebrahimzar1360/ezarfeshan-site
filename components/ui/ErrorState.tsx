@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Button } from './Button'
+import { Icon } from '@/components/ui/Icon'
 
 /**
  * Sibling of EmptyState, same box, different job: an empty state says there is
@@ -34,9 +35,7 @@ export function ErrorState({
   return (
     <div className="max-w-(--container-measure) rounded-lg border border-border bg-bg-sunken px-6 py-10">
       <p className="text-500 font-bold text-text">
-        <span aria-hidden className="me-2 text-accent">
-          ▲
-        </span>
+        <Icon name="alert" className="me-2" />
         {title}
       </p>
       <p className="mt-3 text-300 leading-prose text-text-muted">{body}</p>

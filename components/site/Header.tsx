@@ -5,6 +5,7 @@ import { nav } from '@/lib/site'
 import { CommandPalette } from './CommandPalette'
 import { MobileNav } from './MobileNav'
 import { ThemeToggle } from './ThemeToggle'
+import { Icon } from '@/components/ui/Icon'
 
 export function Header() {
   return (
@@ -46,7 +47,7 @@ export function Header() {
             aria-label="جست‌وجو"
             className="inline-flex size-10 items-center justify-center rounded-md border border-border text-text-muted transition-colors duration-150 hover:border-accent hover:text-text md:hidden"
           >
-            <span aria-hidden className="text-300">⌕</span>
+            <Icon name="search" className="text-400" />
           </Link>
           <div className="hidden md:block">
             <CommandPalette />

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Icon } from '@/components/ui/Icon'
 
 /**
  * Field wrapper: label, control, hint, error.
@@ -47,9 +48,7 @@ export function FormField({
 
       {error && (
         <p id={errorId} role="alert" className="mt-2 text-200 font-medium text-text">
-          <span aria-hidden className="me-1.5 text-accent">
-            ▲
-          </span>
+          <Icon name="alert" className="me-1.5" />
           {error}
         </p>
       )}

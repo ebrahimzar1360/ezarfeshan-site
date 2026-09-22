@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Honeypot, inputClass } from '@/components/ui/FormField'
 import { subscribeSchema, type SubscribeInput } from '@/lib/validation'
+import { Icon } from '@/components/ui/Icon'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 
@@ -111,18 +112,14 @@ export function NewsletterForm({
 
       {errors.email && (
         <p id={`nl-${source}-error`} role="alert" className="mt-2 text-200 font-medium text-text">
-          <span aria-hidden className="me-1.5 text-accent">
-            ▲
-          </span>
+          <Icon name="alert" className="me-1.5" />
           {errors.email.message}
         </p>
       )}
 
       {serverError && (
         <p role="alert" className="mt-2 text-200 font-medium text-text">
-          <span aria-hidden className="me-1.5 text-accent">
-            ▲
-          </span>
+          <Icon name="alert" className="me-1.5" />
           {serverError}
         </p>
       )}

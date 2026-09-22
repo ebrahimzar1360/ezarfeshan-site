@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { FormField, Honeypot, inputClass, textareaClass } from '@/components/ui/FormField'
 import { leadSchema, type LeadInput } from '@/lib/validation'
+import { Icon } from '@/components/ui/Icon'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 
@@ -155,9 +156,7 @@ export function ConsultForm() {
 
       {serverError && (
         <p role="alert" className="text-300 font-medium text-text">
-          <span aria-hidden className="me-1.5 text-accent">
-            ▲
-          </span>
+          <Icon name="alert" className="me-1.5" />
           {serverError}
         </p>
       )}

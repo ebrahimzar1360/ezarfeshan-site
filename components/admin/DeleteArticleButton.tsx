@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { deleteArticle } from '@/lib/admin/actions'
+import { Icon } from '@/components/ui/Icon'
 
 /**
  * Two-step delete. The first click arms it, the second confirms — no modal, no
@@ -31,7 +32,7 @@ export function DeleteArticleButton({ id, title }: { id: string; title: string }
   if (error) {
     return (
       <span role="alert" className="text-200 font-medium text-text">
-        <span aria-hidden className="me-1.5 text-accent">▲</span>
+        <Icon name="alert" className="me-1.5" />
         {error}
       </span>
     )

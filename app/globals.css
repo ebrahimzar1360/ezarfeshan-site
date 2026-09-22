@@ -344,6 +344,17 @@ samp {
      the class. Callout needs it: its `tone` prop used to set `border-accent`
      next to a `border-inline-start-4` that compiled to nothing, so the colour
      never applied and every tone looked the same. */
+  /* Directional icons mirror; the rest do not. Which is which is decided per
+     icon in components/ui/Icon.tsx, because it is a judgement rather than a
+     rule — a magnifier does not flip in Persian interfaces, and neither does
+     play/pause, which is the mistake people reach for first.
+
+     `scale` rather than `transform: scaleX(-1)` so it does not fight any
+     transform an animation may also be applying. */
+  [data-flip]:dir(rtl) {
+    scale: -1 1;
+  }
+
   .gold-marker {
     padding-inline-start: --spacing(4);
     border-inline-start: 4px solid var(--marker-color, var(--accent));

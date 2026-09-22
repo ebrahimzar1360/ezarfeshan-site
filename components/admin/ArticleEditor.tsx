@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FormField, inputClass, textareaClass } from '@/components/ui/FormField'
 import { saveArticle, type ActionResult } from '@/lib/admin/actions'
+import { Icon } from '@/components/ui/Icon'
 
 export type ArticleDraft = {
   id?: string
@@ -206,7 +207,7 @@ export function ArticleEditor({
           )}
           {fields?.body && (
             <p role="alert" className="mt-2 text-200 font-medium text-text">
-              <span aria-hidden className="me-1.5 text-accent">▲</span>
+              <Icon name="alert" className="me-1.5" />
               {fields.body}
             </p>
           )}
@@ -273,7 +274,7 @@ export function ArticleEditor({
               role="status"
               className={`mt-3 text-200 ${result.ok ? 'text-text-muted' : 'font-medium text-text'}`}
             >
-              {!result.ok && <span aria-hidden className="me-1.5 text-accent">▲</span>}
+              {!result.ok && <Icon name="alert" className="me-1.5" />}
               {result.message}
             </p>
           )}

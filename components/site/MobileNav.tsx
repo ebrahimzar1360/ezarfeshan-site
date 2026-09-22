@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Sheet } from '@/components/ui/Sheet'
 import { nav } from '@/lib/site'
+import { Icon } from '@/components/ui/Icon'
 
 /**
  * Replaces the <details> dropdown the header used to carry.
@@ -34,7 +35,7 @@ export function MobileNav() {
         aria-expanded={open}
         className="inline-flex size-10 items-center justify-center rounded-md border border-border text-text-muted transition-colors duration-150 hover:border-accent hover:text-text"
       >
-        <span aria-hidden>☰</span>
+        <Icon name="menu" className="text-400" />
       </button>
 
       <Sheet open={open} onClose={() => setOpen(false)} label="ناوبری سایت">
@@ -47,7 +48,7 @@ export function MobileNav() {
               aria-label="بستن منو"
               className="inline-flex size-10 items-center justify-center rounded-md border border-border text-text-muted transition-colors duration-150 hover:border-accent hover:text-text"
             >
-              <span aria-hidden>✕</span>
+              <Icon name="close" className="text-400" />
             </button>
           </div>
 
@@ -82,7 +83,7 @@ export function MobileNav() {
               href="/search"
               className="block rounded-md px-4 py-3 text-300 text-text-muted no-underline transition-colors duration-150 hover:text-text"
             >
-              <span aria-hidden className="me-2">⌕</span>
+              <Icon name="search" className="me-2" />
               {/* not "جست‌وجو در مقالات": that exact string is the sr-only label
                   of the #q input on /search, which e2e reaches with getByLabel.
                   getByLabel does not match link text, but leaving a second copy

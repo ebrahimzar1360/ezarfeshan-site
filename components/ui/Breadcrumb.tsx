@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { BreadcrumbJsonLd } from '@/components/seo/JsonLd'
+import { Icon } from '@/components/ui/Icon'
 
 export type Crumb = { name: string; path: string }
 
@@ -28,9 +29,7 @@ export function Breadcrumb({ trail }: { trail: Crumb[] }) {
             return (
               <li key={crumb.path} className="flex items-center gap-x-2">
                 {i > 0 && (
-                  <span aria-hidden className="text-text-subtle">
-                    ›
-                  </span>
+                  <Icon name="chevron" className="text-text-subtle" />
                 )}
                 {last ? (
                   <span aria-current="page" className="text-text-muted">

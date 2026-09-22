@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Sheet } from '@/components/ui/Sheet'
 import { SEARCH_ERROR, useArticleSearch } from '@/lib/hooks/useArticleSearch'
 import { legalNav, nav } from '@/lib/site'
+import { Icon } from '@/components/ui/Icon'
 
 type Item = { href: string; label: string; hint?: string }
 
@@ -115,7 +116,7 @@ export function CommandPalette() {
         aria-label="باز کردن جست‌وجوی سریع"
         className="inline-flex size-10 items-center justify-center rounded-md border border-border text-text-muted transition-colors duration-150 hover:border-accent hover:text-text"
       >
-        <span aria-hidden className="text-300">⌕</span>
+        <Icon name="search" className="text-400" />
       </button>
 
       <Sheet open={open} onClose={close} label="جست‌وجوی سریع">
@@ -126,7 +127,7 @@ export function CommandPalette() {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center gap-3 border-b border-border px-4">
-            <span aria-hidden className="text-400 text-text-subtle">⌕</span>
+            <Icon name="search" className="text-400 text-text-subtle" />
             <label htmlFor={`${listId}-input`} className="sr-only">
               {/* Three distinct names on purpose: the trigger is "باز کردن
                   جست‌وجوی سریع", the dialog is "جست‌وجوی سریع", and the field is
@@ -163,7 +164,7 @@ export function CommandPalette() {
           <div className="overflow-y-auto p-2">
             {state === 'error' && (
               <p className="px-3 py-4 text-300 font-medium text-text">
-                <span aria-hidden className="me-1.5 text-accent">▲</span>
+                <Icon name="alert" className="me-1.5" />
                 {SEARCH_ERROR}
               </p>
             )}
