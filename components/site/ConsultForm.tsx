@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { FormField, Honeypot, inputClass, textareaClass } from '@/components/ui/FormField'
 import { leadSchema, type LeadInput } from '@/lib/validation'
 import { Icon } from '@/components/ui/Icon'
+import { Button } from '@/components/ui/Button'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 
@@ -167,13 +168,9 @@ export function ConsultForm() {
           same ۴۸ ساعت appears in the success state, on /contact and in /terms; if
           it changes, it changes in all four. */}
       <div>
-        <button
-          type="submit"
-          disabled={status === 'sending'}
-          className="h-13 rounded-md bg-solid-bg px-8 text-500 font-medium text-solid-text transition-colors duration-150 hover:bg-solid-bg-hover disabled:opacity-60"
-        >
-          {status === 'sending' ? 'در حال ارسال…' : 'ارسال درخواست'}
-        </button>
+        <Button type="submit" size="lg" loading={status === 'sending'}>
+          ارسال درخواست
+        </Button>
         <p className="mt-3.5 text-200 leading-normal text-text-subtle">
           ظرف ۴۸ ساعت کاری خودم جواب می‌دهم — حتی اگر جواب این باشد که کارِ تو در
           حوزهٔ من نیست.

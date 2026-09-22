@@ -23,7 +23,9 @@ const EXEMPT = {
   // The round chat launcher is the single documented exception to the pill ban:
   // a circular FAB is the recognised convention for chat and changing it would
   // confuse people more than the inconsistency costs.
-  pill: ['components/site/ChatWidget.tsx', 'components/site/chat/ChatLauncher.tsx'],
+  // ChatLauncher: the circular FAB. ChatMessages: the three typing dots, which
+  // are circles rather than pills — the ban is about controls.
+  pill: ['components/site/chat/ChatLauncher.tsx', 'components/site/chat/ChatMessages.tsx'],
   // globals.css defines the palette; layout.tsx needs a literal for <meta
   // name="theme-color"> which cannot read a CSS variable; the OG route runs in
   // Satori, which has no cascade at all; mailer.ts writes email HTML, and no

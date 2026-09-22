@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ComponentProps, ReactNode } from 'react'
+import { Spinner } from './Spinner'
 
 type Variant = 'solid' | 'outline' | 'text'
 type Size = 'sm' | 'md' | 'lg'
@@ -45,6 +46,16 @@ type ButtonAsButton = {
   variant?: Variant
   size?: Size
   className?: string
+  /**
+   * Shows a spinner and blocks further clicks while a request is in flight.
+   *
+   * The label stays exactly as it was. Swapping it for "در حال ارسال…" would
+   * change the button's accessible name mid-interaction, which breaks
+   * `getByRole('button', { name: 'ذخیره' })` if a click lands during the swap,
+   * and reads as the control disappearing to anyone listening. The spinner is a
+   * sibling and aria-hidden; `aria-busy` is what announces the state.
+   */
+  loading?: boolean
   children: ReactNode
 } & Omit<ComponentProps<'button'>, 'className' | 'children'>
 
@@ -66,9 +77,23 @@ export function Button(props: ButtonAsLink | ButtonAsButton) {
     )
   }
 
-  const { variant: _v, size: _s, className: _c, children: _ch, ...rest } = props
+  const {
+    variant: _v,
+    size: _s,
+    className: _c,
+    children: _ch,
+    loading = false,
+    disabled,
+    ...rest
+  } = props
   return (
-    <button className={classesFor(variant, size, className)} {...rest}>
+    <button
+      className={classesFor(variant, size, className)}
+      aria-busy={loading || undefined}
+      disabled={disabled || loading}
+      {...rest}
+    >
+      {loading && <Spinner />}
       {children}
     </button>
   )

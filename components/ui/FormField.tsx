@@ -56,17 +56,26 @@ export function FormField({
   )
 }
 
-export const inputClass =
-  'h-12 w-full rounded-md border border-border bg-bg-raised px-4 text-300 text-text ' +
+/**
+ * The behaviour every control shares: border, hover, focus, and the invalid
+ * state. Surface and size are deliberately *not* here.
+ *
+ * Split out for the chat panel, which is itself `bg-bg-raised` — reusing the
+ * full inputClass there gave an input the same colour as the box around it, and
+ * textareaClass's min-h-40 ate most of a panel that is only 34rem tall. Sharing
+ * the base keeps a validation error in the chat looking like the same error on
+ * /consult, which was the point, without dragging page-sized geometry into a
+ * compact context.
+ */
+export const controlBaseClass =
+  'w-full rounded-md border border-border text-text ' +
   'placeholder:text-text-subtle transition-colors duration-150 ' +
   'hover:border-border-strong focus:border-focus ' +
   'aria-[invalid=true]:border-accent'
 
-export const textareaClass =
-  'min-h-40 w-full rounded-md border border-border bg-bg-raised p-4 text-300 leading-prose ' +
-  'text-text placeholder:text-text-subtle transition-colors duration-150 ' +
-  'hover:border-border-strong focus:border-focus ' +
-  'aria-[invalid=true]:border-accent'
+export const inputClass = `${controlBaseClass} h-12 bg-bg-raised px-4 text-300`
+
+export const textareaClass = `${controlBaseClass} min-h-40 bg-bg-raised p-4 text-300 leading-prose`
 
 /**
  * Bot trap. Hidden from people and from assistive technology, but a real input

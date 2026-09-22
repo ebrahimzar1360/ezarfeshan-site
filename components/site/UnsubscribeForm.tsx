@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
+import { Button } from '@/components/ui/Button'
 
 type Status = 'idle' | 'sending' | 'done' | 'error'
 
@@ -46,14 +47,14 @@ export function UnsubscribeForm({ token }: { token: string }) {
       <p className="mt-5 text-400 leading-prose text-text-muted">
         با زدن این دکمه دیگر ایمیلی از خبرنامه دریافت نمی‌کنی.
       </p>
-      <button
-        type="button"
+      <Button
+        variant="outline"
         onClick={unsubscribe}
-        disabled={status === 'sending'}
-        className="mt-7 h-12 rounded-md border border-border-strong px-6 text-300 font-medium text-text transition-colors duration-150 hover:border-accent disabled:opacity-60"
+        loading={status === 'sending'}
+        className="mt-7 h-12 px-6"
       >
-        {status === 'sending' ? 'در حال لغو…' : 'لغو عضویت'}
-      </button>
+        لغو عضویت
+      </Button>
       {message && (
         <p role="alert" className="mt-4 text-200 font-medium text-text">
           <Icon name="alert" className="me-1.5" />

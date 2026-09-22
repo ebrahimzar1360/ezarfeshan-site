@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { deleteArticle } from '@/lib/admin/actions'
 import { Icon } from '@/components/ui/Icon'
+import { useToast } from '@/components/ui/Toast'
 
 /**
  * Two-step delete. The first click arms it, the second confirms — no modal, no
@@ -12,6 +13,7 @@ import { Icon } from '@/components/ui/Icon'
  */
 export function DeleteArticleButton({ id, title }: { id: string; title: string }) {
   const router = useRouter()
+  const toast = useToast()
   const [armed, setArmed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -20,6 +22,12 @@ export function DeleteArticleButton({ id, title }: { id: string; title: string }
     setBusy(true)
     const res = await deleteArticle(id)
     if (res.ok) {
+      // Toast rather than an inline message, because this is one of the few
+      // actions with no inline home: the navigation below unmounts the control
+      // that would have carried the confirmation. ToastProvider lives in the
+      // admin layout, above this page, so it survives the client-side push and
+      // the message is still on screen when the list renders.
+      toast.show(`«${title}» حذف شد.`)
       router.push('/admin/articles')
       router.refresh()
     } else {

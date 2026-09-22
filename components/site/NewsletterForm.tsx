@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { Honeypot, inputClass } from '@/components/ui/FormField'
 import { subscribeSchema, type SubscribeInput } from '@/lib/validation'
 import { Icon } from '@/components/ui/Icon'
+import { Button } from '@/components/ui/Button'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 
@@ -101,13 +102,14 @@ export function NewsletterForm({
             {...register('email')}
           />
         </div>
-        <button
-          type="submit"
-          disabled={status === 'sending'}
-          className="h-12 shrink-0 rounded-md bg-solid-bg px-6 text-300 font-medium text-solid-text transition-colors duration-150 hover:bg-solid-bg-hover disabled:opacity-60"
-        >
-          {status === 'sending' ? 'در حال ارسال…' : 'عضویت'}
-        </button>
+        {/* The label no longer changes while sending. Swapping it moved the
+            button's accessible name mid-interaction — a click landing during the
+            swap would miss `getByRole('button', { name: 'عضویت' })`, and a screen
+            reader heard the control rename itself. The spinner says the same
+            thing without touching the name. */}
+        <Button type="submit" loading={status === 'sending'} className="h-12 shrink-0 px-6">
+          عضویت
+        </Button>
       </div>
 
       {errors.email && (
