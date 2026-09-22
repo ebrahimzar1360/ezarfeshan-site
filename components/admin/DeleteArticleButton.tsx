@@ -2,19 +2,28 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { deleteArticle } from '@/lib/admin/actions'
+import { Button } from '@/components/ui/Button'
+import { Dialog } from '@/components/ui/Dialog'
 import { Icon } from '@/components/ui/Icon'
 import { useToast } from '@/components/ui/Toast'
+import { deleteArticle } from '@/lib/admin/actions'
 
 /**
- * Two-step delete. The first click arms it, the second confirms — no modal, no
- * "type the title to confirm". Deleting an article is rare enough that a
- * second deliberate click is proportionate.
+ * Delete, behind a confirmation dialog.
+ *
+ * Was a two-step arm/confirm in place: the first click swapped the link for a
+ * "«title» حذف شود؟ / بله، حذف کن / انصراف" row. That worked, but a destructive
+ * action deserves something that takes focus and cannot be dismissed by a stray
+ * click elsewhere — which is exactly what <dialog>.showModal() gives.
+ *
+ * Both button labels are load-bearing: e2e/admin.spec.ts clicks `حذف` (exact)
+ * and then `بله، حذف کن`. They stay reachable by role, which is the only reason
+ * moving the confirm into a dialog is safe at all.
  */
 export function DeleteArticleButton({ id, title }: { id: string; title: string }) {
   const router = useRouter()
   const toast = useToast()
-  const [armed, setArmed] = useState(false)
+  const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,18 +31,16 @@ export function DeleteArticleButton({ id, title }: { id: string; title: string }
     setBusy(true)
     const res = await deleteArticle(id)
     if (res.ok) {
-      // Toast rather than an inline message, because this is one of the few
-      // actions with no inline home: the navigation below unmounts the control
-      // that would have carried the confirmation. ToastProvider lives in the
-      // admin layout, above this page, so it survives the client-side push and
-      // the message is still on screen when the list renders.
+      // Toast rather than an inline message: the navigation below unmounts the
+      // control that would have carried the confirmation. ToastProvider sits in
+      // the admin layout, above this page, so it survives the client-side push.
       toast.show(`«${title}» حذف شد.`)
       router.push('/admin/articles')
       router.refresh()
     } else {
       setError(res.message)
       setBusy(false)
-      setArmed(false)
+      setOpen(false)
     }
   }
 
@@ -46,36 +53,32 @@ export function DeleteArticleButton({ id, title }: { id: string; title: string }
     )
   }
 
-  if (!armed) {
-    return (
+  return (
+    <>
       <button
         type="button"
-        onClick={() => setArmed(true)}
+        onClick={() => setOpen(true)}
         className="text-200 text-text-subtle underline underline-offset-4 hover:text-text"
       >
         حذف
       </button>
-    )
-  }
 
-  return (
-    <span className="flex items-center gap-3 text-200">
-      <span className="text-text-muted">«{title}» حذف شود؟</span>
-      <button
-        type="button"
-        onClick={confirm}
-        disabled={busy}
-        className="font-medium text-text underline underline-offset-4 disabled:opacity-60"
-      >
-        {busy ? 'در حال حذف…' : 'بله، حذف کن'}
-      </button>
-      <button
-        type="button"
-        onClick={() => setArmed(false)}
-        className="text-text-subtle underline underline-offset-4"
-      >
-        انصراف
-      </button>
-    </span>
+      <Dialog
+        open={open}
+        onClose={() => !busy && setOpen(false)}
+        title="حذف مقاله"
+        description={`«${title}» برای همیشه حذف می‌شود. این کار برگشت ندارد.`}
+        footer={
+          <>
+            <Button onClick={confirm} loading={busy}>
+              بله، حذف کن
+            </Button>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+              انصراف
+            </Button>
+          </>
+        }
+      />
+    </>
   )
 }

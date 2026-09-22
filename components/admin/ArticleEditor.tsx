@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { FormField, inputClass, textareaClass } from '@/components/ui/FormField'
 import { saveArticle, type ActionResult } from '@/lib/admin/actions'
 import { Icon } from '@/components/ui/Icon'
+import { Button } from '@/components/ui/Button'
 
 export type ArticleDraft = {
   id?: string
@@ -175,11 +176,23 @@ export function ArticleEditor({
         </FormField>
 
         <div>
+          {/* Left as plain buttons, and deliberately not given role="tab".
+              The tab role is a promise of the whole widget pattern — a linked
+              tabpanel, roving tabindex, arrow-key navigation — and announcing
+              it without implementing it is worse than not claiming it at all.
+              (It also silently changed the elements' role out from under
+              `getByRole('button', { name: 'پیش‌نمایش' })`, which is how the
+              regression surfaced.)
+
+              `aria-pressed` is the complete and correct semantic for a
+              two-state toggle: it says which view is showing, and everything it
+              implies is actually true here. */}
           <div className="mb-2 flex items-center gap-1 border-b border-border">
             {(['write', 'preview'] as const).map((t) => (
               <button
                 key={t}
                 type="button"
+                aria-pressed={tab === t}
                 onClick={() => setTab(t)}
                 className={`-mb-px border-b-2 px-4 py-2 text-300 ${
                   tab === t
@@ -261,13 +274,11 @@ export function ArticleEditor({
             مقالهٔ شاخص صفحهٔ اصلی
           </label>
 
-          <button
-            type="submit"
-            disabled={busy}
-            className="mt-6 h-12 w-full rounded-md bg-solid-bg text-300 font-medium text-solid-text transition-colors duration-150 hover:bg-solid-bg-hover disabled:opacity-60"
-          >
-            {busy ? 'در حال ذخیره…' : 'ذخیره'}
-          </button>
+          {/* Label no longer swaps to "در حال ذخیره…" — that renamed the
+              control mid-save, and e2e clicks it by the name `ذخیره`. */}
+          <Button type="submit" loading={busy} className="mt-6 h-12 w-full">
+            ذخیره
+          </Button>
 
           {result && (
             <p

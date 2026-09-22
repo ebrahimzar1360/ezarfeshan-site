@@ -52,7 +52,16 @@ export function TopicManager({ topics }: { topics: Topic[] }) {
     <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
       <div className="rounded-lg border border-border bg-bg">
         {topics.length === 0 ? (
-          <p className="p-6 text-300 text-text-muted">هنوز موضوعی نساخته‌ای.</p>
+          // The only admin list still saying nothing but "empty". The rule
+          // from DESIGN-PLAN §9 is what happened, why, and what to do next —
+          // the form for doing it is already beside this box.
+          <div className="p-6">
+            <p className="text-400 font-bold text-text">هنوز موضوعی نساخته‌ای</p>
+            <p className="mt-3 text-300 leading-prose text-text-muted">
+              موضوع‌ها مقاله‌ها را دسته‌بندی می‌کنند و صفحهٔ خودشان را می‌سازند. اولی را از
+              همین فرم کنار بساز.
+            </p>
+          </div>
         ) : (
           <ul>
             {topics.map((t) => (
