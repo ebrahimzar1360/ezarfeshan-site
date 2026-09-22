@@ -19,15 +19,32 @@ test('the toast viewport never registers as a status region', async ({ page }) =
 })
 
 test('a submit button keeps its accessible name while it is working', async ({ page }) => {
-  await page.goto('/newsletter')
-  const submit = page.getByRole('button', { name: 'عضویت' })
-  await expect(submit).toBeVisible()
+  // The request is held open on purpose. Asserting after it completes was racy:
+  // a successful signup swaps the whole form for the success block, so the
+  // button is gone and the assertion failed about one run in three. The
+  // behaviour under test only exists *during* the request, so the test has to
+  // own that window rather than hope to catch it.
+  let release: () => void = () => {}
+  const inFlight = new Promise<void>((resolve) => {
+    release = resolve
+  })
 
-  // The label used to swap to "در حال ارسال…" mid-request, which renamed the
-  // control while a click could still be landing on it.
+  await page.route('**/api/newsletter/subscribe', async (route) => {
+    await inFlight
+    await route.continue()
+  })
+
+  await page.goto('/newsletter')
   await page.getByPlaceholder('you@example.com').fill(`e2e-${Date.now()}@example.com`)
-  await submit.click()
-  await expect(page.getByRole('button', { name: 'عضویت' })).toHaveCount(1)
+  await page.getByRole('button', { name: 'عضویت' }).click()
+
+  // Mid-request: the label used to become "در حال ارسال…", renaming the control
+  // while a click could still be landing on it.
+  const submit = page.getByRole('button', { name: 'عضویت' })
+  await expect(submit).toHaveCount(1)
+  await expect(submit).toHaveAttribute('aria-busy', 'true')
+
+  release()
 })
 
 test.describe('chat widget', () => {

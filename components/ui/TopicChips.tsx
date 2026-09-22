@@ -19,10 +19,20 @@ export type TopicChip = { slug: string; name: string; count: number }
 export function TopicChips({
   topics,
   activeSlug,
+  current = true,
 }: {
   topics: TopicChip[]
   /** Omit on /articles, where "همه" is the active chip. */
   activeSlug?: string
+  /**
+   * Whether one of these chips represents the page being viewed.
+   *
+   * False on the homepage: nothing there is a topic listing, so marking "همه"
+   * as aria-current="page" would tell a screen reader it is already on a page
+   * it is not on. The chips still work as navigation; they just stop claiming
+   * to be where you are.
+   */
+  current?: boolean
 }) {
   if (topics.length === 0) return null
 
@@ -35,8 +45,8 @@ export function TopicChips({
     <nav aria-label="موضوع‌ها" className="mb-10 flex flex-wrap gap-2">
       <Link
         href="/articles"
-        aria-current={activeSlug ? undefined : 'page'}
-        className={`${base} ${activeSlug ? off : on}`}
+        aria-current={current && !activeSlug ? 'page' : undefined}
+        className={`${base} ${current && !activeSlug ? on : off}`}
       >
         همه
       </Link>
@@ -47,8 +57,8 @@ export function TopicChips({
           <Link
             key={topic.slug}
             href={`/topics/${topic.slug}`}
-            aria-current={active ? 'page' : undefined}
-            className={`${base} ${active ? on : off}`}
+            aria-current={current && active ? 'page' : undefined}
+            className={`${base} ${current && active ? on : off}`}
           >
             {topic.name}
             <span aria-hidden className="text-text-subtle">

@@ -378,7 +378,11 @@ samp {
     margin-block-start: 1.1em;
   }
   .steps > li::before {
-    content: counter(step);
+    /* `persian` is a built-in CSS counter style, so the numerals are Persian by
+       construction. The font-feature route (ss02) does not reach a generated
+       ::before reliably, and it silently fell back to Latin digits on a site
+       whose whole numeric convention is Persian. */
+    content: counter(step, persian);
     position: absolute;
     inset-inline-start: 0;
     inset-block-start: 0.1em;
@@ -390,7 +394,6 @@ samp {
     padding-inline-start: --spacing(2);
     font-size: var(--text-300);
     font-weight: 500;
-    font-feature-settings: 'ss02' 1; /* Persian digits, as everywhere else */
     color: var(--text);
   }
 

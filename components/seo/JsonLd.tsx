@@ -149,3 +149,29 @@ export function BreadcrumbJsonLd({ trail }: { trail: { name: string; path: strin
     />
   )
 }
+
+export type FaqEntry = { question: string; answer: string }
+
+/**
+ * FAQPage structured data.
+ *
+ * Fed the same array the visible list renders from, so the two cannot drift —
+ * the pattern Breadcrumb already uses. That matters more than usual here:
+ * Google treats FAQ markup that does not match the page as a manual-action
+ * risk, so a copy-paste divergence is worse than having no markup at all.
+ */
+export function FaqJsonLd({ entries }: { entries: readonly FaqEntry[] }) {
+  return (
+    <Script
+      data={{
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: entries.map((entry) => ({
+          '@type': 'Question',
+          name: entry.question,
+          acceptedAnswer: { '@type': 'Answer', text: entry.answer },
+        })),
+      }}
+    />
+  )
+}
