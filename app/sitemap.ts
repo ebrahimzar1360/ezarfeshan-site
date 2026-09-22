@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { pageCount } from '@/lib/content/pagination'
 import { getPublishedArticles, getTopics } from '@/lib/content/queries'
 import { site } from '@/lib/site'
 
@@ -27,6 +28,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/terms`, changeFrequency: 'yearly', priority: 0.2 },
   ]
 
+  /**
+   * Pages 2+ of the article list. Without these the only route to anything older
+   * than the first PER_PAGE articles is a click, so a crawler that never presses
+   * "قدیمی‌تر" would treat the back catalogue as unreachable.
+   *
+   * Page 1 is /articles, already listed above, so this starts at 2 and is empty
+   * whenever everything fits on one page — which it does today, at six articles.
+   */
+  const articlePages: MetadataRoute.Sitemap = Array.from(
+    { length: Math.max(0, pageCount(articles.length) - 1) },
+    (_, i) => ({
+      url: `${base}/articles/page/${i + 2}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.5,
+    })
+  )
+
   // /topics itself is only worth indexing once a topic has something to show
   const topicsIndex: MetadataRoute.Sitemap = topics.some((t) => t._count.articles > 0)
     ? [{ url: `${base}/topics`, changeFrequency: 'weekly', priority: 0.6 }]
@@ -34,6 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticPages,
+    ...articlePages,
     ...topicsIndex,
     ...articles.map((a) => ({
       url: `${base}/articles/${a.slug}`,

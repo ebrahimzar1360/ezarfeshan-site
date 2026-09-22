@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Icon } from '@/components/ui/Icon'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -55,9 +56,12 @@ export function ThemeToggle() {
       title={ready ? `تم: ${LABELS[theme]}` : undefined}
       className="inline-flex size-10 items-center justify-center rounded-md border border-border text-text-muted transition-colors duration-150 hover:border-accent hover:text-text"
     >
-      <span aria-hidden className="text-200 font-medium">
-        {ready ? (theme === 'light' ? '☀' : theme === 'dark' ? '☾' : '◐') : '◐'}
-      </span>
+      {/* aria-label above carries the state; the icon stays decorative so a
+          screen reader does not hear the theme name twice. */}
+      <Icon
+        name={ready ? (theme === 'light' ? 'sun' : theme === 'dark' ? 'moon' : 'system') : 'system'}
+        className="text-400"
+      />
     </button>
   )
 }

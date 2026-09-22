@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { SignOutButton } from '@/components/admin/SignOutButton'
 import { auth } from '@/lib/auth'
+import { ToastProvider } from '@/components/ui/Toast'
 
 export const metadata = { title: 'مدیریت', robots: { index: false, follow: false } }
 
@@ -32,33 +33,35 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   ]
 
   return (
-    <div className="min-h-dvh bg-bg-sunken">
-      <header className="border-b border-border bg-bg">
-        <div className="mx-auto flex max-w-(--container-page) flex-wrap items-center gap-x-7 gap-y-3 px-6 py-4">
-          <Link href="/admin" className="text-400 font-bold text-text no-underline">
-            مدیریت
-          </Link>
-          <nav className="flex flex-wrap gap-x-6 gap-y-2">
-            {nav.slice(1).map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-300 text-text-muted no-underline hover:text-text"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="ms-auto flex items-center gap-5">
-            <Link href="/" target="_blank" className="text-200 text-text-subtle no-underline hover:text-text">
-              دیدن سایت ↗
+    <ToastProvider>
+      <div className="min-h-dvh bg-bg-sunken">
+        <header className="border-b border-border bg-bg">
+          <div className="mx-auto flex max-w-(--container-page) flex-wrap items-center gap-x-7 gap-y-3 px-6 py-4">
+            <Link href="/admin" className="text-400 font-bold text-text no-underline">
+              مدیریت
             </Link>
-            <span className="text-200 text-text-subtle">{session.user.email}</span>
-            <SignOutButton />
+            <nav className="flex flex-wrap gap-x-6 gap-y-2">
+              {nav.slice(1).map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-300 text-text-muted no-underline hover:text-text"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="ms-auto flex items-center gap-5">
+              <Link href="/" target="_blank" className="text-200 text-text-subtle no-underline hover:text-text">
+                دیدن سایت ↗
+              </Link>
+              <span className="text-200 text-text-subtle">{session.user.email}</span>
+              <SignOutButton />
+            </div>
           </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-(--container-page) px-6 py-10">{children}</main>
-    </div>
+        </header>
+        <main className="mx-auto max-w-(--container-page) px-6 py-10">{children}</main>
+      </div>
+    </ToastProvider>
   )
 }

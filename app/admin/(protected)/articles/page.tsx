@@ -33,7 +33,42 @@ export default async function AdminArticlesPage() {
           action={{ label: 'مقالهٔ جدید', href: '/admin/articles/new' }}
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-bg">
+        <>
+        {/* Cards below md. Measured at 390px, the table needed 422px inside a
+            340px box: the views column fell off entirely, titles broke onto four
+            lines and slugs wrapped character by character. overflow-x-auto kept
+            the *page* from scrolling but left the content unreadable, which is
+            not the same thing as working. */}
+        <ul className="space-y-3 md:hidden">
+          {articles.map((a) => (
+            <li key={a.id} className="rounded-lg border border-border bg-bg p-4">
+              <Link href={`/admin/articles/${a.id}`} className="font-medium no-underline">
+                {a.title}
+              </Link>
+              {a.featured && (
+                <span className="ms-2 text-200 text-accent" title="مقالهٔ شاخص">
+                  ★
+                </span>
+              )}
+              <p className="latin mt-1 text-200 text-text-subtle">{a.slug}</p>
+              <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-200">
+                <span className={STATUS[a.status].tone}>{STATUS[a.status].label}</span>
+                <span aria-hidden className="text-text-subtle">·</span>
+                <span className="text-text-muted">
+                  {a.topics.map((t) => t.name).join('، ') || '—'}
+                </span>
+                <span aria-hidden className="text-text-subtle">·</span>
+                <span className="text-text-muted">
+                  {a.publishedAt ? formatDate(a.publishedAt) : '—'}
+                </span>
+                <span aria-hidden className="text-text-subtle">·</span>
+                <span className="text-text-muted">{faNum(a.views)} بازدید</span>
+              </p>
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden overflow-x-auto rounded-lg border border-border bg-bg md:block">
           <table className="w-full text-300">
             <thead>
               <tr className="border-b border-border text-200 text-text-subtle">
@@ -73,6 +108,7 @@ export default async function AdminArticlesPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </>
   )

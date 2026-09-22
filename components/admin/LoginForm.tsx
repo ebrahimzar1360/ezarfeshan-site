@@ -4,6 +4,8 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { FormField, inputClass } from '@/components/ui/FormField'
+import { Icon } from '@/components/ui/Icon'
+import { Button } from '@/components/ui/Button'
 
 /**
  * The error message never says which half was wrong.
@@ -67,20 +69,14 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
 
       {error && (
         <p role="alert" className="text-300 font-medium text-text">
-          <span aria-hidden className="me-1.5 text-accent">
-            ▲
-          </span>
+          <Icon name="alert" className="me-1.5" />
           {error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="h-12 w-full rounded-md bg-solid-bg text-300 font-medium text-solid-text transition-colors duration-150 hover:bg-solid-bg-hover disabled:opacity-60"
-      >
-        {busy ? 'در حال ورود…' : 'ورود'}
-      </button>
+      <Button type="submit" loading={busy} className="h-12 w-full">
+        ورود
+      </Button>
 
       <p className="text-200 leading-normal text-text-subtle">
         حساب از خط فرمان ساخته می‌شود: <span className="latin">npm run admin:create</span>.

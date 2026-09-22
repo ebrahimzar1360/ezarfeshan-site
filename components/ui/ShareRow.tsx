@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useToast } from './Toast'
 
 /**
  * Share targets. Plain links rather than an SDK: the platform widgets each pull
@@ -12,6 +13,7 @@ import { useState } from 'react'
  */
 export function ShareRow({ url, title }: { url: string; title: string }) {
   const [copied, setCopied] = useState(false)
+  const toast = useToast()
 
   const targets = [
     { label: 'واتس‌اپ', href: `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}` },
@@ -31,10 +33,15 @@ export function ShareRow({ url, title }: { url: string; title: string }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // clipboard blocked (insecure origin, permission denied) — say so rather
-      // than showing a success state that did not happen
+      // Clipboard blocked: insecure origin, or the permission was denied. Never
+      // show the success state for something that did not happen.
+      //
+      // This used to open a window.prompt with the URL preselected, which is a
+      // modal system dialog interrupting an article to apologise. A toast says
+      // the same thing without stealing focus, and the address is already in
+      // the browser's own bar.
       setCopied(false)
-      window.prompt('نشانی را کپی کن:', url)
+      toast.problem('کپی نشد — مرورگر اجازه نداد. نشانی را از نوار آدرس بردار.')
     }
   }
 
@@ -52,6 +59,9 @@ export function ShareRow({ url, title }: { url: string; title: string }) {
           {t.label}
         </a>
       ))}
+      {/* The inline label stays the primary confirmation — it is beside the
+          control the reader just pressed, which beats a corner popup. The toast
+          is only for the failure path, which has no inline home. */}
       <button
         type="button"
         onClick={copy}

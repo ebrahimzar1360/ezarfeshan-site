@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { FormField, inputClass, textareaClass } from '@/components/ui/FormField'
 import { deleteTopic, saveTopic } from '@/lib/admin/actions'
+import { Icon } from '@/components/ui/Icon'
 
 type Topic = {
   id: string
@@ -51,7 +52,16 @@ export function TopicManager({ topics }: { topics: Topic[] }) {
     <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
       <div className="rounded-lg border border-border bg-bg">
         {topics.length === 0 ? (
-          <p className="p-6 text-300 text-text-muted">هنوز موضوعی نساخته‌ای.</p>
+          // The only admin list still saying nothing but "empty". The rule
+          // from DESIGN-PLAN §9 is what happened, why, and what to do next —
+          // the form for doing it is already beside this box.
+          <div className="p-6">
+            <p className="text-400 font-bold text-text">هنوز موضوعی نساخته‌ای</p>
+            <p className="mt-3 text-300 leading-prose text-text-muted">
+              موضوع‌ها مقاله‌ها را دسته‌بندی می‌کنند و صفحهٔ خودشان را می‌سازند. اولی را از
+              همین فرم کنار بساز.
+            </p>
+          </div>
         ) : (
           <ul>
             {topics.map((t) => (
@@ -162,7 +172,7 @@ export function TopicManager({ topics }: { topics: Topic[] }) {
             role="status"
             className={`mt-4 text-200 ${message.ok ? 'text-text-muted' : 'font-medium text-text'}`}
           >
-            {!message.ok && <span aria-hidden className="me-1.5 text-accent">▲</span>}
+            {!message.ok && <Icon name="alert" className="me-1.5" />}
             {message.text}
           </p>
         )}

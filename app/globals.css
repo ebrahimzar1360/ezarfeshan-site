@@ -296,9 +296,105 @@ samp {
     color: var(--text);
   }
 
+  /* Native <dialog> as the modal primitive — see components/ui/Sheet.tsx for
+     why this beats pulling in Radix. Three things it does not give us: */
+
+  /* 1. Scroll lock. Done in CSS rather than an effect, so nothing has to
+        remember to undo it when a dialog unmounts mid-transition. */
+  body:has(dialog[open]) {
+    overflow: hidden;
+  }
+
+  /* 2. A styled backdrop. The UA default is a flat black wash that ignores the
+        theme; ink at 55% sits correctly under both grounds. */
+  .sheet::backdrop {
+    background: color-mix(in oklab, #1a1a1a 55%, transparent);
+  }
+
+  /* 3. An entrance. `display` is discrete, so the dialog cannot transition in
+        without allow-discrete; @starting-style gives it the frame to start from.
+        Vertical and opacity only — a translateX would arrive from the wrong edge
+        under dir="rtl". Browsers without either property just appear, which is
+        what a dialog did before this rule existed. */
+  .sheet[open] {
+    opacity: 1;
+    translate: 0 0;
+    /* 180ms literal rather than a --dur-* token: the design plan sketched a
+       duration scale that was never built, and inventing one for a single rule
+       adds a second vocabulary next to the duration-150 the components already
+       use. This matches .enter / .rise-in. */
+    transition:
+      opacity 180ms var(--ease-brand),
+      translate 180ms var(--ease-brand),
+      display 180ms allow-discrete,
+      overlay 180ms allow-discrete;
+  }
+  .sheet {
+    opacity: 0;
+    translate: 0 -8px;
+  }
+  @starting-style {
+    .sheet[open] {
+      opacity: 0;
+      translate: 0 -8px;
+    }
+  }
+
+  /* --marker-color exists so a consumer can retint the bar without redefining
+     the class. Callout needs it: its `tone` prop used to set `border-accent`
+     next to a `border-inline-start-4` that compiled to nothing, so the colour
+     never applied and every tone looked the same. */
+  /* Directional icons mirror; the rest do not. Which is which is decided per
+     icon in components/ui/Icon.tsx, because it is a judgement rather than a
+     rule — a magnifier does not flip in Persian interfaces, and neither does
+     play/pause, which is the mistake people reach for first.
+
+     `scale` rather than `transform: scaleX(-1)` so it does not fight any
+     transform an animation may also be applying. */
+  [data-flip]:dir(rtl) {
+    scale: -1 1;
+  }
+
   .gold-marker {
     padding-inline-start: --spacing(4);
+    border-inline-start: 4px solid var(--marker-color, var(--accent));
+  }
+
+  /* Numbered steps for MDX <Steps>. The old component set counter-reset and then
+     never incremented or printed it, with list-none already suppressing the
+     browser's own numbering — an unnumbered, unindented list. The counter lives
+     here so the ::before that prints it can also carry the gold marker. */
+  .steps {
+    counter-reset: step;
+    list-style: none;
+    padding-inline-start: 0;
+  }
+  .steps > li {
+    position: relative;
+    counter-increment: step;
+    padding-inline-start: --spacing(10);
+  }
+  .steps > li + li {
+    margin-block-start: 1.1em;
+  }
+  .steps > li::before {
+    /* `persian` is a built-in CSS counter style, so the numerals are Persian by
+       construction. The font-feature route (ss02) does not reach a generated
+       ::before reliably, and it silently fell back to Latin digits on a site
+       whose whole numeric convention is Persian. */
+    content: counter(step, persian);
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 0.1em;
+    display: grid;
+    place-items: center;
+    inline-size: --spacing(7);
+    block-size: --spacing(7);
     border-inline-start: 4px solid var(--accent);
+    padding-inline-start: --spacing(2);
+    font-size: var(--text-300);
+    font-weight: 500;
+    color: var(--text);
   }
 
   /* Reading progress: the same bar, running down the inline-start edge of the
@@ -382,6 +478,19 @@ samp {
     scroll-margin-block-start: 6rem;
   }
 
+  /* Underlined, not just coloured.
+     Tailwind's preflight sets `a { text-decoration: inherit }`, and the base `a`
+     rule above only sets colour, underline-offset and thickness — so a link in
+     an article body inherited `none` and was distinguished by colour alone.
+     Measured in the browser: text-decoration-line `none`, link emerald
+     rgb(45,106,79) against body ink rgb(26,26,26) — 2.73:1, under the 3:1 that
+     WCAG 1.4.1 requires before colour may carry the distinction by itself.
+     Utilities beat this layer, so a `no-underline` (the heading anchors) still
+     wins. */
+  .prose a {
+    text-decoration: underline;
+  }
+
   .prose strong { color: var(--text); font-weight: 700; }
 
   .prose ul, .prose ol { padding-inline-start: 1.4em; }
@@ -423,6 +532,47 @@ samp {
     animation: enter-bar 420ms var(--ease-brand) both;
   }
 
+  /* Toasts, skeleton swaps and panel entrances all want the same two moves the
+     hero already uses. Exposed as utilities rather than re-declared per
+     component so the reduce block below keeps catching every one of them.
+
+     Neither carries a horizontal offset on purpose. A `translateX` entrance
+     does not mirror under dir="rtl" — the keyframe moves in the physical +x
+     direction whatever the writing mode — so a panel written to slide in from
+     the inline-start edge arrives from the wrong side and nothing errors.
+     Vertical and opacity are direction-neutral. */
+  .fade-in {
+    animation: fade-in 150ms var(--ease-brand) both;
+  }
+  .rise-in {
+    animation: enter 180ms var(--ease-brand) both;
+  }
+
+  /* Skeleton placeholders. An opacity pulse rather than the usual gradient
+     sweep: gradients are banned (§10), and a translateX sweep travels in the
+     physical +x direction, so on an RTL page the light would run backwards. */
+  .pulse {
+    animation: pulse 1.6s var(--ease-brand) infinite;
+  }
+
+  /* Rotation is the one motion with no start or end edge, so it needs no RTL
+     thought at all. Linear on purpose — an eased spin looks like it is
+     stalling. */
+  .spin {
+    animation: spin 700ms linear infinite;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+  }
+  @keyframes spin {
+    to { rotate: 360deg; }
+  }
   @keyframes enter {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: none; }
@@ -443,4 +593,13 @@ samp {
     scroll-behavior: auto !important;
   }
   .reading-rail::after { transform: scaleY(1); }
+  /* The blanket rule above collapses these to 0.01ms, which for an infinite
+     animation means a placeholder flickering at 100 Hz rather than a still one.
+     Pin them to a resting frame instead. */
+  .pulse { animation: none; opacity: 0.7; }
+  .spin { animation: none; }
+  /* The blanket rule zeroes transition-duration, but the discrete `display`
+     transition still needs its start frame neutralised or the panel pops in from
+     8px up. Removed, not shortened. */
+  .sheet, .sheet[open] { translate: none; }
 }

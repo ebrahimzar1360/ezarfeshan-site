@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import { PageViewTracker } from '@/components/site/PageViewTracker'
 import { PersonJsonLd, WebSiteJsonLd } from '@/components/seo/JsonLd'
-import { ChatWidget } from '@/components/site/ChatWidget'
+import { ToastProvider } from '@/components/ui/Toast'
+import { ChatWidget } from '@/components/site/chat/ChatWidget'
 import { Footer } from '@/components/site/Footer'
 import { Header } from '@/components/site/Header'
 
@@ -14,7 +15,7 @@ import { Header } from '@/components/site/Header'
  */
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
-    <>
+    <ToastProvider>
       {/* emitted once for the whole public site, not repeated per page */}
       <PersonJsonLd />
       <WebSiteJsonLd />
@@ -25,6 +26,6 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
       </main>
       <Footer />
       <ChatWidget />
-    </>
+    </ToastProvider>
   )
 }

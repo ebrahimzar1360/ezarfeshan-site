@@ -35,7 +35,24 @@ export default async function SubscribersPage() {
           action={{ label: 'دیدن صفحهٔ خبرنامه', href: '/newsletter' }}
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-bg">
+        <>
+        {/* Cards below md — same reason as the articles list. */}
+        <ul className="space-y-3 md:hidden">
+          {subscribers.map((s) => (
+            <li key={s.id} className="rounded-lg border border-border bg-bg p-4">
+              <p className="latin text-300 text-text">{s.email}</p>
+              <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-200">
+                <span className={STATUS[s.status].tone}>{STATUS[s.status].label}</span>
+                <span aria-hidden className="text-text-subtle">·</span>
+                <span className="latin text-text-muted">{s.source ?? '—'}</span>
+                <span aria-hidden className="text-text-subtle">·</span>
+                <span className="text-text-muted">{formatDate(s.createdAt)}</span>
+              </p>
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden overflow-x-auto rounded-lg border border-border bg-bg md:block">
           <table className="w-full text-300">
             <thead>
               <tr className="border-b border-border text-200 text-text-subtle">
@@ -59,6 +76,7 @@ export default async function SubscribersPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </>
   )
