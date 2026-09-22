@@ -9,7 +9,7 @@
  * 200 containing a number nobody wrote, or a truthful "you never told me your
  * name" about a name given ten turns earlier. Neither is visible to vitest.
  *
- * The history window is built the same way components/site/ChatWidget.tsx
+ * The history window is built the same way components/site/chat/ChatWidget.tsx
  * builds it (lib/chat/history.ts: head + elision + tail), so what the model
  * sees here is what it sees in the browser.
  *
