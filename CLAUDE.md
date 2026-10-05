@@ -97,6 +97,27 @@ Three rules that are easy to break and were broken at least once each:
 Tailwind scans source text, so a constructed class name (`bg-${x}`) produces no CSS.
 Write the full name.
 
+### v2 redesign — the system language
+
+The 2026 redesign (docs/DESIGN-PLAN.md §13) added a night ground (`forest-deep`,
+`.tone-inverse.tone-deep`), `gold-light` for gold *text on dark grounds only*, a
+warm `--bg-band` surface, `--radius-xl` for large panels, blueprint grids
+(`.bp-grid`), and a pure-CSS 3D hero (`components/site/home/SystemScene.tsx`,
+`.stage`/`.scene`/`.slab` in globals.css — no WebGL dependency).
+
+Scroll reveals: add `data-reveal` (optionally `style={{'--d': i}}` for stagger).
+`RevealObserver` marks them with a `data-shown` **attribute**, never a class —
+a class on a not-yet-hydrated streamed element is a hydration mismatch and a
+re-render would strip it. Any page rendered outside `app/(site)/layout.tsx`
+that uses `SectionHead` or `data-reveal` must mount `<RevealObserver />`
+itself (the 404 does), or the content stays invisible.
+
+The homepage's first `<h3>` must be an article title (e2e) — the bento tiles
+use `<p>` titles for that reason.
+
+The UI/UX Pro Max skill is installed in `.claude/skills/ui-ux-pro-max` for
+visual work: `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <ux|style|color|…>`.
+
 ### The gold marker
 
 The brand's signature device, recovered from the original brand guide's page

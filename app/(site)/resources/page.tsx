@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Container } from '@/components/ui/Container'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { SectionHead } from '@/components/ui/SectionHead'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { db } from '@/lib/db'
 
 export const revalidate = 3600
@@ -23,13 +23,13 @@ export default async function ResourcesPage() {
   })
 
   return (
-    <Container className="py-16 md:py-24">
-      <SectionHead
-        as="h1"
-        eyebrow="منابع"
-        title="چک‌لیست و تمپلیت"
-        lead="ابزارهای عملی که می‌توانی همین امروز استفاده کنی."
-      />
+    <>
+    <PageHeader
+      eyebrow="منابع"
+      title="چک‌لیست و تمپلیت"
+      lead="ابزارهای عملی که می‌توانی همین امروز استفاده کنی."
+    />
+    <Container className="py-14 md:py-20">
 
       {resources.length === 0 ? (
         <EmptyState
@@ -38,19 +38,18 @@ export default async function ResourcesPage() {
           action={{ label: 'عضویت در خبرنامه', href: '/newsletter' }}
         />
       ) : (
-        <ul className="space-y-0">
+        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {resources.map((r) => (
-            <li key={r.id} className="border-t border-border py-7">
+            <li key={r.id} className="panel panel-hover p-7">
               <a href={`/resources/${r.slug}`} className="text-500 font-bold no-underline">
                 {r.title}
               </a>
-              <p className="mt-2.5 max-w-(--container-measure) text-300 leading-normal text-text-muted">
-                {r.description}
-              </p>
+              <p className="mt-2.5 text-300 leading-normal text-text-muted">{r.description}</p>
             </li>
           ))}
         </ul>
       )}
     </Container>
+    </>
   )
 }

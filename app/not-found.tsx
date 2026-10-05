@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Footer } from '@/components/site/Footer'
 import { Header } from '@/components/site/Header'
+import { RevealObserver } from '@/components/site/RevealObserver'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
 import { SectionHead } from '@/components/ui/SectionHead'
@@ -36,36 +37,52 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <>
+      <RevealObserver />
       <Header />
       <main id="main" className="flex-1">
-        <Container className="py-20 md:py-32">
-          <SectionHead
-            as="h1"
-            eyebrow="۴۰۴"
-            title="این صفحه وجود ندارد"
-            lead="شاید نشانی اشتباه تایپ شده، یا نوشته‌ای که دنبالش بودی جابه‌جا شده."
-          />
+        <section className="bp-grid relative overflow-hidden bg-bg-band">
+          <Container className="grid items-center gap-12 py-20 md:grid-cols-[1.2fr_1fr] md:py-32">
+            <div>
+              <SectionHead
+                as="h1"
+                eyebrow="۴۰۴"
+                title="این صفحه وجود ندارد"
+                lead="شاید نشانی اشتباه تایپ شده، یا نوشته‌ای که دنبالش بودی جابه‌جا شده."
+              />
 
-          <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
-            <Button href="/articles">همهٔ مقالات</Button>
-            <Button href="/" variant="text">
-              صفحهٔ اصلی
-            </Button>
-          </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button href="/articles" size="lg">همهٔ مقالات</Button>
+                <Button href="/" size="lg" variant="outline">
+                  صفحهٔ اصلی
+                </Button>
+              </div>
 
-          <nav aria-label="بخش‌های سایت" className="mt-14 border-t border-border pt-8">
-            <p className="text-200 text-text-subtle">یا از اینجا شروع کن:</p>
-            <ul className="mt-4 flex flex-wrap gap-x-7 gap-y-3">
-              {nav.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className="text-300">
-                    {item.label}
-                  </Link>
-                </li>
+              <nav aria-label="بخش‌های سایت" className="mt-14 border-t border-border pt-8">
+                <p className="text-200 text-text-subtle">یا از اینجا شروع کن:</p>
+                <ul className="mt-4 flex flex-wrap gap-x-7 gap-y-3">
+                  {nav.map((item) => (
+                    <li key={item.href}>
+                      <Link href={item.href} className="text-300">
+                        {item.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+
+            {/* The hero's four layers, knocked loose: a page that is not where
+                it should be. */}
+            <svg aria-hidden viewBox="0 0 300 260" className="mx-auto w-full max-w-sm" fill="none" strokeWidth="1.5">
+              {[0, 1, 2, 3].map((i) => (
+                <g key={i} transform={`translate(${[20, -18, 26, -8][i]} ${200 - i * 52}) rotate(${[-6, 9, -12, 18][i]} 150 0)`}>
+                  <path d="M150 0 260 -40 150 -80 40 -40Z" className={i === 3 ? 'fill-accent/80 text-accent' : 'fill-bg-raised text-border-strong'} stroke="currentColor" />
+                  <path d="M40 -40v16l110 40 110-40v-16" className="text-border-strong" stroke="currentColor" />
+                </g>
               ))}
-            </ul>
-          </nav>
-        </Container>
+            </svg>
+          </Container>
+        </section>
       </main>
       <Footer />
     </>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Container } from '@/components/ui/Container'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate } from '@/lib/format'
 import { site } from '@/lib/site'
 
@@ -21,13 +22,11 @@ const LAST_UPDATED = '2026-09-10'
  */
 export default function PrivacyPage() {
   return (
-    <Container width="measure" className="py-16 md:py-24">
-      <div className="gold-marker">
-        <p className="mb-3 text-200 font-medium tracking-wide text-text-subtle">حریم خصوصی</p>
-        <h1 className="text-800">چه چیزی از تو نگه می‌دارم</h1>
-      </div>
+    <>
+    <PageHeader eyebrow="حریم خصوصی" title="چه چیزی از تو نگه می‌دارم" width="measure" />
+    <Container width="measure" className="py-14 md:py-20">
 
-      <p className="mt-8 text-400 leading-prose text-text-muted">
+      <p className="text-400 leading-prose text-text-muted">
         کوتاه: هیچ کوکی ردیابی، هیچ ابزار تبلیغاتی، و هیچ آدرس IP خامی روی این سایت
         ذخیره نمی‌شود. چیزی هم به کسی فروخته یا داده نمی‌شود. جزئیاتش این است.
       </p>
@@ -104,5 +103,6 @@ export default function PrivacyPage() {
         <Link href="/terms">شرایط استفاده</Link>
       </p>
     </Container>
+    </>
   )
 }

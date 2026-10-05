@@ -1,22 +1,19 @@
+import type { CSSProperties } from 'react'
+import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
 import { SectionHead } from '@/components/ui/SectionHead'
 
 /**
  * How a request is handled, in three steps.
  *
- * Nothing invented: every line restates what /consult already says — "اول توضیح
- * می‌دهی چه مسئله‌ای داری… اگر فکر کنم نمی‌توانم، همان را می‌گویم" — and the ۴۸
- * ساعت is the same figure on /contact, /consult and /terms. The block exists
- * because that process was only discoverable by opening the request page, which
- * is the one page a hesitant visitor does not open.
+ * Nothing invented: every line restates what /consult already says, and the
+ * ۴۸ ساعت is the same figure on /contact, /consult and /terms.
  *
- * Marked up as an ordered list with the counter from `.steps`, so the numbering
- * is real rather than three headings pretending to be a sequence — and so it
- * reads as an order to a screen reader.
+ * Still an `ol.steps` — the counter prints Persian numerals and e2e counts the
+ * three items — laid out as three columns joined by a drawn line.
  *
- * No h3 anywhere here. e2e/site.spec.ts clicks the first level-3 heading on the
- * homepage and expects an article; every h3 on this page belongs to the article
- * list.
+ * No h3 anywhere here: e2e/site.spec.ts clicks the first level-3 heading on the
+ * homepage and expects an article.
  */
 export function HowIWork() {
   const steps = [
@@ -35,17 +32,22 @@ export function HowIWork() {
   ]
 
   return (
-    <section className="bg-bg-raised py-16 md:py-32">
+    <section className="bg-bg-band py-24 md:py-36">
       <Container>
-        <SectionHead
-          eyebrow="روند کار"
-          title="اگر بخواهی شروع کنیم، چه اتفاقی می‌افتد"
-        />
-        <ol className="steps max-w-(--container-measure)">
-          {steps.map((step) => (
-            <li key={step.title}>
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <SectionHead eyebrow="روند کار" title="اگر بخواهی شروع کنیم، چه اتفاقی می‌افتد" />
+          <div className="mb-10 md:mb-14">
+            <Button href="/consult" size="lg">
+              درخواست مشاوره
+            </Button>
+          </div>
+        </div>
+
+        <ol className="steps steps-v2 rail-x grid gap-10 md:grid-cols-3 md:gap-8" data-reveal="">
+          {steps.map((step, i) => (
+            <li key={step.title} className="relative" data-reveal style={{ '--d': i } as CSSProperties}>
               <p className="text-500 font-bold text-text">{step.title}</p>
-              <p className="mt-2 text-300 leading-prose text-text-muted">{step.body}</p>
+              <p className="mt-3 text-300 leading-prose text-text-muted">{step.body}</p>
             </li>
           ))}
         </ol>

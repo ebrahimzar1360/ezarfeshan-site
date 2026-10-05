@@ -27,7 +27,9 @@ export function coverUrl(
   if (article.coverImage) return article.coverImage
 
   const kicker = article.topics[0]?.name ?? ''
-  const params = new URLSearchParams({ variant: 'cover', seed: article.slug })
+  // `v` busts the year-long immutable CDN cache when the cover art changes;
+  // bump it whenever app/api/og/route.tsx draws covers differently.
+  const params = new URLSearchParams({ variant: 'cover', seed: article.slug, v: '2' })
   if (kicker) params.set('kicker', kicker)
   if (size === 'thumb') params.set('compact', '1')
   return `/api/og?${params}`

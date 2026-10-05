@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { ConsultForm } from '@/components/site/ConsultForm'
 import { Container } from '@/components/ui/Container'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { fa, yearsSince } from '@/lib/content/bio'
 import { Faq } from '@/components/ui/Faq'
 
@@ -44,59 +45,88 @@ const FAQ = [
 export default function ConsultPage() {
   return (
     <>
-      <Container width="measure" className="py-16 md:py-24">
-        <div className="gold-marker">
-          <p className="mb-3 text-200 font-medium tracking-wide text-text-subtle">مشاوره</p>
-          <h1 className="text-800">درخواست مشاوره</h1>
-        </div>
-        <div className="mt-8 space-y-5 text-400 leading-prose text-text-muted">
-          <p>
-            کارم کمک به مدیرانی است که کسب‌وکارشان بدون حضور دائمی خودشان کار نمی‌کند.
-            {' '}{fa(yearsSince(1389))} سال است همین کار را در کسب‌وکار خودم می‌کنم.
-          </p>
-          <p>
-            اول توضیح می‌دهی چه مسئله‌ای داری. اگر فکر کنم می‌توانم کمک کنم، جواب می‌دهم و
-            قرار می‌گذاریم. اگر فکر کنم نمی‌توانم، همان را می‌گویم.
-          </p>
-        </div>
+      <PageHeader
+        tone="deep"
+        eyebrow="مشاوره"
+        title={
+          <>
+            درخواست <span className="text-gold-light">مشاوره</span>
+          </>
+        }
+        lead={
+          <>
+            کارم کمک به مدیرانی است که کسب‌وکارشان بدون حضور دائمی خودشان کار نمی‌کند.{' '}
+            {fa(yearsSince(1389))} سال است همین کار را در کسب‌وکار خودم می‌کنم.
+          </>
+        }
+      />
 
-        {/* The pricing box became the first FAQ entry rather than staying prose.
-            Silence about price is not neutrality — it makes the visitor guess,
-            and people guess high and leave — so that answer stays open on load
-            while the rest collapse. The bands are the same ones the form offers,
-            so the page and the field cannot drift apart. No invented number: the
-            range is where the work has actually landed.
+      <Container className="py-14 md:py-20">
+        <div className="grid gap-14 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
+          {/* Form first in source order on small screens is the wrong way round:
+              the visitor should read how it works before being asked to fill
+              anything. On large screens the two sit side by side and the form
+              column sticks. */}
+          <div>
+            <div className="space-y-5 text-400 leading-prose text-text-muted">
+              <p>
+                اول توضیح می‌دهی چه مسئله‌ای داری. اگر فکر کنم می‌توانم کمک کنم، جواب می‌دهم و
+                قرار می‌گذاریم. اگر فکر کنم نمی‌توانم، همان را می‌گویم.
+              </p>
+            </div>
 
-            Every answer below is already stated somewhere on this site — the
-            intro above, the قبل از فرستادن block, /contact, /terms. Nothing here
-            is a new claim; the block exists to make them findable and to emit
-            FAQPage markup, which is the one thing this page had no way to earn. */}
-        <div className="mt-10">
-          <h2 className="gold-marker mb-6 text-600">سؤال‌های رایج</h2>
-          <Faq openIndex={0} entries={FAQ} />
+            <ol className="mt-10 grid gap-3 sm:grid-cols-3">
+              {['فرم را پر می‌کنی', 'ظرف ۴۸ ساعت کاری جواب', 'گفت‌وگوی اول رایگان'].map((t, i) => (
+                <li key={t} className="panel flex items-center gap-3 px-4 py-4">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-md bg-forest text-200 font-bold text-paper">
+                    {['۱', '۲', '۳'][i]}
+                  </span>
+                  <span className="text-300 font-medium leading-snug">{t}</span>
+                </li>
+              ))}
+            </ol>
+
+            {/* The pricing answer stays open on load: silence about price makes
+                the visitor guess, and people guess high and leave. Every answer
+                below is already stated somewhere on this site. */}
+            <div className="mt-14">
+              <h2 className="gold-marker mb-6 text-600">سؤال‌های رایج</h2>
+              <Faq openIndex={0} entries={FAQ} />
+            </div>
+          </div>
+
+          <div className="lg:sticky lg:top-28 lg:self-start">
+            <div className="panel p-6 shadow-(--shadow) md:p-9">
+              <p className="mb-2 text-600 font-bold">فرم درخواست</p>
+              <p className="mb-8 text-300 text-text-muted">چند دقیقه وقت می‌گیرد. همهٔ پاسخ‌ها فقط دست خودم می‌رسد.</p>
+              <ConsultForm />
+            </div>
+          </div>
         </div>
       </Container>
 
-      <Container width="measure" className="pb-20">
-        <ConsultForm />
-      </Container>
-
-      <section className="tone-inverse bg-forest py-16 md:py-24">
-        <Container width="measure">
-          <h2 className="text-600">قبل از فرستادن</h2>
-          <ul className="mt-6 space-y-4 text-300 leading-prose text-text-muted">
-            <li className="border-t border-border pt-4">
-              <strong className="text-text">اگر دنبال راه‌حل سریع هستی</strong> — سیستم‌سازی
-              سریع نیست. نتیجه‌اش ماندگار است، ولی یک‌شبه نمی‌آید.
+      <section className="tone-inverse tone-deep bp-grid relative overflow-hidden py-20 md:py-28">
+        <Container>
+          <h2 className="text-700 font-black">قبل از فرستادن</h2>
+          <ul className="mt-10 grid gap-5 md:grid-cols-3">
+            <li className="panel bg-bg-raised/70 p-7 text-300 leading-prose text-text-muted">
+              <strong className="block text-400 text-gold-light">اگر دنبال راه‌حل سریع هستی</strong>
+              <span className="mt-3 block">
+                سیستم‌سازی سریع نیست. نتیجه‌اش ماندگار است، ولی یک‌شبه نمی‌آید.
+              </span>
             </li>
-            <li className="border-t border-border pt-4">
-              <strong className="text-text">اگر فقط دنبال ابزار هوش مصنوعی هستی</strong> —
-              خودکار کردن کاری که فرایندش نوشته نشده، فقط بی‌نظمی را سریع‌تر می‌کند. اول
-              فرایند.
+            <li className="panel bg-bg-raised/70 p-7 text-300 leading-prose text-text-muted">
+              <strong className="block text-400 text-gold-light">اگر فقط دنبال ابزار هوش مصنوعی هستی</strong>
+              <span className="mt-3 block">
+                خودکار کردن کاری که فرایندش نوشته نشده، فقط بی‌نظمی را سریع‌تر می‌کند. اول
+                فرایند.
+              </span>
             </li>
-            <li className="border-t border-border pt-4">
-              <strong className="text-text">اگر مطمئن نیستی</strong> — از{' '}
-              <a href="/articles">مقالات</a> شروع کن. اگر حرف‌ها به کارت آمد، بعد بنویس.
+            <li className="panel bg-bg-raised/70 p-7 text-300 leading-prose text-text-muted">
+              <strong className="block text-400 text-gold-light">اگر مطمئن نیستی</strong>
+              <span className="mt-3 block">
+                از <a href="/articles">مقالات</a> شروع کن. اگر حرف‌ها به کارت آمد، بعد بنویس.
+              </span>
             </li>
           </ul>
         </Container>

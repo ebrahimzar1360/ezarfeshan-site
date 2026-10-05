@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { ArticleListItem } from '@/components/ui/ArticleCard'
+import { ArticleGrid } from '@/components/ui/ArticleGrid'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Container } from '@/components/ui/Container'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
-import { SectionHead } from '@/components/ui/SectionHead'
 import { TopicChips } from '@/components/ui/TopicChips'
 import { pageCount } from '@/lib/content/pagination'
 import { getPublishedArticlesPage, getTopics } from '@/lib/content/queries'
@@ -25,14 +25,13 @@ export default async function ArticlesPage() {
     .map((t) => ({ slug: t.slug, name: t.name, count: t._count.articles }))
 
   return (
-    <Container className="py-16 md:py-24">
-      <SectionHead
-        as="h1"
+    <>
+      <PageHeader
         eyebrow="مقالات"
-        title="نوشته‌ها"
-        lead="هر نوشته یک مسئلهٔ عملیاتی را می‌گیرد و تا انتها می‌برد."
+        title="نوشته‌هایی از میدان"
+        lead="هر نوشته یک مسئلهٔ عملیاتی را می‌گیرد و تا انتها می‌برد — از جایی که کار گیر کرده تا سیستمی که جایش می‌نشیند."
       />
-
+      <Container className="py-14 md:py-20">
       <TopicChips topics={withArticles} />
 
       {items.length === 0 ? (
@@ -43,11 +42,7 @@ export default async function ArticlesPage() {
         />
       ) : (
         <>
-          <div>
-            {items.map((a) => (
-              <ArticleListItem key={a.slug} article={a} />
-            ))}
-          </div>
+          <ArticleGrid items={items} priorityFirst />
           <Pagination
             page={1}
             count={pageCount(total)}
@@ -55,6 +50,7 @@ export default async function ArticlesPage() {
           />
         </>
       )}
-    </Container>
+      </Container>
+    </>
   )
 }

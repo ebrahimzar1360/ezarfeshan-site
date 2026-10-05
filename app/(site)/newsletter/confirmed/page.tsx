@@ -40,7 +40,9 @@ export default async function ConfirmedPage({
   const state = STATES[status ?? ''] ?? STATES.invalid!
 
   return (
-    <Container width="measure" className="py-24 md:py-32">
+    <div className="bp-grid bg-bg-band">
+    <Container width="measure" className="py-24 md:py-36">
+      <div className="panel p-8 shadow-(--shadow) md:p-12">
       <div className="gold-marker">
         <h1 className="text-700">{state.title}</h1>
       </div>
@@ -52,6 +54,8 @@ export default async function ConfirmedPage({
           </Link>
         </p>
       )}
+      </div>
     </Container>
+    </div>
   )
 }

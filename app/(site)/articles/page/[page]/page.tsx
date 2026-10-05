@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { ArticleListItem } from '@/components/ui/ArticleCard'
+import { ArticleGrid } from '@/components/ui/ArticleGrid'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Container } from '@/components/ui/Container'
 import { Pagination } from '@/components/ui/Pagination'
-import { SectionHead } from '@/components/ui/SectionHead'
 import { TopicChips } from '@/components/ui/TopicChips'
 import { faNum } from '@/lib/format'
 import { pageCount, parsePageParam } from '@/lib/content/pagination'
@@ -69,20 +69,13 @@ export default async function ArticlesPaginated({
     .map((t) => ({ slug: t.slug, name: t.name, count: t._count.articles }))
 
   return (
-    <Container className="py-16 md:py-24">
-      <SectionHead
-        as="h1"
-        eyebrow="مقالات"
-        title={`نوشته‌ها — صفحهٔ ${faNum(n)}`}
-      />
+    <>
+    <PageHeader eyebrow="مقالات" title={`نوشته‌ها — صفحهٔ ${faNum(n)}`} />
+    <Container className="py-14 md:py-20">
 
       <TopicChips topics={withArticles} />
 
-      <div>
-        {items.map((a) => (
-          <ArticleListItem key={a.slug} article={a} />
-        ))}
-      </div>
+      <ArticleGrid items={items} />
 
       <Pagination
         page={n}
@@ -90,5 +83,6 @@ export default async function ArticlesPaginated({
         hrefFor={(p) => (p === 1 ? '/articles' : `/articles/page/${p}`)}
       />
     </Container>
+    </>
   )
 }

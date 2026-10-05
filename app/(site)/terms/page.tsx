@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Container } from '@/components/ui/Container'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate } from '@/lib/format'
 import { site } from '@/lib/site'
 
@@ -20,13 +21,11 @@ const LAST_UPDATED = '2026-09-10'
  */
 export default function TermsPage() {
   return (
-    <Container width="measure" className="py-16 md:py-24">
-      <div className="gold-marker">
-        <p className="mb-3 text-200 font-medium tracking-wide text-text-subtle">شرایط استفاده</p>
-        <h1 className="text-800">قاعده‌های ساده</h1>
-      </div>
+    <>
+    <PageHeader eyebrow="شرایط استفاده" title="قاعده‌های ساده" width="measure" />
+    <Container width="measure" className="py-14 md:py-20">
 
-      <p className="mt-8 text-400 leading-prose text-text-muted">
+      <p className="text-400 leading-prose text-text-muted">
         این صفحه کوتاه است چون قرار نیست چیزی را پشت متن حقوقی پنهان کند. سه نکته
         دارد.
       </p>
@@ -75,5 +74,6 @@ export default function TermsPage() {
         <Link href="/privacy">حریم خصوصی</Link>
       </p>
     </Container>
+    </>
   )
 }

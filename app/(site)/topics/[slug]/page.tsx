@@ -1,14 +1,13 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
-import { ArticleListItem } from '@/components/ui/ArticleCard'
+import { ArticleGrid } from '@/components/ui/ArticleGrid'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { faNum } from '@/lib/format'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Container } from '@/components/ui/Container'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
-import { SectionHead } from '@/components/ui/SectionHead'
 import { TopicChips } from '@/components/ui/TopicChips'
-import { COVER_RATIO, coverAlt, coverUrl } from '@/lib/content/cover'
 import { pageCount } from '@/lib/content/pagination'
 import { getArticlesByTopicPage, getTopicBySlug, getTopics } from '@/lib/content/queries'
 
@@ -57,39 +56,25 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
     .map((t) => ({ slug: t.slug, name: t.name, count: t._count.articles }))
 
   return (
-    <Container className="py-16 md:py-24">
+    <>
+    <PageHeader
+      eyebrow={`موضوع · ${faNum(total)} مقاله`}
+      title={topic.name}
+      lead={topic.description ?? undefined}
+    >
+      <div className="mb-8">
       <Breadcrumb
         trail={[
           { name: 'موضوع‌ها', path: '/topics' },
           { name: topic.name, path: `/topics/${topic.slug}` },
         ]}
       />
-
-      <div className="mt-8">
-        <SectionHead
-          as="h1"
-          eyebrow="موضوع"
-          title={topic.name}
-          lead={topic.description ?? undefined}
-        />
       </div>
+    </PageHeader>
+    <Container className="py-14 md:py-20">
 
       <TopicChips topics={withArticles} activeSlug={topic.slug} />
 
-      {/* The newest article's cover stands in as the topic's own image. The
-          brand has no topic artwork and inventing some would be decoration; this
-          at least points at what the topic currently contains. */}
-      {items[0] && (
-        <Image
-          src={coverUrl(items[0])}
-          alt={coverAlt(items[0])}
-          width={COVER_RATIO.width}
-          height={COVER_RATIO.height}
-          sizes="(min-width: 1216px) 76rem, 100vw"
-          priority
-          className="mb-12 w-full rounded-lg border border-border"
-        />
-      )}
 
       {items.length === 0 ? (
         <EmptyState
@@ -99,11 +84,7 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
         />
       ) : (
         <>
-          <div>
-            {items.map((a) => (
-              <ArticleListItem key={a.slug} article={a} />
-            ))}
-          </div>
+          <ArticleGrid items={items} priorityFirst />
           <Pagination
             page={1}
             count={pageCount(total)}
@@ -112,5 +93,6 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
         </>
       )}
     </Container>
+    </>
   )
 }

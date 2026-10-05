@@ -4,6 +4,7 @@ import { PersonJsonLd, WebSiteJsonLd } from '@/components/seo/JsonLd'
 import { ToastProvider } from '@/components/ui/Toast'
 import { ChatWidget } from '@/components/site/chat/ChatWidget'
 import { Footer } from '@/components/site/Footer'
+import { RevealObserver } from '@/components/site/RevealObserver'
 import { Header } from '@/components/site/Header'
 
 /**
@@ -20,6 +21,7 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
       <PersonJsonLd />
       <WebSiteJsonLd />
       <PageViewTracker />
+      <RevealObserver />
       <Header />
       <main id="main" className="flex-1">
         {children}

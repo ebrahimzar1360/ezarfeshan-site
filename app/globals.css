@@ -33,6 +33,16 @@
   --color-emerald-300: #5fa88a;
   --color-emerald-200: #7dbfa2;
 
+  /* v2 additions — measured, see docs/DESIGN-PLAN.md §13.
+     forest-deep: the hero/night ground. paper on it 15.22:1, gold 7.26:1.
+     gold-light: gold as *text* on dark grounds — 10.22:1 on forest-deep,
+       7.38:1 on forest. Still never text on a light ground.
+     sand: a warm alternate light surface for banding. ink 14.10:1,
+       emerald 5.18:1, the 65% subtle tint 4.93:1. */
+  --color-forest-deep: #0e2219;
+  --color-gold-light: #e2c97e;
+  --color-sand: #ece7da;
+
   --font-sans: 'Vazirmatn', 'Segoe UI', system-ui, sans-serif;
   --font-latin: 'Inter', 'Vazirmatn', system-ui, sans-serif;
 
@@ -46,6 +56,9 @@
   --text-800: 2.441rem;
   --text-900: 3.052rem;
   --text-1000: 3.815rem;
+  /* display sizes: fluid, for the hero and page mastheads only */
+  --text-display: clamp(2.6rem, 1.4rem + 5.2vw, 5.6rem);
+  --text-display-sm: clamp(2.2rem, 1.5rem + 3vw, 3.9rem);
 
   --leading-tight: 1.35;
   --leading-snug: 1.5;
@@ -57,8 +70,12 @@
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 10px;
+  /* v2: large surfaces only (panels, hero frames, bento tiles). Controls and
+     chips still cap at --radius-lg. */
+  --radius-xl: 18px;
 
   --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
 
   --container-measure: 38rem; /* ~68 Persian characters at 18px */
   --container-page: 76rem;
@@ -84,6 +101,7 @@
   --bg-raised: #ffffff;
   --bg-sunken: color-mix(in oklab, var(--color-paper) 94%, var(--color-ink));
   --bg-inverse: var(--color-forest);
+  --bg-band: var(--color-sand);
   --text: var(--color-ink);
   --text-muted: var(--ink-70);
   --text-subtle: var(--ink-55);
@@ -118,6 +136,7 @@
     --bg: #141613;
     --bg-raised: #1c1f1c;
     --bg-sunken: #101210;
+    --bg-band: #181c18;
     --bg-inverse: var(--color-forest);
     --text: #edede8;
     --text-muted: var(--ink-70);
@@ -148,6 +167,7 @@
   --bg: #141613;
   --bg-raised: #1c1f1c;
   --bg-sunken: #101210;
+  --bg-band: #181c18;
   --text: #edede8;
   --text-muted: var(--ink-70);
   --text-subtle: var(--ink-55);
@@ -166,6 +186,7 @@
   --color-bg-raised: var(--bg-raised);
   --color-bg-sunken: var(--bg-sunken);
   --color-bg-inverse: var(--bg-inverse);
+  --color-bg-band: var(--bg-band);
   --color-text: var(--text);
   --color-text-muted: var(--text-muted);
   --color-text-subtle: var(--text-subtle);
@@ -273,7 +294,8 @@ samp {
   /* Dark sections re-point the semantic roles instead of asking every child to
      know what ground it sits on. Without this, `text-text-subtle` inside a
      forest block resolves to 55% ink — near-invisible on dark green. */
-  .tone-inverse {
+  .tone-inverse,
+  body:has([data-hero]) .site-header {
     --text: var(--color-paper);
     /* Without these the form controls inside a dark section keep the light
        theme surfaces: the newsletter input rendered as a white box with
@@ -602,4 +624,480 @@ samp {
      transition still needs its start frame neutralised or the panel pops in from
      8px up. Removed, not shortened. */
   .sheet, .sheet[open] { translate: none; }
+}
+
+/* ============================================================
+   6. V2 — THE SYSTEM LANGUAGE
+   The 2026 redesign. The gold marker stays the signature; around it the
+   site gains depth: a deep-forest night ground, blueprint grids, one 3D
+   scene on the homepage, and scroll reveals. Everything below degrades to
+   the finished, static state under prefers-reduced-motion and without JS.
+   See docs/DESIGN-PLAN.md §13.
+   ============================================================ */
+
+/* Registered so keyframes can interpolate it — the hero stack breathes by
+   animating this one length instead of four separate transforms. */
+@property --spread {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 10px;
+}
+
+@layer components {
+  .scroll-cue { animation: scroll-cue 2.2s var(--ease-brand) infinite; }
+  @keyframes scroll-cue {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(200%); }
+  }
+
+  /* Night ground: forest-deep with the same re-pointed roles as .tone-inverse.
+     Use together: `tone-inverse tone-deep`. */
+  .tone-deep,
+  body:has([data-hero]) .site-header {
+    --bg: var(--color-forest-deep);
+    --bg-raised: color-mix(in oklab, var(--color-paper) 7%, var(--color-forest-deep));
+    --bg-sunken: color-mix(in oklab, black 25%, var(--color-forest-deep));
+    --link: var(--color-gold-light);
+    --link-hover: var(--color-paper);
+    --accent-text: var(--color-gold-light);
+  }
+  .tone-deep { background-color: var(--color-forest-deep); }
+  .tone-inverse { --accent-text: var(--color-gold-light); }
+
+  /* Blueprint grid: the drafting paper a system is drawn on. A background
+     image, not a gradient fill — two hairlines per cell, faded at the edges. */
+  .bp-grid {
+    position: relative;
+    isolation: isolate;
+  }
+  .bp-grid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to bottom, var(--grid-line, var(--border)) 1px, transparent 1px),
+      linear-gradient(to left, var(--grid-line, var(--border)) 1px, transparent 1px);
+    background-size: var(--grid-size, 56px) var(--grid-size, 56px);
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 80%);
+    opacity: 0.55;
+  }
+  .tone-inverse.bp-grid::before { --grid-line: color-mix(in oklab, var(--color-paper) 9%, transparent); opacity: 1; }
+
+  /* Soft light pools behind focal points. */
+  .glow-gold,
+  .glow-emerald {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+    filter: blur(60px);
+    z-index: -1;
+  }
+  .glow-gold { background: color-mix(in oklab, var(--color-gold) 32%, transparent); }
+  .glow-emerald { background: color-mix(in oklab, var(--color-emerald) 55%, transparent); }
+
+  /* Panels — the v2 card. Hairline first, shadow only on lift. */
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--bg-raised);
+  }
+  .panel-hover {
+    transition:
+      transform 300ms var(--ease-brand),
+      border-color 200ms var(--ease-brand),
+      box-shadow 300ms var(--ease-brand);
+  }
+  .panel-hover:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow);
+  }
+
+  /* Eyebrow with a live dot — the marker in miniature. */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: var(--text-200);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--text-subtle);
+  }
+  .eyebrow::before {
+    content: '';
+    inline-size: 1.4rem;
+    block-size: 2px;
+    background: var(--accent);
+  }
+
+  /* Gold underline that draws in under a phrase (dark grounds pair it with
+     gold-light text; on light grounds the text stays ink). */
+  .ink-sweep {
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-repeat: no-repeat;
+    background-position: 100% 92%;
+    background-size: 100% 0.12em;
+  }
+  html.js .ink-sweep {
+    animation: sweep 900ms var(--ease-brand) 700ms both;
+  }
+  @keyframes sweep {
+    from { background-size: 0% 0.12em; }
+    to { background-size: 100% 0.12em; }
+  }
+
+  /* Word-by-word headline entrance. Each word is clipped by its own line box
+     and rises into place. */
+  .split-word {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: bottom;
+    padding-block: 0.08em;
+    margin-block: -0.08em;
+  }
+  .split-word > span {
+    display: inline-block;
+  }
+  html.js .split-word > span {
+    animation: word-rise 900ms var(--ease-brand) both;
+    animation-delay: calc(120ms + var(--w, 0) * 90ms);
+  }
+  @keyframes word-rise {
+    from { transform: translateY(105%); }
+    to { transform: none; }
+  }
+
+  /* Scroll reveal. Hidden only under html.js, and RevealObserver adds [data-shown]. */
+  html.js [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 800ms var(--ease-brand),
+      transform 900ms var(--ease-brand);
+    transition-delay: calc(var(--d, 0) * 90ms);
+  }
+  html.js [data-reveal='scale'] { transform: scale(0.94); }
+  html.js [data-reveal][data-shown] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* SVG strokes that draw themselves once revealed. */
+  html.js .draw path,
+  html.js .draw line,
+  html.js .draw polyline {
+    stroke-dasharray: var(--len, 600);
+    stroke-dashoffset: var(--len, 600);
+    transition: stroke-dashoffset 1600ms var(--ease-brand);
+    transition-delay: calc(var(--d, 0) * 120ms + 200ms);
+  }
+  html.js [data-shown].draw path,
+  html.js [data-shown] .draw path,
+  html.js [data-shown].draw line,
+  html.js [data-shown] .draw line,
+  html.js [data-shown].draw polyline,
+  html.js [data-shown] .draw polyline {
+    stroke-dashoffset: 0;
+  }
+
+  /* Travelling dashes along a connector — data moving through the system. */
+  .flow {
+    stroke-dasharray: 4 10;
+    animation: flow 1.6s linear infinite;
+  }
+  @keyframes flow {
+    to { stroke-dashoffset: -28; }
+  }
+
+  /* Ribbon marquee. Two identical tracks; the animation moves the pair by
+     exactly one track so the loop is seamless in either writing direction. */
+  .marquee {
+    display: flex;
+    overflow: hidden;
+    mask-image: linear-gradient(to left, transparent, black 8%, black 92%, transparent);
+  }
+  .marquee-track {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 2.5rem;
+    padding-inline-end: 2.5rem;
+    animation: marquee 38s linear infinite;
+  }
+  .marquee:hover .marquee-track { animation-play-state: paused; }
+  @keyframes marquee {
+    to { transform: translateX(100%); }
+  }
+
+  /* ---------- Chaos → order (Diagnosis) ----------
+     Each quote card starts thrown somewhere on the table and settles into a
+     straight column once the block scrolls in: the site's thesis, enacted. */
+  .chaos-card {
+    transition:
+      transform 1100ms var(--ease-spring),
+      opacity 600ms var(--ease-brand);
+    transition-delay: calc(var(--i, 0) * 110ms);
+  }
+  html.js .chaos:not([data-shown]) .chaos-card {
+    transform: translate(var(--cx, 0), var(--cy, 0)) rotate(var(--cr, 0deg));
+  }
+
+  /* ---------- 3D: the system stack (homepage hero) ----------
+     Pure CSS geometry. The scene is laid out LTR internally so the box maths
+     reads the same as every CSS-3D reference; it is aria-hidden decoration and
+     mirroring it would mean nothing. */
+  .stage {
+    direction: ltr;
+    perspective: 1600px;
+    perspective-origin: 50% 30%;
+    /* on the stage, not the scene: the 2D labels beside the scene read the
+       same --spread, so the animation must sit on their common ancestor */
+    animation: breathe 7s var(--ease-brand) infinite;
+  }
+  .scene {
+    --rx: 58deg;
+    --rz: -42deg;
+    position: relative;
+    inline-size: var(--w, 230px);
+    block-size: var(--w, 230px);
+    transform-style: preserve-3d;
+    transform: rotateX(var(--rx)) rotateZ(var(--rz));
+  }
+  @keyframes breathe {
+    0%, 12% { --spread: 10px; }
+    42%, 70% { --spread: 54px; }
+    100% { --spread: 10px; }
+  }
+  .slab {
+    --h: 30px;
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transform: translateZ(calc(var(--i) * (var(--h) + var(--spread))));
+  }
+  .face {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    translate: -50% -50%;
+    backface-visibility: visible;
+    border: 1px solid color-mix(in oklab, var(--color-paper) 22%, transparent);
+  }
+  .face-top {
+    inline-size: 100%;
+    block-size: 100%;
+    transform: translateZ(calc(var(--h) / 2)) translateZ(calc(var(--h) / 2));
+    background-color: var(--slab-top);
+    background-image:
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-paper) 10%, transparent) 1px, transparent 1px),
+      linear-gradient(to left, color-mix(in oklab, var(--color-paper) 10%, transparent) 1px, transparent 1px);
+    background-size: 23px 23px;
+  }
+  .face-x {
+    inline-size: var(--h);
+    block-size: 100%;
+    background: var(--slab-side-a);
+  }
+  .face-y {
+    inline-size: 100%;
+    block-size: var(--h);
+    background: var(--slab-side-b);
+  }
+  .face-xp { transform: translateZ(calc(var(--h) / 2)) rotateY(90deg) translateZ(calc(var(--w, 230px) / 2)); }
+  .face-xn { transform: translateZ(calc(var(--h) / 2)) rotateY(-90deg) translateZ(calc(var(--w, 230px) / 2)); }
+  .face-yp { transform: translateZ(calc(var(--h) / 2)) rotateX(-90deg) translateZ(calc(var(--w, 230px) / 2)); }
+  .face-yn { transform: translateZ(calc(var(--h) / 2)) rotateX(90deg) translateZ(calc(var(--w, 230px) / 2)); }
+
+  .slab-1 { --slab-top: #24533b; --slab-side-a: #173828; --slab-side-b: #1d4632; }
+  .slab-2 { --slab-top: #2d6a4f; --slab-side-a: #1c4633; --slab-side-b: #245840; }
+  .slab-3 { --slab-top: #3a7c5d; --slab-side-a: #22533c; --slab-side-b: #2c6649; }
+  .slab-4 {
+    --slab-top: color-mix(in oklab, var(--color-gold) 26%, #1a3d2b);
+    --slab-side-a: color-mix(in oklab, var(--color-gold) 55%, #1a3d2b);
+    --slab-side-b: var(--color-gold);
+  }
+  .slab-4 .face { border-color: color-mix(in oklab, var(--color-gold-light) 60%, transparent); }
+
+  /* The logo's ring, lying flat around the stack and turning. Depth sorting
+     sends its far half behind the slabs, which is what sells the 3D. */
+  .orbit {
+    position: absolute;
+    inset: -34%;
+    transform-style: preserve-3d;
+    transform: translateZ(70px);
+    animation: orbit 24s linear infinite;
+  }
+  .orbit svg { inline-size: 100%; block-size: 100%; overflow: visible; }
+  @keyframes orbit {
+    to { transform: translateZ(70px) rotateZ(360deg); }
+  }
+
+  /* Billboard: undo the scene rotation so the bead faces the camera. */
+  .billboard {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    transform-style: preserve-3d;
+    transform:
+      translateZ(var(--z, 0px)) rotateZ(calc(-1 * var(--rz))) rotateX(calc(-1 * var(--rx)));
+  }
+  .bead {
+    inline-size: 26px;
+    block-size: 26px;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #f3e2ad, var(--color-gold) 55%, #8a7230);
+    box-shadow: 0 0 40px color-mix(in oklab, var(--color-gold) 70%, transparent);
+    animation: bob 3.2s ease-in-out infinite;
+  }
+  @keyframes bob {
+    50% { translate: -50% calc(-50% - 10px); }
+  }
+
+  /* Data motes rising off the stack. */
+  .mote {
+    position: absolute;
+    inline-size: 8px;
+    block-size: 8px;
+    background: var(--color-gold-light);
+    opacity: 0;
+    transform: translate3d(var(--mx), var(--my), 0);
+    animation: mote 6s var(--ease-brand) infinite;
+    animation-delay: var(--md, 0s);
+  }
+  @keyframes mote {
+    0% { opacity: 0; transform: translate3d(var(--mx), var(--my), 20px); }
+    20% { opacity: 0.9; }
+    100% { opacity: 0; transform: translate3d(var(--mx), var(--my), 260px); }
+  }
+
+  /* Labels sit in 2D beside the stage and follow their slab's height:
+     a z-offset projects to −sin(rx)·z on screen; 0.85 ≈ sin(58°). */
+  .stack-label {
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 50%;
+    transform: translateY(calc(-0.85 * var(--i) * (30px + var(--spread)) + var(--ly, 0px)));
+  }
+
+  /* Tilt card (portrait): JS writes --tx/--ty, CSS does the rest. */
+  .tilt {
+    transform: perspective(1000px) rotateX(var(--ty, 0deg)) rotateY(var(--tx, 0deg));
+    transition: transform 400ms var(--ease-brand);
+    transform-style: preserve-3d;
+  }
+  .tilt-pop { transform: translateZ(40px); }
+
+  /* Frame offset behind a photo — the gold marker, grown into a frame. */
+  .gold-frame {
+    position: relative;
+  }
+  .gold-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    translate: -14px 14px;
+    border: 2px solid var(--accent);
+    border-radius: var(--radius-xl);
+    z-index: -1;
+  }
+
+  /* Timeline rail with a gold fill that grows as the list scrolls in. */
+  .rail-x {
+    position: relative;
+  }
+  .rail-x::before,
+  .rail-x::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 11px;
+    block-size: 2px;
+    background: var(--border);
+  }
+  .rail-x::after {
+    background: var(--accent);
+    transform-origin: var(--origin, right);
+    transition: transform 2000ms var(--ease-brand) 200ms;
+  }
+  html.js .rail-x:not([data-shown])::after { transform: scaleX(0); }
+  .rail-x:dir(ltr) { --origin: left; }
+
+  /* Bigger, softer steps for the v2 process block. */
+  .steps-v2 > li::before {
+    inline-size: --spacing(12);
+    block-size: --spacing(12);
+    border: 1px solid var(--border-strong);
+    border-inline-start: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    font-size: var(--text-500);
+    font-weight: 700;
+    color: var(--text);
+    background: var(--bg-band);
+    position: relative;
+    z-index: 1;
+    margin-block-end: --spacing(5);
+  }
+  .steps-v2.rail-x::before,
+  .steps-v2.rail-x::after { inset-block-start: 24px; }
+  .steps-v2 > li { padding-inline-start: 0; }
+  .steps-v2 > li + li { margin-block-start: 0; }
+}
+
+/* v2 motion off: everything lands in its finished place at once. */
+@media (prefers-reduced-motion: reduce) {
+  html.js [data-reveal] { opacity: 1; transform: none; }
+  html.js .draw path, html.js .draw line, html.js .draw polyline { stroke-dashoffset: 0; }
+  html.js .chaos:not([data-shown]) .chaos-card { transform: none; }
+  html.js .rail-x:not([data-shown])::after { transform: none; }
+  html.js .split-word > span, html.js .ink-sweep { animation: none; }
+  .stage, .orbit, .bead, .flow, .marquee-track, .scroll-cue { animation: none !important; }
+  .stage { --spread: 26px; }
+  .mote { display: none; }
+  .tilt { transform: none !important; }
+}
+
+/* v2 small diagram motion (Pillars) */
+@layer components {
+  .bar-grow {
+    transform-box: fill-box;
+    transform-origin: bottom;
+  }
+  html.js [data-reveal] .bar-grow {
+    transform: scaleY(0.08);
+    transition: transform 1200ms var(--ease-spring);
+    transition-delay: calc(var(--d, 0) * 110ms + 300ms);
+  }
+  html.js [data-reveal][data-shown] .bar-grow { transform: none; }
+
+  .node-swap { animation: node-swap 4.5s var(--ease-brand) infinite; }
+  @keyframes node-swap {
+    0%, 35% { opacity: 1; }
+    45%, 55% { opacity: 0.15; }
+    70%, 100% { opacity: 1; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.js [data-reveal] .bar-grow { transform: none; }
+  .node-swap { animation: none; }
+  .spark { display: none; }
+}
+@media (width < 48rem) {
+  .rail-x::before,
+  .rail-x::after { display: none; }
+}
+@layer components {
+  .ring-spin { animation: ring-spin 60s linear infinite; }
+  @keyframes ring-spin { to { rotate: 360deg; } }
+}
+@media (prefers-reduced-motion: reduce) { .ring-spin { animation: none; } }
+
+/* Unlayered on purpose: the header's own `bg-bg/80` utility sits in the
+   utilities layer and would otherwise win, leaving an 80% night ground over the
+   paper body — which reads as grey, not as part of the hero. */
+body:has([data-hero]) .site-header {
+  background-color: color-mix(in oklab, var(--color-forest-deep) 94%, transparent);
 }

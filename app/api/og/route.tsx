@@ -27,27 +27,6 @@ function hash(seed: string): number {
   return h
 }
 
-/**
- * Hairlines derived from the slug.
- *
- * The brief bans gradients, patterns and stock photography, so a cover cannot be
- * decorated — but a wall of identical paper rectangles is not a cover either.
- * Five vertical rules at slug-derived positions and widths give each article a
- * recognisable fingerprint using nothing but the existing ink tint, at an
- * opacity low enough to read as texture rather than as content.
- */
-function rules(seed: string) {
-  const h = hash(seed)
-  return Array.from({ length: 5 }, (_, i) => {
-    const n = (h >> (i * 5)) & 0x1f
-    return {
-      insetInlineStart: `${6 + i * 19 + (n % 7)}%`,
-      width: n % 3 === 0 ? 3 : 1,
-      opacity: 0.05 + (n % 4) * 0.02,
-    }
-  })
-}
-
 let fontCache: Buffer | null = null
 function vazirmatn(): Buffer {
   fontCache ??= readFileSync(join(process.cwd(), 'assets', 'fonts', 'vazirmatn-700.ttf'))
@@ -100,19 +79,70 @@ function RtlText({
 }
 
 /**
- * Article cover art: the same ground and the same gold marker as the Open Graph
- * card, but with no title on it.
+ * Cover grounds, chosen per slug. Two night grounds and the warm sand, so a
+ * list of covers alternates instead of reading as a wall of one colour.
+ */
+const GROUNDS = [
+  { bg: '#0E2219', grid: 'rgba(245,245,240,0.06)', text: PAPER, sub: 'rgba(245,245,240,0.62)', accent: '#E2C97E', slab: ['#24533B', '#173828', '#1D4632'], edge: 'rgba(245,245,240,0.22)' },
+  { bg: '#1A3D2B', grid: 'rgba(245,245,240,0.07)', text: PAPER, sub: 'rgba(245,245,240,0.62)', accent: '#E2C97E', slab: ['#3A7C5D', '#22533C', '#2C6649'], edge: 'rgba(245,245,240,0.25)' },
+  { bg: '#ECE7DA', grid: 'rgba(26,26,26,0.06)', text: INK, sub: 'rgba(26,26,26,0.6)', accent: '#1A3D2B', slab: ['#2D6A4F', '#1A3D2B', '#24583F'], edge: 'rgba(245,245,240,0.3)' },
+] as const
+
+/**
+ * The homepage's system stack, drawn flat in isometric for a cover. Slab
+ * count, which layer is gold, and how far apart the layers sit all come from
+ * the slug, so every article gets its own arrangement of the same idea.
  *
- * Deliberate: a list page already prints the title as a heading, so repeating it
- * twenty pixels above reads as a rendering bug rather than as design. What a
- * cover has to do here is distinguish one article from another at a glance,
- * which the topic kicker and the slug-derived rules do.
+ * An SVG string handed to Satori as a data-URI image: Satori draws <img> SVGs
+ * faithfully, while its own CSS has no polygons.
+ */
+function stackSvg(seed: string, ground: (typeof GROUNDS)[number], w: number, h: number) {
+  const n = hash(seed)
+  const count = 3 + (n % 2)
+  const goldAt = (n >>> 3) % count
+  const gap = [10, 26, 44][(n >>> 6) % 3]!
+  const a = 190
+  const b = Math.round(a * 0.577)
+  const t = 40
+  const cx = Math.round(w * 0.3)
+  const total = count * t + (count - 1) * gap
+  const baseY = Math.round(h / 2 + total / 2)
+
+  const cell = 48
+  let grid = ''
+  for (let x = 0; x <= w; x += cell) grid += `<path d="M${x} 0V${h}" stroke="${ground.grid}"/>`
+  for (let y = 0; y <= h; y += cell) grid += `<path d="M0 ${y}H${w}" stroke="${ground.grid}"/>`
+
+  let slabs = ''
+  for (let i = 0; i < count; i++) {
+    const cy = baseY - b - i * (t + gap) - t
+    const gold = i === goldAt
+    const [top, left, right] = gold ? ['#D8BD6A', '#A68A3A', '#C8A84B'] : ground.slab
+    const edge = gold ? 'rgba(243,226,173,0.7)' : ground.edge
+    slabs +=
+      `<path d="M${cx - a} ${cy} L${cx} ${cy + b} L${cx} ${cy + b + t} L${cx - a} ${cy + t}Z" fill="${left}" stroke="${edge}"/>` +
+      `<path d="M${cx} ${cy + b} L${cx + a} ${cy} L${cx + a} ${cy + t} L${cx} ${cy + b + t}Z" fill="${right}" stroke="${edge}"/>` +
+      `<path d="M${cx} ${cy - b} L${cx + a} ${cy} L${cx} ${cy + b} L${cx - a} ${cy}Z" fill="${top}" stroke="${edge}"/>`
+  }
+  const topY = baseY - b - (count - 1) * (t + gap) - t
+  const ring = `<ellipse cx="${cx}" cy="${baseY - total / 2 - b / 2}" rx="${a * 1.45}" ry="${b * 1.45}" fill="none" stroke="${GOLD}" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="${Math.round(a * 6.2)} 120"/>`
+  const bead = `<circle cx="${cx}" cy="${topY - b - 70}" r="16" fill="${GOLD}"/>`
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${grid}${ring}${slabs}${bead}</svg>`
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
+
+/**
+ * Article cover art: night or sand ground, blueprint grid, the system stack,
+ * and the topic kicker. No title on it — a list page already prints the title
+ * as a heading, and repeating it twenty pixels above reads as a bug.
  *
  * Same constraint as the rest of this file: no `direction: rtl`. Satori does not
  * act on it for ordering, so Persian text goes through RtlText, Latin never
  * does, and the gold bar comes last because the block is right-aligned.
  */
 function cover(kicker: string, seed: string, compact = false) {
+  const ground = GROUNDS[hash(seed + 'g') % GROUNDS.length]!
   return (
     <div
       style={{
@@ -120,31 +150,20 @@ function cover(kicker: string, seed: string, compact = false) {
         height: '100%',
         display: 'flex',
         position: 'relative',
-        background: PAPER,
+        background: ground.bg,
         padding: '72px 80px',
       }}
     >
-      {rules(seed).map((rule, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: rule.insetInlineStart,
-            width: rule.width,
-            background: INK,
-            opacity: rule.opacity,
-          }}
-        />
-      ))}
+      <img
+        src={stackSvg(seed, ground, COVER.width, COVER.height)}
+        width={COVER.width}
+        height={COVER.height}
+        style={{ position: 'absolute', top: 0, left: 0 }}
+      />
 
       <div style={{ display: 'flex', flex: 1, gap: 30, alignItems: 'stretch' }}>
-        {/* At a 128px thumbnail this canvas is rendered about nine times down,
-            which puts the type below four pixels — it reads as smudges, which is
-            worse than an empty tile. So the compact size drops the text entirely
-            and keeps only what survives the reduction: the gold marker and the
-            slug-derived rules. Same brand, legible at both ends. */}
+        {/* At a thumbnail the type would render below four pixels, so the
+            compact size keeps only the art and the gold marker. */}
         {!compact && (
           <div
             style={{
@@ -155,13 +174,11 @@ function cover(kicker: string, seed: string, compact = false) {
               flex: 1,
             }}
           >
-            <RtlText text={kicker} style={{ fontSize: 34, color: 'rgba(26,26,26,0.55)' }} />
+            <RtlText text={kicker} style={{ fontSize: 38, color: ground.sub }} />
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <RtlText text={site.name} style={{ fontSize: 40, color: INK }} />
+              <RtlText text={site.name} style={{ fontSize: 44, color: ground.text }} />
               {/* Latin, so it must NOT go through RtlText */}
-              <div style={{ fontSize: 22, color: 'rgba(26,26,26,0.45)', marginTop: 8 }}>
-                {site.nameLatin}
-              </div>
+              <div style={{ fontSize: 22, color: ground.sub, marginTop: 8 }}>{site.nameLatin}</div>
             </div>
           </div>
         )}

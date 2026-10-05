@@ -1,15 +1,16 @@
 import Link from 'next/link'
 import { Container } from '@/components/ui/Container'
 import { Logo } from '@/components/ui/Logo'
-import { nav } from '@/lib/site'
 import { CommandPalette } from './CommandPalette'
 import { MobileNav } from './MobileNav'
+import { NavLinks } from './NavLinks'
+import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from './ThemeToggle'
 import { Icon } from '@/components/ui/Icon'
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-bg/85 backdrop-blur-sm">
+    <header className="site-header sticky top-0 z-50 border-b border-border bg-bg/80 text-text backdrop-blur-md">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-3 focus:z-10 focus:rounded-md focus:bg-bg-raised focus:px-4 focus:py-2 focus:text-300"
@@ -20,17 +21,7 @@ export function Header() {
       <Container className="flex h-20 items-center justify-between gap-6">
         <Logo />
 
-        <nav aria-label="ناوبری اصلی" className="hidden items-center gap-7 md:flex">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-300 text-text-muted no-underline transition-colors duration-150 hover:text-text"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <NavLinks />
 
         <div className="flex items-center gap-2">
           {/* Two entry points, split by breakpoint. Below md the plain link to
@@ -53,6 +44,12 @@ export function Header() {
             <CommandPalette />
           </div>
           <ThemeToggle />
+          {/* wrapped: `hidden` on the Button itself loses to its own inline-flex */}
+          <span className="ms-2 hidden lg:block">
+            <Button href="/consult" size="sm" className="h-10 px-4">
+              درخواست مشاوره
+            </Button>
+          </span>
           <MobileNav />
         </div>
       </Container>

@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { ArticleListItem } from '@/components/ui/ArticleCard'
+import { ArticleGrid } from '@/components/ui/ArticleGrid'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Container } from '@/components/ui/Container'
 import { Pagination } from '@/components/ui/Pagination'
-import { SectionHead } from '@/components/ui/SectionHead'
 import { TopicChips } from '@/components/ui/TopicChips'
 import { faNum } from '@/lib/format'
 import { pageCount, parsePageParam } from '@/lib/content/pagination'
@@ -60,7 +60,9 @@ export default async function TopicPaginated({
     .map((t) => ({ slug: t.slug, name: t.name, count: t._count.articles }))
 
   return (
-    <Container className="py-16 md:py-24">
+    <>
+    <PageHeader eyebrow="موضوع" title={`${topic.name} — صفحهٔ ${faNum(n)}`}>
+      <div className="mb-8">
       <Breadcrumb
         trail={[
           { name: 'موضوع‌ها', path: '/topics' },
@@ -68,18 +70,13 @@ export default async function TopicPaginated({
           { name: `صفحهٔ ${faNum(n)}`, path: `/topics/${topic.slug}/page/${n}` },
         ]}
       />
-
-      <div className="mt-8">
-        <SectionHead as="h1" eyebrow="موضوع" title={`${topic.name} — صفحهٔ ${faNum(n)}`} />
       </div>
+    </PageHeader>
+    <Container className="py-14 md:py-20">
 
       <TopicChips topics={withArticles} activeSlug={topic.slug} />
 
-      <div>
-        {items.map((a) => (
-          <ArticleListItem key={a.slug} article={a} />
-        ))}
-      </div>
+      <ArticleGrid items={items} />
 
       <Pagination
         page={n}
@@ -87,5 +84,6 @@ export default async function TopicPaginated({
         hrefFor={(p) => (p === 1 ? `/topics/${slug}` : `/topics/${slug}/page/${p}`)}
       />
     </Container>
+    </>
   )
 }

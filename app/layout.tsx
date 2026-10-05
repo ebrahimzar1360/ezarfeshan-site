@@ -40,8 +40,11 @@ export const viewport: Viewport = {
 /**
  * Runs before first paint so a dark-mode visitor never sees a white flash.
  * Must stay in sync with components/site/ThemeToggle.tsx.
+ *
+ * It also marks <html class="js">. Scroll reveals only hide content under that
+ * class, so a visitor without JavaScript never gets a page of invisible blocks.
  */
-const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})()`
+const themeScript = `(function(){document.documentElement.classList.add('js');try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})()`
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

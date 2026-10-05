@@ -17,7 +17,9 @@ export default async function UnsubscribePage({
   const { token } = await searchParams
 
   return (
-    <Container width="measure" className="py-24 md:py-32">
+    <div className="bp-grid bg-bg-band">
+    <Container width="measure" className="py-24 md:py-36">
+      <div className="panel p-8 shadow-(--shadow) md:p-12">
       <div className="gold-marker">
         <h1 className="text-700">لغو عضویت</h1>
       </div>
@@ -28,6 +30,8 @@ export default async function UnsubscribePage({
           این نشانی توکن ندارد. لینک لغو عضویت را از انتهای یکی از ایمیل‌های خبرنامه باز کن.
         </p>
       )}
+      </div>
     </Container>
+    </div>
   )
 }

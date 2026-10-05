@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { SearchBox } from '@/components/site/SearchBox'
 import { Container } from '@/components/ui/Container'
-import { SectionHead } from '@/components/ui/SectionHead'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export const metadata: Metadata = {
   title: 'جست‌وجو',
@@ -10,9 +10,13 @@ export const metadata: Metadata = {
 
 export default function SearchPage() {
   return (
-    <Container className="py-16 md:py-24">
-      <SectionHead as="h1" eyebrow="جست‌وجو" title="دنبال چه می‌گردی؟" />
-      <SearchBox />
-    </Container>
+    <>
+      <PageHeader eyebrow="جست‌وجو" title="دنبال چه می‌گردی؟" lead="در عنوان و متن همهٔ نوشته‌ها — حتی با بخشی از یک کلمه." />
+      <Container className="py-14 md:py-20">
+        <div className="max-w-3xl">
+          <SearchBox />
+        </div>
+      </Container>
+    </>
   )
 }

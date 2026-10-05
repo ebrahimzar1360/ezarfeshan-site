@@ -1,53 +1,112 @@
+import type { CSSProperties } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
+import { CountUp } from '@/components/ui/CountUp'
+import { yearsSince } from '@/lib/content/bio'
 import { site } from '@/lib/site'
+import { SystemScene } from './home/SystemScene'
 
 /**
- * The tagline behaves as the page's thesis, not decoration — so it is the h1 and
- * nothing competes with it. Deliberately not a centred stack on a gradient:
- * asymmetric, type-led, flat ground.
+ * v2 hero: night ground, blueprint grid, the 3D system stack.
  *
- * min-height is 72vh rather than 100vh so the next block is visible at the fold.
- * A hero that fills the viewport hides the fact that the site is about reading.
+ * The tagline is still the h1 and still the thesis. It is split into words so
+ * each can rise into place, but the words stay real text in one heading —
+ * its textContent is exactly the tagline, with the spaces kept as text nodes.
  *
- * The entrance is the one orchestrated motion in the whole site: the gold bar
- * draws down, then the lines settle behind it. `prefers-reduced-motion` removes
- * it outright — see the reduce block in globals.css.
+ * `data-hero` is also a hook: globals.css flips the sticky header to the dark
+ * tone on any page that carries one, so the bar does not sit as a pale strip
+ * on top of a night-coloured opening.
+ *
+ * CTA order is unchanged from the brief: read → subscribe → enquire.
  */
+const LINE_1 = ['سیستم', 'بساز،']
+const LINE_2 = ['آزاد', 'باش']
+
+const FIGURES = [
+  { value: yearsSince(1380), label: 'سال در حوزهٔ خودرو' },
+  { value: yearsSince(1389), label: 'سال مدیریت نمایندگی' },
+  { value: yearsSince(1397), label: 'سال از تأسیس کسب‌وکار دوم' },
+]
+
+function Words({ words, offset }: { words: string[]; offset: number }) {
+  return words.map((w, i) => (
+    <span key={w}>
+      {i > 0 && ' '}
+      <span className="split-word">
+        <span style={{ '--w': i + offset } as CSSProperties}>{w}</span>
+      </span>
+    </span>
+  ))
+}
+
 export function Hero() {
   return (
-    <Container className="flex min-h-[72vh] flex-col justify-center py-20 md:py-28">
-      <div className="relative ps-4 md:ps-6">
-        {/* The marker is its own element so it can animate independently of the text.
-            Tailwind's logical inset utilities are `inset-y-*` and `start-*`; the
-            CSS property names (inset-block, inset-inline-start) are not class names
-            and silently produce nothing. */}
-        <span
-          aria-hidden
-          className="enter-bar absolute inset-y-0 start-0 w-1 origin-top rounded-sm bg-accent"
-        />
-        <h1 className="text-800 md:text-900 lg:text-1000">{site.tagline}</h1>
-        <p
-          className="enter mt-6 max-w-(--container-measure) text-500 text-text-muted"
-          style={{ animationDelay: '180ms' }}
-        >
-          برای مدیرانی که کسب‌وکارشان بدون خودشان از حرکت می‌ایستد.
-        </p>
-      </div>
+    <section data-hero className="tone-inverse tone-deep bp-grid relative overflow-hidden">
+      <span aria-hidden className="glow-emerald -top-40 end-[-10%] size-[38rem] opacity-60" />
+      <span aria-hidden className="glow-gold bottom-[-12rem] start-[-8rem] size-[26rem] opacity-50" />
 
-      <div
-        className="enter mt-10 flex flex-wrap items-center gap-x-7 gap-y-4 ps-4 md:ps-6"
-        style={{ animationDelay: '300ms' }}
-      >
-        <Button href="/articles" size="lg">
-          آخرین مقالات
-        </Button>
-        {/* the second action stays a text link: reading comes before subscribing,
-            and subscribing before booking. Two solid buttons would flatten that. */}
-        <Button href="/newsletter" variant="text">
-          عضویت در خبرنامه
-        </Button>
-      </div>
-    </Container>
+      <Container className="grid min-h-[calc(100svh-5rem)] items-center gap-6 pb-16 pt-12 lg:grid-cols-[1.08fr_1fr] lg:gap-10 lg:py-16">
+        <div>
+          <p className="enter inline-flex items-center gap-2.5 rounded-lg border border-border bg-bg-raised/60 px-3.5 py-1.5 text-200 font-medium text-text-muted backdrop-blur-sm">
+            <span aria-hidden className="relative flex size-2">
+              <span className="absolute inset-0 animate-ping rounded-[2px] bg-gold opacity-60" />
+              <span className="relative size-2 rounded-[2px] bg-gold" />
+            </span>
+            {site.role}
+          </p>
+
+          <h1 className="mt-7 text-display font-black leading-[1.15] tracking-tight">
+            <span className="block">
+              <Words words={LINE_1} offset={0} />
+            </span>{' '}
+            <span className="block text-gold-light">
+              <span className="ink-sweep">
+                <Words words={LINE_2} offset={2} />
+              </span>
+            </span>
+          </h1>
+
+          <p
+            className="enter mt-7 max-w-[34rem] text-500 leading-normal text-text-muted"
+            style={{ animationDelay: '520ms' }}
+          >
+            برای مدیرانی که کسب‌وکارشان بدون خودشان از حرکت می‌ایستد. از میدان آمده‌ام، نه از
+            کلاس — و حالا ابزارهای تازه را روی همان تجربه سوار می‌کنم.
+          </p>
+
+          <div
+            className="enter mt-10 flex flex-wrap items-center gap-3"
+            style={{ animationDelay: '640ms' }}
+          >
+            <Button href="/articles" size="lg">
+              آخرین مقالات
+            </Button>
+            <Button href="/newsletter" size="lg" variant="outline">
+              عضویت در خبرنامه
+            </Button>
+          </div>
+
+          <dl
+            className="enter mt-14 grid max-w-[34rem] grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border"
+            style={{ animationDelay: '780ms' }}
+          >
+            {FIGURES.map((f) => (
+              <div key={f.label} className="bg-bg px-4 py-4 sm:px-5">
+                <dt className="sr-only">{f.label}</dt>
+                <dd>
+                  <CountUp value={f.value} className="text-700 font-black text-gold-light" />
+                  <span className="mt-1 block text-200 leading-snug text-text-muted">{f.label}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        <div className="enter" style={{ animationDelay: '200ms' }}>
+          <SystemScene />
+        </div>
+      </Container>
+
+    </section>
   )
 }
