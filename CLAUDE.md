@@ -102,8 +102,11 @@ Write the full name.
 The 2026 redesign (docs/DESIGN-PLAN.md §13) added a night ground (`forest-deep`,
 `.tone-inverse.tone-deep`), `gold-light` for gold *text on dark grounds only*, a
 warm `--bg-band` surface, `--radius-xl` for large panels, blueprint grids
-(`.bp-grid`), and a pure-CSS 3D hero (`components/site/home/SystemScene.tsx`,
-`.stage`/`.scene`/`.slab` in globals.css — no WebGL dependency).
+(`.bp-grid`), and an animated hero story (`components/site/home/HeroStory.tsx`,
+`.story-*` in globals.css): a busy phone, the consultant's card, then one written
+process. It replaced a 3D slab stack nobody could read. Positions are cqw
+custom-property pairs picked by a container query; the server renders the
+finished state, which is also what reduced-motion and no-JS visitors keep.
 
 Scroll reveals: add `data-reveal` (optionally `style={{'--d': i}}` for stagger).
 `RevealObserver` marks them with a `data-shown` **attribute**, never a class —

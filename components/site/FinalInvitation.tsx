@@ -6,9 +6,7 @@ import { Container } from '@/components/ui/Container'
  * Closing block. The newsletter is the action; consulting is a quiet line
  * underneath it. The brief's CTA order is read → subscribe → enquire.
  *
- * Behind it, the logo's ring at architectural scale, turning slowly — the same
- * ring that orbits the hero stack, so the page closes on the shape it opened
- * with.
+ * Behind it, the logo's ring at architectural scale, turning slowly.
  *
  * The form posts to /api/newsletter/subscribe: validated, rate limited,
  * honeypot-guarded, double opt-in.

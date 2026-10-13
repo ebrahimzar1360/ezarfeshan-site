@@ -4,10 +4,11 @@ import { Container } from '@/components/ui/Container'
 import { CountUp } from '@/components/ui/CountUp'
 import { yearsSince } from '@/lib/content/bio'
 import { site } from '@/lib/site'
-import { SystemScene } from './home/SystemScene'
+import { HeroStory } from './home/HeroStory'
 
 /**
- * v2 hero: night ground, blueprint grid, the 3D system stack.
+ * v2 hero: night ground, blueprint grid, and the before/consult/after story
+ * (HeroStory) — the thesis drawn, not just written.
  *
  * The tagline is still the h1 and still the thesis. It is split into words so
  * each can rise into place, but the words stay real text in one heading —
@@ -103,7 +104,7 @@ export function Hero() {
         </div>
 
         <div className="enter" style={{ animationDelay: '200ms' }}>
-          <SystemScene />
+          <HeroStory />
         </div>
       </Container>
 

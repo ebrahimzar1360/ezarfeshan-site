@@ -635,14 +635,6 @@ samp {
    See docs/DESIGN-PLAN.md §13.
    ============================================================ */
 
-/* Registered so keyframes can interpolate it — the hero stack breathes by
-   animating this one length instead of four separate transforms. */
-@property --spread {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 10px;
-}
-
 @layer components {
   .scroll-cue { animation: scroll-cue 2.2s var(--ease-brand) infinite; }
   @keyframes scroll-cue {
@@ -844,143 +836,536 @@ samp {
     transform: translate(var(--cx, 0), var(--cy, 0)) rotate(var(--cr, 0deg));
   }
 
-  /* ---------- 3D: the system stack (homepage hero) ----------
-     Pure CSS geometry. The scene is laid out LTR internally so the box maths
-     reads the same as every CSS-3D reference; it is aria-hidden decoration and
-     mirroring it would mean nothing. */
-  .stage {
-    direction: ltr;
-    perspective: 1600px;
-    perspective-origin: 50% 30%;
-    /* on the stage, not the scene: the 2D labels beside the scene read the
-       same --spread, so the animation must sit on their common ancestor */
-    animation: breathe 7s var(--ease-brand) infinite;
+  /* ---------- Hero story (components/site/home/HeroStory.tsx) ----------
+     A drawing, laid out LTR internally like the old 3D stack was: every
+     position is design-space px converted to cqw of `.story`, written by the
+     component as a --{name}d / --{name}m pair (wide / narrow layout). The
+     container query below picks one. Text inside is set back to RTL. */
+  .story {
+    container: story / inline-size;
+    inline-size: 100%;
+    max-inline-size: 560px;
+    margin-inline: auto;
   }
-  .scene {
-    --rx: 58deg;
-    --rz: -42deg;
+  .story-stage {
     position: relative;
-    inline-size: var(--w, 230px);
-    block-size: var(--w, 230px);
-    transform-style: preserve-3d;
-    transform: rotateX(var(--rx)) rotateZ(var(--rz));
+    direction: ltr;
+    aspect-ratio: 520 / 536;
+    --cw: 45.385cqw;
+    --ch: 9.231cqw;
+    --kw: 57.692cqw;
+    --kh: 22.308cqw;
+    --kp: 16.923cqw;
+    --big: 1.5;
+    --capy: 74.04cqw;
   }
-  @keyframes breathe {
-    0%, 12% { --spread: 10px; }
-    42%, 70% { --spread: 54px; }
-    100% { --spread: 10px; }
+  .story-stage [style] {
+    --x: var(--xd); --y: var(--yd); --w: var(--wd); --h: var(--hd);
+    --fx: var(--fxd); --fy: var(--fyd); --cx: var(--cxd); --cy: var(--cyd); --r: var(--rd);
+    --ox: var(--oxd); --oy: var(--oyd);
+    --sx: var(--sxd); --sy: var(--syd); --sh: var(--shd);
+    --kx: var(--kxd); --ky: var(--kyd); --qx: var(--qxd); --qy: var(--qyd);
   }
-  .slab {
-    --h: 30px;
+  .story-narrow { display: none; }
+  @container story (max-width: 440px) {
+    .story-stage {
+      aspect-ratio: 358 / 426;
+      --cw: 54.749cqw;
+      --ch: 11.732cqw;
+      --kw: 57.542cqw;
+      --kh: 25.698cqw;
+      --kp: 17.877cqw;
+      --big: 1.3;
+      --capy: 74.86cqw;
+    }
+    .story-stage [style] {
+      --x: var(--xm); --y: var(--ym); --w: var(--wm); --h: var(--hm);
+      --fx: var(--fxm); --fy: var(--fym); --cx: var(--cxm); --cy: var(--cym); --r: var(--rm);
+      --ox: var(--oxm); --oy: var(--oym);
+      --sx: var(--sxm); --sy: var(--sym); --sh: var(--shm);
+      --kx: var(--kxm); --ky: var(--kym); --qx: var(--qxm); --qy: var(--qym);
+    }
+    .story-wide { display: none; }
+    .story-narrow { display: block; }
+    .story-chip { font-size: 12px; }
+    .story-who b { font-size: 14px; white-space: nowrap; }
+    .story-card { gap: 3cqw; padding-inline: 2.5cqw; }
+    .story-meta { font-size: 10.5px; }
+  }
+
+  /* Hidden until hydration resets it to act 0, so the finished picture does
+     not flash first. If hydration never comes, it shows itself anyway. */
+  html.js .story:not([data-live]) .story-stage {
+    opacity: 0;
+    animation: story-fallback 0s 2.5s forwards;
+  }
+  @keyframes story-fallback { to { opacity: 1; } }
+  .story-stage[data-frozen] *,
+  .story-stage[data-frozen] *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* act tabs + replay */
+  .story-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    font-size: 13px;
+  }
+  .story-tabs li {
+    padding: 5px 14px;
+    border-radius: var(--radius-md);
+    color: var(--text-subtle);
+    transition: background-color 400ms var(--ease-brand), color 400ms var(--ease-brand);
+  }
+  .story-tabs li[data-on] {
+    background: var(--color-gold);
+    color: var(--color-forest-deep);
+    font-weight: 700;
+  }
+  .story-replay {
+    font-size: 13px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 5px 12px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 400ms var(--ease-brand), visibility 400ms, color 150ms;
+  }
+  .story-replay[data-show] { opacity: 1; visibility: visible; }
+  .story-replay:hover { color: var(--text); }
+
+  /* threads from the phone to each question */
+  .story-lines {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 100%;
+    block-size: auto;
+    overflow: visible;
+  }
+  .story-lines line {
+    stroke: var(--border-strong);
+    stroke-width: 1.4;
+    stroke-dasharray: 4 5;
+    vector-effect: non-scaling-stroke;
+    opacity: 0;
+    transition: opacity 400ms var(--ease-brand);
+  }
+  .story-stage[data-act='before'] .story-lines line {
+    opacity: 1;
+    transition-delay: calc(var(--i) * 600ms + 250ms);
+  }
+  .story-stage[data-act='consult'] .story-lines line { opacity: 0.2; }
+
+  /* the phone */
+  .story-phone {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    translate: var(--x) var(--y);
+    inline-size: var(--w);
+    block-size: var(--h);
+    padding: calc(var(--w) * 0.045);
+    border-radius: calc(var(--w) * 0.17);
+    background: var(--color-ink);
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 30px 70px rgb(0 0 0 / 0.5);
+  }
+  .story-phone[data-buzz='0'] { animation: story-buzz-a 350ms; }
+  .story-phone[data-buzz='1'] { animation: story-buzz-b 350ms; }
+  @keyframes story-buzz-a { 25% { rotate: -2deg; } 75% { rotate: 2deg; } }
+  @keyframes story-buzz-b { 25% { rotate: 2deg; } 75% { rotate: -2deg; } }
+  .story-screen {
+    position: relative;
+    direction: rtl;
+    block-size: 100%;
+    overflow: hidden;
+    border-radius: calc(var(--w) * 0.13);
+    background: color-mix(in oklab, var(--color-ink) 82%, var(--color-gold));
+    transition: background-color 1200ms var(--ease-brand);
+  }
+  .story-stage[data-act='after'] .story-screen {
+    background: var(--color-forest);
+    transition-delay: 900ms;
+  }
+  .story-notch {
+    position: absolute;
+    inset-block-start: calc(var(--w) * 0.04);
+    inset-inline: 0;
+    margin-inline: auto;
+    inline-size: calc(var(--w) * 0.32);
+    block-size: calc(var(--w) * 0.09);
+    border-radius: var(--radius-lg);
+    background: var(--color-forest-deep);
+  }
+  .story-time {
+    padding-block-start: calc(var(--w) * 0.19);
+    text-align: center;
+    font-size: calc(var(--w) * 0.2);
+    font-weight: 300;
+    line-height: 1.2;
+  }
+  .story-day {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: max(8px, calc(var(--w) * 0.055));
+  }
+  .story-badge {
+    position: absolute;
+    inset-block-start: calc(var(--w) * 0.17);
+    inset-inline-end: calc(var(--w) * 0.06);
+    padding: 1px 7px;
+    border-radius: var(--radius-sm);
+    background: var(--color-gold);
+    color: var(--color-forest-deep);
+    font-size: max(9px, calc(var(--w) * 0.06));
+    font-weight: 800;
+    transition: opacity 400ms;
+  }
+  .story-stage[data-act='after'] .story-badge { opacity: 0; }
+  .story-notes {
+    position: absolute;
+    inset-block-start: calc(var(--w) * 0.6);
+    inset-inline: calc(var(--w) * 0.04);
+  }
+  .story-notes li {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    padding: calc(var(--w) * 0.035) calc(var(--w) * 0.05);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--color-paper) 12%, transparent);
+    font-size: max(8.5px, calc(var(--w) * 0.055));
+    line-height: 1.5;
+    translate: 0 calc(var(--k) * var(--w) * 0.25);
+    scale: calc(1 - var(--k) * 0.03);
+    transition: translate 400ms var(--ease-brand), scale 400ms var(--ease-brand), opacity 400ms;
+    animation: story-note 400ms var(--ease-brand);
+  }
+  .story-notes li[data-hide] { opacity: 0; }
+  .story-notes b { display: block; font-weight: 700; }
+  .story-notes span { color: var(--text-muted); }
+  @keyframes story-note { from { opacity: 0; translate: 0 -24px; } }
+  .story-stage[data-act='after'] .story-notes li {
+    opacity: 0;
+    translate: 0 calc(var(--w) * 0.2);
+    scale: 0.85;
+    transition-delay: 600ms;
+  }
+  .story-report {
+    position: absolute;
+    inset-block-start: calc(var(--w) * 0.62);
+    inset-inline: calc(var(--w) * 0.05);
+    padding: calc(var(--w) * 0.06);
+    border: 1px solid color-mix(in oklab, var(--color-gold) 50%, transparent);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--color-paper) 8%, transparent);
+    font-size: max(8.5px, calc(var(--w) * 0.055));
+    opacity: 0;
+    translate: 0 16px;
+    transition: opacity 700ms var(--ease-brand), translate 700ms var(--ease-brand);
+  }
+  .story-stage[data-act='after'] .story-report {
+    opacity: 1;
+    translate: 0 0;
+    transition-delay: 1300ms;
+  }
+  .story-report p { display: flex; gap: 6px; padding-block: 0.4em; border-block-start: 1px solid var(--border); }
+  .story-report i { font-style: normal; font-weight: 900; color: var(--color-gold-light); }
+  .story-report .story-report-title {
+    border: 0;
+    padding-block: 0 0.4em;
+    color: var(--color-gold-light);
+    font-weight: 700;
+    font-size: 1.15em;
+  }
+  .story-report .story-ai {
+    border: 0;
+    color: var(--text-muted);
+    clip-path: inset(0 0 0 100%);
+  }
+  .story-stage[data-act='after'] .story-ai {
+    clip-path: inset(0);
+    transition: clip-path 1400ms steps(36) 2400ms;
+  }
+
+  /* the questions, later the process */
+  /* Positioned elements stay LTR: Chrome maps inset-inline-* through the
+     element's own direction, so an RTL chip would be placed from the right
+     edge. row-reverse puts the number on the reading-start side instead, and
+     the text spans are RTL. */
+  .story-chip {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 10px;
+    padding-inline: 12px;
+    inline-size: var(--cw);
+    block-size: var(--ch);
+    font-size: 13.5px;
+    border-radius: var(--radius-lg);
+    background: var(--bg-raised);
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+    translate: var(--fx) var(--fy);
+    scale: 0.4;
+    opacity: 0;
+    transition:
+      translate 900ms var(--ease-brand),
+      scale 900ms var(--ease-brand),
+      rotate 900ms var(--ease-brand),
+      opacity 300ms,
+      filter 400ms,
+      background-color 600ms,
+      border-color 600ms;
+  }
+  .story-chip[data-in] {
+    translate: var(--cx) var(--cy);
+    rotate: var(--r);
+    scale: 1;
+    opacity: 1;
+    transition-delay: 220ms;
+  }
+  .story-stage[data-act='consult'] .story-chip {
+    opacity: 0.3;
+    filter: blur(1.5px);
+    transition-delay: 0ms;
+  }
+  .story-stage[data-act='after'] .story-chip {
+    translate: var(--ox) var(--oy);
+    rotate: 0deg;
+    scale: 1;
+    opacity: 1;
+    filter: none;
+    background: color-mix(in oklab, var(--color-forest) 70%, var(--color-forest-deep));
+    border-color: color-mix(in oklab, var(--color-gold) 45%, transparent);
+    transition-delay: calc(700ms + var(--k) * 110ms);
+  }
+  .story-num {
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: 1.8em;
+    block-size: 1.8em;
+    border-radius: var(--radius-sm);
+    font-size: 0.85em;
+    font-weight: 800;
+    color: var(--text-muted);
+    background: color-mix(in oklab, var(--color-paper) 10%, transparent);
+    transition: background-color 600ms, color 600ms;
+  }
+  .story-stage[data-act='after'] .story-num {
+    background: var(--color-gold);
+    color: var(--color-forest-deep);
+    transition-delay: calc(900ms + var(--k) * 110ms);
+  }
+  .story-text { position: relative; flex: 1; block-size: 100%; direction: rtl; }
+  .story-text > span {
     position: absolute;
     inset: 0;
-    transform-style: preserve-3d;
-    transform: translateZ(calc(var(--i) * (var(--h) + var(--spread))));
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    transition: opacity 400ms;
   }
-  .face {
-    position: absolute;
-    inset-block-start: 50%;
-    inset-inline-start: 50%;
-    translate: -50% -50%;
-    backface-visibility: visible;
-    border: 1px solid color-mix(in oklab, var(--color-paper) 22%, transparent);
+  .story-s { opacity: 0; font-weight: 700; }
+  .story-stage[data-act='after'] .story-q { opacity: 0; transition-delay: calc(700ms + var(--k) * 110ms); }
+  .story-stage[data-act='after'] .story-s { opacity: 1; transition-delay: calc(900ms + var(--k) * 110ms); }
+  .story-aitag {
+    flex: none;
+    display: none;
+    padding: 1px 7px;
+    border: 1px solid var(--color-gold);
+    border-radius: var(--radius-sm);
+    color: var(--color-gold-light);
+    font-size: 10.5px;
+    font-weight: 700;
   }
-  .face-top {
-    inline-size: 100%;
-    block-size: 100%;
-    transform: translateZ(calc(var(--h) / 2)) translateZ(calc(var(--h) / 2));
-    background-color: var(--slab-top);
-    background-image:
-      linear-gradient(to bottom, color-mix(in oklab, var(--color-paper) 10%, transparent) 1px, transparent 1px),
-      linear-gradient(to left, color-mix(in oklab, var(--color-paper) 10%, transparent) 1px, transparent 1px);
-    background-size: 23px 23px;
-  }
-  .face-x {
-    inline-size: var(--h);
-    block-size: 100%;
-    background: var(--slab-side-a);
-  }
-  .face-y {
-    inline-size: 100%;
-    block-size: var(--h);
-    background: var(--slab-side-b);
-  }
-  .face-xp { transform: translateZ(calc(var(--h) / 2)) rotateY(90deg) translateZ(calc(var(--w, 230px) / 2)); }
-  .face-xn { transform: translateZ(calc(var(--h) / 2)) rotateY(-90deg) translateZ(calc(var(--w, 230px) / 2)); }
-  .face-yp { transform: translateZ(calc(var(--h) / 2)) rotateX(-90deg) translateZ(calc(var(--w, 230px) / 2)); }
-  .face-yn { transform: translateZ(calc(var(--h) / 2)) rotateX(90deg) translateZ(calc(var(--w, 230px) / 2)); }
+  .story-stage[data-act='after'] .story-aitag { display: inline-block; }
 
-  .slab-1 { --slab-top: #24533b; --slab-side-a: #173828; --slab-side-b: #1d4632; }
-  .slab-2 { --slab-top: #2d6a4f; --slab-side-a: #1c4633; --slab-side-b: #245840; }
-  .slab-3 { --slab-top: #3a7c5d; --slab-side-a: #22533c; --slab-side-b: #2c6649; }
-  .slab-4 {
-    --slab-top: color-mix(in oklab, var(--color-gold) 26%, #1a3d2b);
-    --slab-side-a: color-mix(in oklab, var(--color-gold) 55%, #1a3d2b);
-    --slab-side-b: var(--color-gold);
-  }
-  .slab-4 .face { border-color: color-mix(in oklab, var(--color-gold-light) 60%, transparent); }
-
-  /* The logo's ring, lying flat around the stack and turning. Depth sorting
-     sends its far half behind the slabs, which is what sells the 3D. */
-  .orbit {
+  /* the process rail */
+  .story-spine {
     position: absolute;
-    inset: -34%;
-    transform-style: preserve-3d;
-    transform: translateZ(70px);
-    animation: orbit 24s linear infinite;
-  }
-  .orbit svg { inline-size: 100%; block-size: 100%; overflow: visible; }
-  @keyframes orbit {
-    to { transform: translateZ(70px) rotateZ(360deg); }
-  }
-
-  /* Billboard: undo the scene rotation so the bead faces the camera. */
-  .billboard {
-    position: absolute;
-    inset-block-start: 50%;
-    inset-inline-start: 50%;
-    transform-style: preserve-3d;
-    transform:
-      translateZ(var(--z, 0px)) rotateZ(calc(-1 * var(--rz))) rotateX(calc(-1 * var(--rx)));
-  }
-  .bead {
-    inline-size: 26px;
-    block-size: 26px;
-    translate: -50% -50%;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #f3e2ad, var(--color-gold) 55%, #8a7230);
-    box-shadow: 0 0 40px color-mix(in oklab, var(--color-gold) 70%, transparent);
-    animation: bob 3.2s ease-in-out infinite;
-  }
-  @keyframes bob {
-    50% { translate: -50% calc(-50% - 10px); }
-  }
-
-  /* Data motes rising off the stack. */
-  .mote {
-    position: absolute;
-    inline-size: 8px;
-    block-size: 8px;
-    background: var(--color-gold-light);
-    opacity: 0;
-    transform: translate3d(var(--mx), var(--my), 0);
-    animation: mote 6s var(--ease-brand) infinite;
-    animation-delay: var(--md, 0s);
-  }
-  @keyframes mote {
-    0% { opacity: 0; transform: translate3d(var(--mx), var(--my), 20px); }
-    20% { opacity: 0.9; }
-    100% { opacity: 0; transform: translate3d(var(--mx), var(--my), 260px); }
-  }
-
-  /* Labels sit in 2D beside the stage and follow their slab's height:
-     a z-offset projects to −sin(rx)·z on screen; 0.85 ≈ sin(58°). */
-  .stack-label {
-    position: absolute;
+    inset-block-start: 0;
     inset-inline-start: 0;
-    inset-block-start: 50%;
-    transform: translateY(calc(-0.85 * var(--i) * (30px + var(--spread)) + var(--ly, 0px)));
+    translate: var(--sx) var(--sy);
+    inline-size: 2px;
+    block-size: var(--sh);
+    background: var(--color-gold);
+    transform-origin: top;
+    scale: 1 0;
+    transition: scale 1200ms var(--ease-brand);
   }
+  .story-stage[data-act='after'] .story-spine { scale: 1 1; transition-delay: 1400ms; }
+  .story-dot {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 11px;
+    block-size: 11px;
+    margin: -5.5px 0 0 -4.5px;
+    border-radius: 50%;
+    background: var(--color-gold-light);
+    box-shadow: 0 0 14px var(--color-gold);
+    translate: var(--sx) var(--sy);
+    opacity: 0;
+  }
+  .story-stage[data-act='after'] .story-dot {
+    opacity: 1;
+    transition: opacity 400ms 2600ms;
+    animation: story-run 2.6s linear 2.6s infinite;
+  }
+  @keyframes story-run {
+    from { translate: var(--sx) var(--sy); }
+    to { translate: var(--sx) calc(var(--sy) + var(--sh)); }
+  }
+
+  /* the turn: everything else steps back and the card takes the stage */
+  .story-veil {
+    position: absolute;
+    inset: -2%;
+    border-radius: var(--radius-xl);
+    background: color-mix(in oklab, var(--color-forest-deep) 72%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 600ms var(--ease-brand);
+  }
+  .story-stage[data-act='consult'] .story-veil { opacity: 1; }
+  .story-card {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 4.5cqw;
+    inline-size: var(--kw);
+    block-size: var(--kh);
+    padding-inline: 3cqw;
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--color-forest-deep) 85%, var(--color-ink));
+    border: 1px solid color-mix(in oklab, var(--color-gold) 60%, transparent);
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
+    translate: var(--qx) var(--qy);
+    scale: calc(var(--big) * 1.1);
+    opacity: 0;
+    filter: blur(8px);
+    transition:
+      translate 1000ms var(--ease-brand),
+      scale 1000ms var(--ease-brand),
+      opacity 500ms var(--ease-brand),
+      filter 700ms var(--ease-brand);
+  }
+  /* a gold ring that breaks outward once, as the card lands */
+  .story-card::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    border: 2px solid var(--color-gold);
+    opacity: 0;
+  }
+  .story-stage[data-act='consult'] .story-card {
+    scale: var(--big);
+    opacity: 1;
+    filter: none;
+  }
+  .story-stage[data-act='consult'] .story-card::after { animation: story-ring 1400ms var(--ease-brand) 500ms; }
+  @keyframes story-ring {
+    0% { opacity: 0.9; scale: 1; }
+    100% { opacity: 0; scale: 1.12; }
+  }
+  .story-stage[data-act='after'] .story-card {
+    translate: var(--kx) var(--ky);
+    scale: 1;
+    opacity: 1;
+    filter: none;
+  }
+  .story-photo {
+    position: relative;
+    flex: none;
+    inline-size: var(--kp);
+    block-size: var(--kp);
+  }
+  .story-photo img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-gold);
+    clip-path: circle(0% at 50% 50%);
+    scale: 1.15;
+    transition: clip-path 900ms var(--ease-brand), scale 1200ms var(--ease-brand);
+  }
+  .story-stage:is([data-act='consult'], [data-act='after']) .story-photo img {
+    clip-path: circle(75% at 50% 50%);
+    scale: 1;
+    transition-delay: 250ms;
+  }
+  .story-check {
+    position: absolute;
+    inset-block-end: -6px;
+    inset-inline-start: -6px;
+    display: grid;
+    place-items: center;
+    inline-size: 22px;
+    block-size: 22px;
+    border-radius: var(--radius-sm);
+    background: var(--color-gold);
+    color: var(--color-forest-deep);
+    font-size: 12px;
+    font-weight: 900;
+    scale: 0;
+    transition: scale 400ms var(--ease-brand);
+  }
+  .story-stage[data-act='after'] .story-check { scale: 1; transition-delay: 1100ms; }
+  .story-who { display: flex; flex-direction: column; gap: 5px; min-inline-size: 0; direction: rtl; }
+  .story-who b { font-size: 18px; font-weight: 800; line-height: 1.3; }
+  .story-rule {
+    display: block;
+    inline-size: 36px;
+    block-size: 2px;
+    background: var(--color-gold);
+    scale: 0 1;
+    transition: scale 600ms var(--ease-brand);
+  }
+  .story-meta { font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
+  .story-meta em { font-style: normal; font-weight: 800; color: var(--color-gold-light); }
+  .story-who b,
+  .story-meta {
+    opacity: 0;
+    translate: 0 8px;
+    transition: opacity 500ms var(--ease-brand), translate 500ms var(--ease-brand);
+  }
+  .story-stage:is([data-act='consult'], [data-act='after']) :is(.story-who b, .story-meta) {
+    opacity: 1;
+    translate: 0 0;
+  }
+  .story-stage:is([data-act='consult'], [data-act='after']) .story-who b { transition-delay: 500ms; }
+  .story-stage:is([data-act='consult'], [data-act='after']) .story-rule { scale: 1 1; transition-delay: 700ms; }
+  .story-stage:is([data-act='consult'], [data-act='after']) .story-meta { transition-delay: 850ms; }
+  .story-stage:is([data-act='consult'], [data-act='after']) .story-meta:last-child { transition-delay: 1000ms; }
+  .story-caption {
+    position: absolute;
+    inset-block-start: var(--capy);
+    inset-inline: 0;
+    direction: rtl;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-gold-light);
+    opacity: 0;
+    transition: opacity 500ms var(--ease-brand);
+  }
+  .story-stage[data-act='consult'] .story-caption { opacity: 1; transition-delay: 1200ms; }
 
   /* Tilt card (portrait): JS writes --tx/--ty, CSS does the rest. */
   .tilt {
@@ -1054,9 +1439,8 @@ samp {
   html.js .chaos:not([data-shown]) .chaos-card { transform: none; }
   html.js .rail-x:not([data-shown])::after { transform: none; }
   html.js .split-word > span, html.js .ink-sweep { animation: none; }
-  .stage, .orbit, .bead, .flow, .marquee-track, .scroll-cue { animation: none !important; }
-  .stage { --spread: 26px; }
-  .mote { display: none; }
+  .flow, .marquee-track, .scroll-cue { animation: none !important; }
+  .story * { transition: none !important; animation: none !important; }
   .tilt { transform: none !important; }
 }
 
