@@ -4,7 +4,6 @@ import { Logo } from '@/components/ui/Logo'
 import { CommandPalette } from './CommandPalette'
 import { MobileNav } from './MobileNav'
 import { NavLinks } from './NavLinks'
-import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from './ThemeToggle'
 import { Icon } from '@/components/ui/Icon'
 
@@ -45,10 +44,16 @@ export function Header() {
           </div>
           <ThemeToggle />
           {/* wrapped: `hidden` on the Button itself loses to its own inline-flex */}
-          <span className="ms-2 hidden lg:block">
-            <Button href="/consult" size="sm" className="h-10 px-4">
+          {/* Gold and round, like the hero's own consult button. On the
+              homepage it waits until the hero has scrolled away (HeroWatch +
+              globals.css), so the two never compete on one screen. */}
+          <span className="header-cta ms-2 hidden lg:block">
+            <Link
+              href="/consult"
+              className="inline-flex h-10 items-center rounded-full bg-gold px-5 text-200 font-bold text-forest-deep transition-colors duration-150 hover:bg-gold-light"
+            >
               درخواست مشاوره
-            </Button>
+            </Link>
           </span>
           <MobileNav />
         </div>

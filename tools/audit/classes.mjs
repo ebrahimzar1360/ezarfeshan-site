@@ -26,12 +26,14 @@ const EXEMPT = {
   // ChatLauncher: the circular FAB. ChatMessages: the three typing dots, which
   // are circles rather than pills — the ban is about controls.
   // Button: its `round` option, used only by the hero CTAs; Hero: the offer
-  // strip above them. Both at the owner's request (1405/07).
+  // strip and its role chip; Header: the gold consult button. All at the
+  // owner's request (1405/07): consult and hero controls are round.
   pill: [
     'components/site/chat/ChatLauncher.tsx',
     'components/site/chat/ChatMessages.tsx',
     'components/ui/Button.tsx',
     'components/site/Hero.tsx',
+    'components/site/Header.tsx',
   ],
   // globals.css defines the palette; layout.tsx needs a literal for <meta
   // name="theme-color"> which cannot read a CSS variable; the OG route runs in

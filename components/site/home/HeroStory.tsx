@@ -48,12 +48,12 @@ const ACTS: { key: Act; label: string }[] = [
 
 /** Arrival order is how the questions land; `step` is where each sits in the process. */
 const ITEMS = [
-  { from: 'رضا (انبار)', q: 'این قطعه موجوده؟', s: 'بررسی موجودی', step: 1 },
-  { from: 'مشتری', q: 'سفارشم کجاست؟', s: 'ثبت سفارش', step: 0 },
-  { from: 'حسابداری', q: 'فاکتورش صادر شد؟', s: 'صدور فاکتور', step: 2 },
-  { from: 'انبار', q: 'بار امروز بره یا نه؟', s: 'ارسال', step: 3 },
-  { from: 'تماس از دست‌رفته', q: 'مشتری شاکیه!', s: 'پیگیری مشتری', step: 4 },
-  { from: 'مریم (فروش)', q: 'آمار این ماه چند شد؟', s: 'گزارش روزانه', step: 5, ai: true },
+  { from: 'رضا (انبار)', q: 'این قطعه موجوده؟', s: 'بررسی موجودی', r: 'موجودی به‌روز است', step: 1 },
+  { from: 'مشتری', q: 'سفارشم کجاست؟', s: 'ثبت سفارش', r: 'سفارش‌ها ثبت شد', step: 0 },
+  { from: 'حسابداری', q: 'فاکتورش صادر شد؟', s: 'صدور فاکتور', r: 'فاکتورها صادر شد', step: 2 },
+  { from: 'انبار', q: 'بار امروز بره یا نه؟', s: 'ارسال', r: 'بار امروز رفت', step: 3 },
+  { from: 'تماس از دست‌رفته', q: 'مشتری شاکیه!', s: 'پیگیری مشتری', r: 'مشتری‌ها پیگیری شدند', step: 4 },
+  { from: 'مریم (فروش)', q: 'آمار این ماه چند شد؟', s: 'گزارش روزانه', r: 'خلاصه با هوش مصنوعی', step: 5, ai: true },
 ] as const
 
 /* ---------- design space ---------- */
@@ -172,7 +172,7 @@ const T = {
   each: 600, // one question every 600ms
   toConsult: 1300, // after the last question
   toAfter: 2800, // how long the card holds the stage
-  done: 3000, // after act 3 begins, when the replay button appears
+  done: 3800, // after act 3 begins, when the replay button appears
 }
 
 export function HeroStory() {
@@ -285,10 +285,15 @@ export function HeroStory() {
             </ul>
             <div className="story-report">
               <p className="story-report-title">گزارش امروز آماده است</p>
-              <p><i>✓</i>سفارش‌ها ثبت و پیگیری شد</p>
-              <p><i>✓</i>موجودی انبار به‌روز است</p>
-              <p><i>✓</i>کارهای تیم طبق روال</p>
-              <p className="story-ai">هوش مصنوعی: خلاصهٔ امروز را برایت نوشتم.</p>
+              {/* one line per step, ticking in with its chip */}
+              {[...ITEMS]
+                .sort((x, y) => x.step - y.step)
+                .map((it) => (
+                  <p key={it.r} style={{ '--k': it.step } as CSSProperties}>
+                    <i>✓</i>
+                    {it.r}
+                  </p>
+                ))}
             </div>
           </div>
         </div>
