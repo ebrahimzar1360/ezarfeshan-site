@@ -28,9 +28,33 @@ import { HeroWatch } from './home/HeroWatch'
 /* The brand line "سیستم بساز، آزاد باش" stays as the footer's sign-off; up
    here the promise is spelled out, because a visitor meeting the site for the
    first time read the tagline and did not know what it offered. Copy is the
-   owner's (1405/07), lightly edited. */
+   owner's own wording (1405/07). */
 const LINE_1 = ['از', 'مدیریت', 'ریزه‌کاری‌ها']
-const LINE_2 = ['تا', 'رهبری', 'کسب‌وکاری', 'خودگردان']
+const LINE_2 = ['تا', 'رهبری', 'یک', 'کسب‌وکار', 'خودمختار']
+
+/**
+ * A sticker beside the years line: the number in the middle, a ring of text
+ * turning slowly around it. Decorative — the sentence beside it says the same
+ * thing in words — so it is aria-hidden. Reduced motion stops the ring.
+ */
+function YearsSticker({ years }: { years: string }) {
+  return (
+    <span aria-hidden className="years-sticker relative grid size-20 flex-none place-items-center">
+      <svg viewBox="0 0 100 100" className="years-ring absolute inset-0 size-full text-gold-light">
+        <defs>
+          <path id="years-ring-path" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0" />
+        </defs>
+        <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeDasharray="2 4" />
+        <text fontSize="10.5" fontWeight="700" fill="currentColor" letterSpacing="0.5">
+          <textPath href="#years-ring-path" startOffset="50%" textAnchor="middle">از میدان · از ۱۳۸۰ تا امروز · تجربهٔ واقعی ·</textPath>
+        </text>
+      </svg>
+      <span className="relative grid size-12 place-items-center rounded-full bg-gold text-500 font-black leading-none text-forest-deep">
+        {years}
+      </span>
+    </span>
+  )
+}
 
 function Words({ words, offset }: { words: string[]; offset: number }) {
   return words.map((w, i) => (
@@ -75,19 +99,18 @@ export function Hero() {
             className="enter mt-7 max-w-[34rem] text-500 leading-normal text-text-muted"
             style={{ animationDelay: '520ms' }}
           >
-            اگر گوشی‌تان اتاق فرمانِ همهٔ کارهای کوچک است، کنارتان هستم تا فرایندها را منظم،
-            تیم را مستقل و هوش مصنوعی را به کار بگیرید.
+            اگر گوشی شما اتاق فرمان مجموعه‌ای از کارهای کوچک است، همراه شما هستم تا فرآیندها را
+            منظم، تیم را مستقل و هوش مصنوعی را فعال به کار بگیرید.
           </p>
           <p
-            className="enter mt-4 flex items-center gap-2.5 text-300 font-bold text-gold-light"
+            className="enter mt-5 flex items-center gap-4 text-400 font-bold text-text"
             style={{ animationDelay: '580ms' }}
           >
-            {/* a small flag, not the 🏁 emoji: emoji render differently on every platform */}
-            <svg aria-hidden viewBox="0 0 24 24" className="size-5 flex-none" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 21V4" />
-              <path d="M5 4h12l-2.5 4L17 12H5" />
-            </svg>
-            {fa(yearsSince(1380))} سال تجربه از میدان عمل، در خدمت وقت و آزادی شما
+            <YearsSticker years={fa(yearsSince(1380))} />
+            <span>
+              حاصل <span className="text-gold-light">{fa(yearsSince(1380))} سال</span> تجربهٔ واقعی
+              در میدان کسب‌وکار
+            </span>
           </p>
 
           {/* The one primary action: enquire. Same promise as /consult and the

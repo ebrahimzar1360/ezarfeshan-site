@@ -848,6 +848,12 @@ samp {
     translate: 0 -8px;
   }
 
+  /* Years sticker in the hero: pops in once, then its text ring turns. */
+  .years-sticker { animation: sticker-pop 700ms cubic-bezier(0.3, 1.5, 0.5, 1) 900ms both; }
+  .years-ring { animation: sticker-spin 18s linear infinite; }
+  @keyframes sticker-pop { from { scale: 0; rotate: -40deg; } }
+  @keyframes sticker-spin { to { rotate: -360deg; } }
+
   /* Hero offer strip: the badge pops, then the button breathes twice to draw
      the eye, and stops. The arrow leans forward on hover. */
   .offer .offer-badge { animation: offer-pop 450ms cubic-bezier(0.3, 1.6, 0.5, 1) 1300ms both; }
@@ -1513,7 +1519,7 @@ samp {
   html.js .rail-x:not([data-shown])::after { transform: none; }
   html.js .split-word > span, html.js .ink-sweep { animation: none; }
   .flow, .marquee-track, .scroll-cue { animation: none !important; }
-  .story *, .offer *, .header-cta { transition: none !important; animation: none !important; }
+  .story *, .offer *, .header-cta, .years-sticker, .years-ring { transition: none !important; animation: none !important; }
   .tilt { transform: none !important; }
 }
 
