@@ -7,8 +7,8 @@ import { expect, test } from '@playwright/test'
 
 test('the homepage states who this is for within one screen', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('کسب‌وکاری بساز که بدون تو هم بچرخد')
-  await expect(page.getByText('برای مدیرانی که')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('از مدیریت ریزه‌کاری‌ها تا رهبری کسب‌وکاری خودگردان')
+  await expect(page.getByText('اگر گوشی‌تان اتاق فرمان')).toBeVisible()
   await expect(page.getByRole('link', { name: 'آخرین مقالات' })).toBeVisible()
 })
 

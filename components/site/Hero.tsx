@@ -27,9 +27,10 @@ import { HeroWatch } from './home/HeroWatch'
  */
 /* The brand line "سیستم بساز، آزاد باش" stays as the footer's sign-off; up
    here the promise is spelled out, because a visitor meeting the site for the
-   first time read the tagline and did not know what it offered (owner, 1405/07). */
-const LINE_1 = ['کسب‌وکاری', 'بساز']
-const LINE_2 = ['که', 'بدون', 'تو', 'هم', 'بچرخد']
+   first time read the tagline and did not know what it offered. Copy is the
+   owner's (1405/07), lightly edited. */
+const LINE_1 = ['از', 'مدیریت', 'ریزه‌کاری‌ها']
+const LINE_2 = ['تا', 'رهبری', 'کسب‌وکاری', 'خودگردان']
 
 function Words({ words, offset }: { words: string[]; offset: number }) {
   return words.map((w, i) => (
@@ -49,7 +50,7 @@ export function Hero() {
       <span aria-hidden className="glow-emerald -top-40 end-[-10%] size-[38rem] opacity-60" />
       <span aria-hidden className="glow-gold bottom-[-12rem] start-[-8rem] size-[26rem] opacity-50" />
 
-      <Container className="grid min-h-[calc(100svh-5rem)] items-center gap-6 pb-16 pt-12 lg:grid-cols-[1.08fr_1fr] lg:gap-10 lg:py-16">
+      <Container className="grid min-h-[calc(100svh-5rem)] items-center gap-6 pb-16 pt-12 lg:grid-cols-[1.08fr_1fr] lg:gap-16 lg:py-16 xl:gap-28">
         <div>
           <p className="enter inline-flex items-center gap-2.5 rounded-full border border-border bg-bg-raised/60 px-3.5 py-1.5 text-200 font-medium text-text-muted backdrop-blur-sm">
             <span aria-hidden className="relative flex size-2">
@@ -74,9 +75,19 @@ export function Hero() {
             className="enter mt-7 max-w-[34rem] text-500 leading-normal text-text-muted"
             style={{ animationDelay: '520ms' }}
           >
-            برای مدیرانی که هنوز هر کار کوچکی از گوشی خودشان رد می‌شود. کارها را با هم
-            می‌نویسیم، به تیم می‌سپاریم و هوش مصنوعی را جایی می‌گذاریم که واقعاً وقتت را آزاد
-            کند — با {fa(yearsSince(1380))} سال تجربه از میدان، نه از کلاس.
+            اگر گوشی‌تان اتاق فرمانِ همهٔ کارهای کوچک است، کنارتان هستم تا فرایندها را منظم،
+            تیم را مستقل و هوش مصنوعی را به کار بگیرید.
+          </p>
+          <p
+            className="enter mt-4 flex items-center gap-2.5 text-300 font-bold text-gold-light"
+            style={{ animationDelay: '580ms' }}
+          >
+            {/* a small flag, not the 🏁 emoji: emoji render differently on every platform */}
+            <svg aria-hidden viewBox="0 0 24 24" className="size-5 flex-none" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 21V4" />
+              <path d="M5 4h12l-2.5 4L17 12H5" />
+            </svg>
+            {fa(yearsSince(1380))} سال تجربه از میدان عمل، در خدمت وقت و آزادی شما
           </p>
 
           {/* The one primary action: enquire. Same promise as /consult and the

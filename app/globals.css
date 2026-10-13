@@ -871,6 +871,10 @@ samp {
     max-inline-size: 560px;
     margin-inline: auto;
   }
+  /* beside the copy, hug the far edge so the drawing keeps its distance */
+  @media (min-width: 1024px) {
+    .story { margin-inline: auto 0; max-inline-size: 520px; }
+  }
   .story-stage {
     position: relative;
     direction: ltr;
@@ -916,7 +920,7 @@ samp {
     .story-narrow { display: block; }
     .story-chip { font-size: 12px; }
     .story-who b { font-size: 14px; white-space: nowrap; }
-    .story-card { gap: 3cqw; padding-inline: 2.4cqw 6cqw; }
+    .story-card { gap: 3cqw; padding-inline: 2.5cqw; }
     .story-meta { font-size: 10.5px; }
   }
 
@@ -1317,8 +1321,8 @@ samp {
     gap: 4.5cqw;
     inline-size: var(--kw);
     block-size: var(--kh);
-    padding-inline: 2.6cqw 6cqw;
-    border-radius: 999px;
+    padding-inline: 3cqw;
+    border-radius: var(--radius-lg);
     background: color-mix(in oklab, var(--color-forest-deep) 85%, var(--color-ink));
     border: 1px solid color-mix(in oklab, var(--color-gold) 60%, transparent);
     box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
@@ -1367,21 +1371,21 @@ samp {
     inline-size: 100%;
     block-size: 100%;
     object-fit: cover;
-    border-radius: 50%;
+    border-radius: var(--radius-lg);
     border: 2px solid var(--color-gold);
     clip-path: circle(0% at 50% 50%);
     scale: 1.15;
     transition: clip-path 900ms var(--ease-brand), scale 1200ms var(--ease-brand);
   }
   .story-stage:is([data-act='consult'], [data-act='after']) .story-photo img {
-    clip-path: circle(50% at 50% 50%);
+    clip-path: circle(75% at 50% 50%);
     scale: 1;
     transition-delay: 250ms;
   }
   .story-check {
     position: absolute;
-    inset-block-end: -2px;
-    inset-inline-start: -2px;
+    inset-block-end: -6px;
+    inset-inline-start: -6px;
     display: grid;
     place-items: center;
     inline-size: 22px;
