@@ -25,7 +25,13 @@ const EXEMPT = {
   // confuse people more than the inconsistency costs.
   // ChatLauncher: the circular FAB. ChatMessages: the three typing dots, which
   // are circles rather than pills — the ban is about controls.
-  pill: ['components/site/chat/ChatLauncher.tsx', 'components/site/chat/ChatMessages.tsx'],
+  // Button: its `round` option, used only by the two hero CTAs at the owner's
+  // request (1405/07).
+  pill: [
+    'components/site/chat/ChatLauncher.tsx',
+    'components/site/chat/ChatMessages.tsx',
+    'components/ui/Button.tsx',
+  ],
   // globals.css defines the palette; layout.tsx needs a literal for <meta
   // name="theme-color"> which cannot read a CSS variable; the OG route runs in
   // Satori, which has no cascade at all; mailer.ts writes email HTML, and no

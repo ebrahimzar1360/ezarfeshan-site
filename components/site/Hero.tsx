@@ -79,10 +79,10 @@ export function Hero() {
             className="enter mt-10 flex flex-wrap items-center gap-3"
             style={{ animationDelay: '640ms' }}
           >
-            <Button href="/articles" size="lg">
+            <Button href="/articles" size="lg" round>
               آخرین مقالات
             </Button>
-            <Button href="/newsletter" size="lg" variant="outline">
+            <Button href="/newsletter" size="lg" variant="outline" round>
               عضویت در خبرنامه
             </Button>
           </div>

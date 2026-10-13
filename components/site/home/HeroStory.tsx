@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { fa, yearsSince } from '@/lib/content/bio'
+import { fa } from '@/lib/content/bio'
 
 /**
  * The hero's picture: the site's thesis told as a three-act story.
@@ -172,7 +172,7 @@ const T = {
   each: 600, // one question every 600ms
   toConsult: 1300, // after the last question
   toAfter: 2800, // how long the card holds the stage
-  done: 3400, // after act 3 begins, when the replay button appears
+  done: 3000, // after act 3 begins, when the replay button appears
 }
 
 export function HeroStory() {
@@ -247,7 +247,7 @@ export function HeroStory() {
         به یک فرایند نوشته‌شده تبدیل می‌شوند و در پایان روز فقط یک گزارش می‌رسد.
       </figcaption>
 
-      <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="mb-5 flex justify-center">
         <ol aria-hidden className="story-tabs">
           {ACTS.map((a, i) => (
             <li key={a.key} data-on={i === tagIndex || undefined}>
@@ -255,15 +255,6 @@ export function HeroStory() {
             </li>
           ))}
         </ol>
-        <button
-          type="button"
-          onClick={() => setRun((r) => r + 1)}
-          className="story-replay"
-          data-show={(live && done && !still) || undefined}
-          aria-label="پخش دوبارهٔ انیمیشن"
-        >
-          <span aria-hidden>↻</span> دوباره
-        </button>
       </div>
 
       <div ref={stage} aria-hidden className="story-stage" data-act={act} data-frozen={frozen || undefined}>
@@ -333,12 +324,29 @@ export function HeroStory() {
             <b>ابراهیم زرفشان</b>
             <span className="story-rule" />
             <span className="story-meta">
-              <em>{fa(yearsSince(1380))} سال</em> از میدان
+              <em>مشاور سیستم‌سازی</em>
             </span>
-            <span className="story-meta">MBA · DBA</span>
+            <span className="story-meta">مدیر نمایندگی سایپا</span>
           </span>
         </div>
         <p className="story-caption">فرایند را با هم می‌نویسیم</p>
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <button
+          type="button"
+          onClick={() => setRun((r) => r + 1)}
+          className="story-replay"
+          data-show={(live && done && !still) || undefined}
+        >
+          <span aria-hidden className="story-replay-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 3-6.7" />
+              <path d="M3 4v5h5" />
+            </svg>
+          </span>
+          دوباره ببین
+        </button>
       </div>
     </figure>
   )

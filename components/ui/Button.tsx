@@ -7,7 +7,8 @@ type Size = 'sm' | 'md' | 'lg'
 
 /**
  * Radius caps at --radius-lg on purpose: pill buttons are on the banned list
- * in the brief. Gold is never a text colour on light ground (2.10:1), so the
+ * in the brief. `round` is the one exception, for the hero's two CTAs, at the
+ * owner's request (1405/07) — not a general option. Gold is never a text colour on light ground (2.10:1), so the
  * solid variant puts gold behind ink instead of in front of paper.
  */
 const variants: Record<Variant, string> = {
@@ -23,20 +24,22 @@ const sizes: Record<Size, string> = {
 }
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-md font-medium ' +
+  'inline-flex items-center justify-center gap-2 font-medium ' +
   'transition-[background-color,border-color,color] duration-150 ease-brand ' +
   'disabled:opacity-50 disabled:pointer-events-none'
 
-function classesFor(variant: Variant, size: Size, className: string) {
+function classesFor(variant: Variant, size: Size, round: boolean, className: string) {
   // the text variant is a link, not a control: no fixed height or padding
   const sizing = variant === 'text' ? 'text-300' : sizes[size]
-  return `${base} ${variants[variant]} ${sizing} ${className}`
+  const radius = round ? 'rounded-full' : 'rounded-md'
+  return `${base} ${radius} ${variants[variant]} ${sizing} ${className}`
 }
 
 type ButtonAsLink = {
   href: string
   variant?: Variant
   size?: Size
+  round?: boolean
   className?: string
   children: ReactNode
 } & Omit<ComponentProps<typeof Link>, 'href' | 'className' | 'children'>
@@ -45,6 +48,7 @@ type ButtonAsButton = {
   href?: undefined
   variant?: Variant
   size?: Size
+  round?: boolean
   className?: string
   /**
    * Shows a spinner and blocks further clicks while a request is in flight.
@@ -60,15 +64,15 @@ type ButtonAsButton = {
 } & Omit<ComponentProps<'button'>, 'className' | 'children'>
 
 export function Button(props: ButtonAsLink | ButtonAsButton) {
-  const { variant = 'solid', size = 'md', className = '', children } = props
+  const { variant = 'solid', size = 'md', round = false, className = '', children } = props
 
   if (props.href !== undefined) {
-    const { href, variant: _v, size: _s, className: _c, children: _ch, ...rest } = props
+    const { href, variant: _v, size: _s, round: _r, className: _c, children: _ch, ...rest } = props
     const external = /^https?:\/\//.test(href)
     return (
       <Link
         href={href}
-        className={classesFor(variant, size, className)}
+        className={classesFor(variant, size, round, className)}
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         {...rest}
       >
@@ -80,6 +84,7 @@ export function Button(props: ButtonAsLink | ButtonAsButton) {
   const {
     variant: _v,
     size: _s,
+    round: _r,
     className: _c,
     children: _ch,
     loading = false,
@@ -88,7 +93,7 @@ export function Button(props: ButtonAsLink | ButtonAsButton) {
   } = props
   return (
     <button
-      className={classesFor(variant, size, className)}
+      className={classesFor(variant, size, round, className)}
       aria-busy={loading || undefined}
       disabled={disabled || loading}
       {...rest}
