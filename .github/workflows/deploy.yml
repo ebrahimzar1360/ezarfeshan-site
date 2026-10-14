@@ -28,6 +28,9 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # prisma.config.ts reads it even for `generate`, which never connects
+      DATABASE_URL: postgresql://build:build@127.0.0.1:5432/build
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
