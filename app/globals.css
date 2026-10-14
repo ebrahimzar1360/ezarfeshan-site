@@ -823,19 +823,6 @@ samp {
     to { transform: translateX(100%); }
   }
 
-  /* ---------- Chaos → order (Diagnosis) ----------
-     Each quote card starts thrown somewhere on the table and settles into a
-     straight column once the block scrolls in: the site's thesis, enacted. */
-  .chaos-card {
-    transition:
-      transform 1100ms var(--ease-spring),
-      opacity 600ms var(--ease-brand);
-    transition-delay: calc(var(--i, 0) * 110ms);
-  }
-  html.js .chaos:not([data-shown]) .chaos-card {
-    transform: translate(var(--cx, 0), var(--cy, 0)) rotate(var(--cr, 0deg));
-  }
-
   /* Header consult button: hidden while the hero is on screen, slides in once
      it has scrolled away (body[data-past-hero], set by HeroWatch). Pages
      without a hero are unaffected. */
@@ -1515,7 +1502,6 @@ samp {
 @media (prefers-reduced-motion: reduce) {
   html.js [data-reveal] { opacity: 1; transform: none; }
   html.js .draw path, html.js .draw line, html.js .draw polyline { stroke-dashoffset: 0; }
-  html.js .chaos:not([data-shown]) .chaos-card { transform: none; }
   html.js .rail-x:not([data-shown])::after { transform: none; }
   html.js .split-word > span, html.js .ink-sweep { animation: none; }
   .flow, .marquee-track, .scroll-cue { animation: none !important; }

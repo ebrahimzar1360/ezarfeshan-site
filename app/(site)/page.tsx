@@ -19,7 +19,7 @@ import { getFeaturedArticle, getPublishedArticles, getTopics } from '@/lib/conte
  * The homepage is a story in the order the brand argues it:
  *
  *   hero (the thesis, the 3D system) → ribbon (the subjects) → diagnosis (the
- *   pain, chaos snapping into order) → four pillars (what a system is made of)
+ *   pain, as a self-check that points at articles) → four pillars (what a system is made of)
  *   → about (who says so, and from where) → field example (one thing built) →
  *   articles (the proof, in writing) → how I work → newsletter.
  *

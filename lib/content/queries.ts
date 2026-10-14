@@ -184,3 +184,18 @@ export async function getArticlesByTopic(slug: string): Promise<ArticleCardData[
     orderBy: { publishedAt: 'desc' },
   })
 }
+
+export type ArticleLink = { slug: string; title: string; readingMinutes: number }
+
+/**
+ * Published articles among the given slugs — for blocks that point at specific
+ * pieces (the homepage self-check). Anything unpublished or missing is simply
+ * absent from the result, so the caller never links to a 404.
+ */
+export async function getPublishedArticlesBySlugs(slugs: string[]): Promise<ArticleLink[]> {
+  if (slugs.length === 0) return []
+  return db.article.findMany({
+    where: { ...publicFilter(), slug: { in: slugs } },
+    select: { slug: true, title: true, readingMinutes: true },
+  })
+}
