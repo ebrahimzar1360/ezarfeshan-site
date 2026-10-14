@@ -1,0 +1,118 @@
+name: Deploy to Arvan
+
+# Every push to main: typecheck + tests, then SSH to the VM, fetch the code,
+# migrate, build and restart. Vercel is no longer the production target.
+#
+# Required secrets (Settings -> Secrets and variables -> Actions):
+#   VM_HOST      188.121.125.13
+#   VM_USER      root
+#   VM_SSH_KEY   private key of a deploy key authorised on the VM
+# Optional secrets (written into the server's .env when set):
+#   OPENROUTER_API_KEY, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx prisma generate
+      - run: npm run typecheck
+      - run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+        with:
+          envs: GH_TOKEN,GH_REPO,OPENROUTER_API_KEY,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,MAIL_FROM
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          timeout: 30s
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+            DIR=/opt/ezarfeshan-site
+            mkdir -p "$DIR" && cd "$DIR"
+            [ -d .git ] || git init -q
+
+            # token of this run only; not written to .git/config
+            GIT_TERMINAL_PROMPT=0 git -c credential.helper= fetch \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" main
+            git reset --hard FETCH_HEAD
+
+            # shared network that the HooshSazmani Caddy joins to reach the app
+            docker network inspect ezar-net >/dev/null 2>&1 || docker network create ezar-net
+
+            # .env: generated once (secrets never rotate by accident); optional
+            # values are re-applied from GitHub secrets on every deploy
+            if [ ! -f .env ]; then
+              umask 077
+              {
+                echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
+                echo "AUTH_SECRET=$(openssl rand -base64 32)"
+                echo "NEXT_PUBLIC_SITE_URL=https://ebrahimzarfeshan.com"
+                echo "MAIL_DRIVER=console"
+              } > .env
+            fi
+            setenv() { # key value
+              [ -n "$2" ] || return 0
+              grep -v "^$1=" .env > .env.tmp || true
+              echo "$1=$2" >> .env.tmp && mv .env.tmp .env
+            }
+            setenv OPENROUTER_API_KEY "${OPENROUTER_API_KEY:-}"
+            setenv SMTP_HOST "${SMTP_HOST:-}"
+            setenv SMTP_PORT "${SMTP_PORT:-}"
+            setenv SMTP_USER "${SMTP_USER:-}"
+            setenv SMTP_PASS "${SMTP_PASS:-}"
+            setenv MAIL_FROM "${MAIL_FROM:-}"
+            if [ -n "${SMTP_HOST:-}" ]; then setenv MAIL_DRIVER smtp; fi
+
+            DC="docker compose -p ezar -f docker-compose.arvan.yml"
+
+            # 1. database up and migrated BEFORE the build: next build reads it
+            $DC up -d --wait db
+            PGPW=$(grep '^POSTGRES_PASSWORD=' .env | cut -d= -f2-)
+            docker build -q --target deps -t ezar-migrate .
+            docker run --rm --network host \
+              -e DATABASE_URL="postgresql://ezarfeshan:${PGPW}@127.0.0.1:55433/ezarfeshan" \
+              -v "$PWD/prisma:/app/prisma:ro" -v "$PWD/prisma.config.ts:/app/prisma.config.ts:ro" \
+              ezar-migrate npx prisma migrate deploy
+
+            # 2. build + start the app
+            $DC up -d --build app
+            for i in $(seq 1 30); do
+              if [ "$(docker inspect -f '{{.State.Health.Status}}' ezar-app-1 2>/dev/null)" = healthy ]; then break; fi
+              sleep 4
+            done
+            docker inspect -f 'app health: {{.State.Health.Status}}' ezar-app-1
+            docker image prune -f >/dev/null
+            echo "deploy finished"

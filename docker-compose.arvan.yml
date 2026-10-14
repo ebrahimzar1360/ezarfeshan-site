@@ -1,0 +1,73 @@
+# Production on the shared Arvan VM (188.121.125.13), next to the HooshSazmani
+# stack. That stack's Caddy already owns ports 80/443 and terminates TLS for
+# this domain too, so there is NO caddy service here: the app joins the
+# external `ezar-net` network and Caddy reaches it as `ezar-app:3000`.
+# The route lives in HooshSazmani/infra/vm/Caddyfile.
+#
+# Driven by .github/workflows/deploy.yml; run by hand with:
+#   docker compose -p ezar -f docker-compose.arvan.yml up -d --build
+
+name: ezar
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ezarfeshan
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ezarfeshan
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./prisma/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ezarfeshan"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # loopback only: `next build` runs with host networking (see app.build) and
+    # reads the database through this port. Never reachable from outside.
+    ports:
+      - "127.0.0.1:55433:5432"
+
+  app:
+    build:
+      context: .
+      # `next build` queries the database during static generation. A docker
+      # build cannot resolve compose service names, so it shares the host
+      # network and uses the loopback port above. deploy.yml migrates first.
+      network: host
+      args:
+        DATABASE_URL: postgresql://ezarfeshan:${POSTGRES_PASSWORD}@127.0.0.1:55433/ezarfeshan
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://ezarfeshan:${POSTGRES_PASSWORD}@db:5432/ezarfeshan
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL is required}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
+      MAIL_DRIVER: ${MAIL_DRIVER:-console}
+      MAIL_FROM: ${MAIL_FROM:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+    command: sh -c "npx prisma migrate deploy && node server.js"
+    networks:
+      default: {}
+      ezar-net:
+        aliases:
+          - ezar-app
+    expose:
+      - "3000"
+
+networks:
+  ezar-net:
+    external: true
+
+volumes:
+  pgdata:
