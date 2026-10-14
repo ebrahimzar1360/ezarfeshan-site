@@ -24,6 +24,9 @@ export type DiagnosisItem = {
  * Real checkboxes inside labels, so it works with a keyboard and a screen
  * reader; the result panel is a polite live region.
  */
+/** How heavily the business leans on its manager, by how many sentences are ticked. */
+const LEVELS = ['کم', 'متوسط', 'زیاد', 'بحرانی']
+
 export function DiagnosisCheck({ items }: { items: DiagnosisItem[] }) {
   const [checked, setChecked] = useState<boolean[]>(() => items.map(() => false))
   const count = checked.filter(Boolean).length
@@ -68,9 +71,15 @@ export function DiagnosisCheck({ items }: { items: DiagnosisItem[] }) {
 
       <div className="rounded-xl border border-border bg-bg-raised/60 p-6 md:p-7" aria-live="polite">
         <div className="flex items-baseline justify-between gap-4">
-          <p className="text-300 text-text-muted">وابستگی کسب‌وکار به شما</p>
+          <p className="flex items-center gap-2 text-300 text-text-muted">
+            <svg aria-hidden viewBox="0 0 24 24" className="size-5 flex-none text-gold-light" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M4 20h16M7 16v-4M12 16V8M17 16v-7" />
+            </svg>
+            میزان وابستگی کسب‌وکار به شما
+          </p>
           <p className="text-700 font-black text-gold-light">
             {fa(count)} از {fa(items.length)}
+            {count > 0 && <span className="ms-2 text-300 font-bold">({LEVELS[count - 1]})</span>}
           </p>
         </div>
         <div aria-hidden className="mt-3 h-2.5 overflow-hidden rounded-sm bg-border">
@@ -86,8 +95,8 @@ export function DiagnosisCheck({ items }: { items: DiagnosisItem[] }) {
           </p>
         ) : (
           <>
-            <p className="mt-6 text-300 text-text-muted">
-              علت‌هایی که در کسب‌وکار شما هست — و از کجا شروع کنید:
+            <p className="mt-6 text-300 font-bold text-text">
+              ریشهٔ اصلی مشکلات و محل دقیق شروع تغییر:
             </p>
             <ul className="mt-3 space-y-2.5">
               {items.map((it, i) =>
@@ -109,18 +118,13 @@ function Cause({ item }: { item: DiagnosisItem }) {
   const body = (
     <>
       <span className="flex-1">
-        <span className="block text-200 font-bold text-gold-light">{item.cause}</span>
-        {item.article ? (
-          <>
-            <span className="mt-1 block text-400 font-bold leading-snug text-text">
-              {item.article.title}
-            </span>
-            <span className="mt-1 block text-200 text-text-subtle">
-              مقاله · {fa(item.article.readingMinutes)} دقیقه مطالعه
-            </span>
-          </>
-        ) : (
-          <span className="mt-1 block text-300 leading-snug text-text-muted">{item.why}</span>
+        <span className="block text-300 font-bold text-gold-light">{item.cause}</span>
+        <span className="mt-1 block text-300 leading-snug text-text-muted">{item.why}</span>
+        {item.article && (
+          <span className="mt-2 block text-200 text-text-subtle">
+            مقاله: <span className="font-bold text-text">{item.article.title}</span> ·{' '}
+            {fa(item.article.readingMinutes)} دقیقه
+          </span>
         )}
       </span>
       {item.article && (
