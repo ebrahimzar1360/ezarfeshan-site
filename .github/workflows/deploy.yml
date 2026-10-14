@@ -64,7 +64,11 @@ jobs:
       - name: Enable pg_trgm on the build database
         run: PGPASSWORD=build psql -h 127.0.0.1 -U build -d build -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm'
 
+      # the plain docker driver is needed for network: host below (the default
+      # docker-container driver cannot reach the postgres service)
       - uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
 
       - name: Build image
         uses: docker/build-push-action@v6
@@ -74,8 +78,6 @@ jobs:
           tags: ezarfeshan-web:latest
           network: host
           build-args: DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Configure SSH
         env:
