@@ -31,6 +31,17 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npx prisma generate && npm run build
 
+# ---------- production dependencies ----------
+# The Prisma CLI (needed for `migrate deploy` at container start) pulls in a
+# dependency tree of its own — effect, c12, and so on. Copying only
+# node_modules/prisma and @prisma left it unable to start, so the runtime image
+# gets the complete production tree instead.
+FROM node:22-alpine AS prod-deps
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
 # ---------- runtime ----------
 FROM node:22-alpine AS runner
 WORKDIR /app
@@ -44,6 +55,9 @@ ENV HOSTNAME=0.0.0.0
 # never run the server as root
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
+# production tree first: the standalone output below overlays its traced subset
+# (including the generated Prisma client) on top of it
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
 # assets/ holds the OG font, which is read from disk at runtime and must not be
 # public. outputFileTracingIncludes copies it into .next/standalone.
@@ -53,9 +67,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # migrations and the Prisma CLI, so the container can migrate itself on deploy
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
+# create-admin.mjs, run once by hand after the first deploy
+COPY --from=builder /app/tools/db ./tools/db
 
 USER nextjs
 EXPOSE 3000

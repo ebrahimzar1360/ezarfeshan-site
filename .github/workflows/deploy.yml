@@ -1,0 +1,120 @@
+name: Deploy to Arvan
+
+# Every push to main: typecheck + tests, build the image on the runner (the VM
+# has too little disk to build on), stream it to the VM over SSH, restart only
+# the ezarfeshan compose project, and roll back if the health check fails.
+#
+# The VM is shared with other products. This touches /opt/ezarfeshan and the
+# ezarfeshan-* containers only.
+#
+# Required secrets (Settings -> Secrets and variables -> Actions):
+#   VM_HOST       188.121.125.13
+#   VM_USER       root
+#   VM_SSH_KEY    private key of a deploy key authorised on the VM
+#   VM_HOST_KEY   the VM's ssh-ed25519 host key line (ssh-keyscan -t ed25519 <ip>)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx prisma generate
+      - run: npm run typecheck
+      - run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    services:
+      # next build runs migrations and generateStaticParams against a database;
+      # this one exists only for the build and is thrown away with the runner
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: build
+          POSTGRES_PASSWORD: build
+          POSTGRES_DB: build
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U build" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable pg_trgm on the build database
+        run: PGPASSWORD=build psql -h 127.0.0.1 -U build -d build -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm'
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: ezarfeshan-web:latest
+          network: host
+          build-args: DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Configure SSH
+        env:
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_HOST_KEY: ${{ secrets.VM_HOST_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VM_HOST_KEY" > ~/.ssh/known_hosts
+          printf 'Host vm\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  IdentitiesOnly yes\n  StrictHostKeyChecking yes\n' \
+            "$VM_HOST" "${{ secrets.VM_USER }}" > ~/.ssh/config
+
+      - name: Ship image and compose file
+        run: |
+          scp deploy/docker-compose.arvan.yml vm:/opt/ezarfeshan/docker-compose.yml
+          # keep the running image reachable under a second tag for rollback
+          ssh vm 'docker tag ezarfeshan-web:latest ezarfeshan-web:previous 2>/dev/null || true'
+          docker save ezarfeshan-web:latest | gzip | ssh vm 'gunzip | docker load'
+
+      - name: Restart and verify
+        run: |
+          ssh vm bash -s <<'REMOTE'
+          set -u
+          cd /opt/ezarfeshan
+          docker compose up -d --remove-orphans
+          for i in $(seq 1 30); do
+            s=$(docker inspect -f '{{.State.Health.Status}}' ezarfeshan-web 2>/dev/null || echo none)
+            [ "$s" = healthy ] && break
+            sleep 4
+          done
+          if [ "$s" = healthy ]; then
+            docker rmi ezarfeshan-web:previous >/dev/null 2>&1 || true
+            docker image prune -f >/dev/null
+            echo "deploy finished: healthy"
+          else
+            echo "::error::new version is $s - rolling back"
+            docker logs --tail 40 ezarfeshan-web 2>&1 || true
+            if docker image inspect ezarfeshan-web:previous >/dev/null 2>&1; then
+              docker tag ezarfeshan-web:previous ezarfeshan-web:latest
+              docker compose up -d
+            fi
+            exit 1
+          fi
+          REMOTE
