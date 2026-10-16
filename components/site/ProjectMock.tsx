@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import type { Project } from '@/lib/content/projects'
 
 /**
@@ -125,13 +126,46 @@ function Intelligence() {
   )
 }
 
-export function ProjectMock({ kind }: { kind: Project['mock'] }) {
+export function ProjectMock({ project }: { project: Project }) {
+  const { image, mock } = project
+
+  if (image) {
+    return (
+      <div
+        className={`relative aspect-[8/5] w-full overflow-hidden ${
+          image.fit === 'contain' ? '' : 'bg-bg-band'
+        }`}
+        style={image.fit === 'contain' ? { backgroundColor: image.bg ?? 'white' } : undefined}
+      >
+        <Image
+          src={image.src}
+          alt={image.alt}
+          width={image.width}
+          height={image.height}
+          sizes="(min-width: 768px) 32rem, 92vw"
+          className={`size-full ${image.fit === 'contain' ? 'object-contain py-2' : 'object-cover'}`}
+          // a soft edge so a picture with its own near-white ground melts into the frame
+          style={
+            image.fit === 'contain'
+              ? {
+                  maskImage:
+                    'linear-gradient(to right, transparent, black 14%, black 86%, transparent), linear-gradient(to bottom, transparent, black 6%, black 94%, transparent)',
+                  maskComposite: 'intersect',
+                  WebkitMaskComposite: 'source-in',
+                }
+              : undefined
+          }
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="aspect-[8/5] w-full overflow-hidden bg-bg-band">
       <svg viewBox="0 0 400 250" aria-hidden focusable="false" className="size-full">
-        {kind === 'performance' && <Performance />}
-        {kind === 'tama' && <Tama />}
-        {kind === 'intelligence' && <Intelligence />}
+        {mock === 'performance' && <Performance />}
+        {mock === 'tama' && <Tama />}
+        {mock === 'intelligence' && <Intelligence />}
       </svg>
     </div>
   )

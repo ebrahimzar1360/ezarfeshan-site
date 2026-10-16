@@ -19,7 +19,7 @@ export function StatusBadge({ children }: { children: React.ReactNode }) {
 export function ProjectCard({ project }: { project: Project }) {
   return (
     <article className="card-v3 card-v3-hover flex h-full flex-col overflow-hidden">
-      <ProjectMock kind={project.mock} />
+      <ProjectMock project={project} />
       <div className="flex flex-1 flex-col p-6">
         <div>
           <StatusBadge>{project.status}</StatusBadge>

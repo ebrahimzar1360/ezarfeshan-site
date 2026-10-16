@@ -21,7 +21,7 @@ export function ProjectsPreview() {
         </header>
 
         <div className="grid gap-5 md:grid-cols-3 md:gap-6">
-          {projects.map((p, i) => (
+          {projects.slice(0, 3).map((p, i) => (
             <div key={p.slug} data-reveal style={{ '--d': i } as CSSProperties}>
               <ProjectCard project={p} />
             </div>

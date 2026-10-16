@@ -40,7 +40,7 @@ export default function ProjectsPage() {
                     <p className="mt-4 max-w-[28rem] text-400 leading-prose text-text-muted">{p.text}</p>
                   </div>
                   <div className="order-first md:order-none">
-                    <ProjectMock kind={p.mock} />
+                    <ProjectMock project={p} />
                   </div>
                 </article>
               </li>
