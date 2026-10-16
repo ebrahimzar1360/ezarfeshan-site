@@ -1,57 +1,37 @@
 import Link from 'next/link'
 import { Container } from '@/components/ui/Container'
+import { Icon, type IconName } from '@/components/ui/Icon'
+import { Logo } from '@/components/ui/Logo'
+import { currentJalaliYear, fa } from '@/lib/content/bio'
 import { legalNav, nav, site, socials } from '@/lib/site'
 
+const byLabel = (label: string) => socials.find((s) => s.label === label)?.href ?? '/contact'
+
+const social: { label: string; href: string; icon: IconName }[] = [
+  { label: 'ایمیل', href: `mailto:${site.email}`, icon: 'mail' },
+  { label: 'لینکدین', href: byLabel('لینکدین'), icon: 'linkedin' },
+  { label: 'واتس‌اپ', href: byLabel('واتس‌اپ'), icon: 'whatsapp' },
+  { label: 'اینستاگرام', href: byLabel('اینستاگرام'), icon: 'instagram' },
+]
+
 /**
- * v2 footer: the tagline at display size as a sign-off, then the index.
- * Night ground with the blueprint grid — the page ends on the drafting table it
- * started on.
+ * v3 footer: compact, on the forest ground. Logo, the five links, the four
+ * contact icons, then the copyright line and the two legal links.
  */
 export function Footer() {
-  const year = new Date().getFullYear()
-
   return (
-    <footer className="tone-inverse tone-deep bp-grid relative overflow-hidden border-t border-border">
-      <Container className="pb-10 pt-20 md:pt-28">
-        <div className="flex flex-col gap-10 border-b border-border pb-14 md:flex-row md:items-end md:justify-between">
-          <p className="text-display-sm font-black leading-[1.1]">
-            سیستم بساز،
-            <br />
-            <span className="text-gold-light">آزاد باش.</span>
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/consult"
-              className="inline-flex h-12 items-center rounded-md bg-solid-bg px-6 text-300 font-medium text-solid-text no-underline transition-colors duration-150 hover:bg-solid-bg-hover"
-            >
-              درخواست مشاوره
-            </Link>
-            <Link
-              href="/newsletter"
-              className="inline-flex h-12 items-center rounded-md border border-border-strong px-6 text-300 font-medium text-text no-underline transition-colors duration-150 hover:border-accent"
-            >
-              عضویت در خبرنامه
-            </Link>
-          </div>
-        </div>
-
-        <div className="grid gap-12 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
-          <div>
-            <p className="text-600 font-bold">{site.name}</p>
-            <p className="mt-2 text-300 text-text-muted">{site.role}</p>
-            <p className="mt-6 max-w-sm text-300 leading-prose text-text-muted">
-              {site.description}
-            </p>
-          </div>
+    <footer className="tone-inverse bg-forest">
+      <Container className="py-12 md:py-14">
+        <div className="flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
+          <Logo tone="light" />
 
           <nav aria-label="ناوبری فوتر">
-            <h2 className="mb-5 text-200 font-medium tracking-wide text-text-subtle">بخش‌ها</h2>
-            <ul className="space-y-3">
-              {[...nav, { label: 'درخواست مشاوره', href: '/consult' }].map((item) => (
+            <ul className="flex flex-wrap gap-x-7 gap-y-3">
+              {nav.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-300 text-text no-underline transition-colors duration-150 hover:text-gold-light"
+                    className="text-300 text-paper/85 no-underline transition-colors duration-150 hover:text-gold-light"
                   >
                     {item.label}
                   </Link>
@@ -60,53 +40,32 @@ export function Footer() {
             </ul>
           </nav>
 
-          <div>
-            <h2 className="mb-5 text-200 font-medium tracking-wide text-text-subtle">ارتباط</h2>
-            <ul className="space-y-3">
-              <li>
+          <ul className="flex gap-3">
+            {social.map((s) => (
+              <li key={s.href}>
                 <a
-                  href={`mailto:${site.email}`}
-                  className="latin text-300 text-text no-underline transition-colors duration-150 hover:text-gold-light"
+                  href={s.href}
+                  aria-label={s.label}
+                  {...(s.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  className="inline-flex size-10 items-center justify-center rounded-lg border border-paper/25 text-500 text-paper no-underline transition-colors duration-150 hover:border-gold hover:text-gold-light"
                 >
-                  {site.email}
+                  <Icon name={s.icon} />
                 </a>
               </li>
-              <li>
-                <a
-                  href={site.phone.href}
-                  className="text-300 text-text no-underline transition-colors duration-150 hover:text-gold-light"
-                >
-                  {site.phone.display}
-                </a>
-              </li>
-              {/* Only confirmed destinations render. */}
-              {socials.map((s) => (
-                <li key={s.href}>
-                  <a
-                    href={s.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-300 text-text no-underline transition-colors duration-150 hover:text-gold-light"
-                  >
-                    {s.label}
-                    {s.handle && <span className="latin text-text-subtle"> · {s.handle}</span>}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+            ))}
+          </ul>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-border pt-7 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-200 text-text-subtle">
-            © <span className="latin">{year}</span> {site.name} · {site.address.city}، {site.address.region}
+        <div className="mt-10 flex flex-col gap-3 border-t border-paper/15 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-200 text-paper/70">
+            © {fa(currentJalaliYear())} {site.name}. تمام حقوق محفوظ است.
           </p>
           <nav aria-label="صفحات حقوقی" className="flex gap-6">
             {legalNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-200 text-text-muted no-underline transition-colors duration-150 hover:text-gold-light"
+                className="text-200 text-paper/70 no-underline transition-colors duration-150 hover:text-gold-light"
               >
                 {item.label}
               </Link>

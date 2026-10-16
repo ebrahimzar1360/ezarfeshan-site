@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
+import { PageBand } from '@/components/site/PageBand'
+import { ReferencesNote } from '@/components/site/ReferencesNote'
 import { ArticleGrid } from '@/components/ui/ArticleGrid'
-import { PageHeader } from '@/components/ui/PageHeader'
 import { Container } from '@/components/ui/Container'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
@@ -11,45 +12,44 @@ import { getPublishedArticlesPage, getTopics } from '@/lib/content/queries'
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: 'مقالات',
-  description: 'نوشته‌هایی دربارهٔ سیستم‌سازی، مدیریت تیم، و استفادهٔ عملی از هوش مصنوعی.',
+  title: 'یادداشت‌ها و تجربه‌ها',
+  description:
+    'مرور ایده‌ها، تجربه‌های مدیریتی و استفاده کاربردی از هوش مصنوعی در کسب‌وکارها',
+  alternates: { canonical: '/articles' },
 }
 
 export default async function ArticlesPage() {
-  const [{ items, total }, topics] = await Promise.all([
-    getPublishedArticlesPage(1),
-    getTopics(),
-  ])
-  const withArticles = topics
-    .filter((t) => t._count.articles > 0)
-    .map((t) => ({ slug: t.slug, name: t.name, count: t._count.articles }))
+  const [{ items, total }, topics] = await Promise.all([getPublishedArticlesPage(1), getTopics()])
+  const chips = topics.map((t) => ({ slug: t.slug, name: t.name }))
 
   return (
     <>
-      <PageHeader
-        eyebrow="مقالات"
-        title="نوشته‌هایی از میدان"
-        lead="هر نوشته یک مسئلهٔ عملیاتی را می‌گیرد و تا انتها می‌برد — از جایی که کار گیر کرده تا سیستمی که جایش می‌نشیند."
+      <PageBand
+        title="یادداشت‌ها و تجربه‌ها"
+        lead="مرور ایده‌ها، تجربه‌های مدیریتی و استفاده کاربردی از هوش مصنوعی در کسب‌وکارها"
       />
-      <Container className="py-14 md:py-20">
-      <TopicChips topics={withArticles} />
 
-      {items.length === 0 ? (
-        <EmptyState
-          title="هنوز مقاله‌ای منتشر نشده"
-          body="اولین نوشته‌ها به‌زودی اینجا می‌آیند."
-          action={{ label: 'دربارهٔ من', href: '/about' }}
-        />
-      ) : (
-        <>
-          <ArticleGrid items={items} priorityFirst />
-          <Pagination
-            page={1}
-            count={pageCount(total)}
-            hrefFor={(n) => (n === 1 ? '/articles' : `/articles/page/${n}`)}
+      <Container className="py-12 md:py-16">
+        <TopicChips topics={chips} />
+
+        {items.length === 0 ? (
+          <EmptyState
+            title="هنوز یادداشتی منتشر نشده"
+            body="اولین یادداشت‌ها به‌زودی اینجا می‌آیند."
+            action={{ label: 'درباره من', href: '/about' }}
           />
-        </>
-      )}
+        ) : (
+          <>
+            <ArticleGrid items={items} priorityFirst />
+            <Pagination
+              page={1}
+              count={pageCount(total)}
+              hrefFor={(n) => (n === 1 ? '/articles' : `/articles/page/${n}`)}
+            />
+          </>
+        )}
+
+        <ReferencesNote className="mt-14 md:mt-20" />
       </Container>
     </>
   )

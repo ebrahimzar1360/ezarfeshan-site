@@ -294,8 +294,7 @@ samp {
   /* Dark sections re-point the semantic roles instead of asking every child to
      know what ground it sits on. Without this, `text-text-subtle` inside a
      forest block resolves to 55% ink — near-invisible on dark green. */
-  .tone-inverse,
-  body:has([data-hero]) .site-header {
+  .tone-inverse {
     --text: var(--color-paper);
     /* Without these the form controls inside a dark section keep the light
        theme surfaces: the newsletter input rendered as a white box with
@@ -644,8 +643,7 @@ samp {
 
   /* Night ground: forest-deep with the same re-pointed roles as .tone-inverse.
      Use together: `tone-inverse tone-deep`. */
-  .tone-deep,
-  body:has([data-hero]) .site-header {
+  .tone-deep {
     --bg: var(--color-forest-deep);
     --bg-raised: color-mix(in oklab, var(--color-paper) 7%, var(--color-forest-deep));
     --bg-sunken: color-mix(in oklab, black 25%, var(--color-forest-deep));
@@ -794,759 +792,112 @@ samp {
     stroke-dashoffset: 0;
   }
 
-  /* Travelling dashes along a connector — data moving through the system. */
-  .flow {
-    stroke-dasharray: 4 10;
-    animation: flow 1.6s linear infinite;
-  }
-  @keyframes flow {
-    to { stroke-dashoffset: -28; }
-  }
-
-  /* Ribbon marquee. Two identical tracks; the animation moves the pair by
-     exactly one track so the loop is seamless in either writing direction. */
-  .marquee {
-    display: flex;
-    overflow: hidden;
-    mask-image: linear-gradient(to left, transparent, black 8%, black 92%, transparent);
-  }
-  .marquee-track {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    gap: 2.5rem;
-    padding-inline-end: 2.5rem;
-    animation: marquee 38s linear infinite;
-  }
-  .marquee:hover .marquee-track { animation-play-state: paused; }
-  @keyframes marquee {
-    to { transform: translateX(100%); }
-  }
-
-  /* Header consult button: hidden while the hero is on screen, slides in once
-     it has scrolled away (body[data-past-hero], set by HeroWatch). Pages
-     without a hero are unaffected. */
-  .header-cta {
-    transition: opacity 300ms var(--ease-brand), translate 300ms var(--ease-brand), visibility 300ms;
-  }
-  body:has([data-hero]):not([data-past-hero]) .header-cta {
-    opacity: 0;
-    visibility: hidden;
-    translate: 0 -8px;
-  }
-
-  /* Years sticker in the hero: pops in once, then its text ring turns. */
-  .years-sticker { animation: sticker-pop 700ms cubic-bezier(0.3, 1.5, 0.5, 1) 900ms both; }
-  .years-ring { animation: sticker-spin 18s linear infinite; }
-  @keyframes sticker-pop { from { scale: 0; rotate: -40deg; } }
-  @keyframes sticker-spin { to { rotate: -360deg; } }
-
-  /* Hero offer strip: the badge pops, then the button breathes twice to draw
-     the eye, and stops. The arrow leans forward on hover. */
-  .offer .offer-badge { animation: offer-pop 450ms cubic-bezier(0.3, 1.6, 0.5, 1) 1300ms both; }
-  .offer .offer-cta { animation: offer-nudge 1400ms var(--ease-brand) 1900ms 2; }
-  .offer .offer-arrow { transition: translate 200ms var(--ease-brand); }
-  .offer:hover .offer-arrow { translate: -4px 0; }
-  @keyframes offer-pop { from { scale: 0; } }
-  @keyframes offer-nudge {
-    0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-gold) 55%, transparent); }
-    60% { box-shadow: 0 0 0 12px transparent; }
-  }
-
-  /* ---------- Hero story (components/site/home/HeroStory.tsx) ----------
-     A drawing, laid out LTR internally like the old 3D stack was: every
-     position is design-space px converted to cqw of `.story`, written by the
-     component as a --{name}d / --{name}m pair (wide / narrow layout). The
-     container query below picks one. Text inside is set back to RTL. */
-  .story {
-    container: story / inline-size;
-    inline-size: 100%;
-    max-inline-size: 560px;
-    margin-inline: auto;
-  }
-  /* beside the copy, hug the far edge so the drawing keeps its distance */
-  @media (min-width: 1024px) {
-    .story { margin-inline: auto 0; max-inline-size: 520px; }
-  }
-  .story-stage {
-    position: relative;
-    direction: ltr;
-    aspect-ratio: 520 / 536;
-    /* act 3 cadence: step k lands at t0 + k·dt, its report line with it */
-    --story-t0: 600ms;
-    --story-dt: 380ms;
-    --cw: 45.385cqw;
-    --ch: 9.231cqw;
-    --kw: 57.692cqw;
-    --kh: 22.308cqw;
-    --kp: 16.923cqw;
-    --big: 1.5;
-    --capy: 74.04cqw;
-  }
-  .story-stage [style] {
-    --x: var(--xd); --y: var(--yd); --w: var(--wd); --h: var(--hd);
-    --fx: var(--fxd); --fy: var(--fyd); --cx: var(--cxd); --cy: var(--cyd); --r: var(--rd);
-    --ox: var(--oxd); --oy: var(--oyd);
-    --sx: var(--sxd); --sy: var(--syd); --sh: var(--shd);
-    --kx: var(--kxd); --ky: var(--kyd); --qx: var(--qxd); --qy: var(--qyd);
-  }
-  .story-narrow { display: none; }
-  @container story (max-width: 440px) {
-    .story-stage {
-      aspect-ratio: 358 / 426;
-      --cw: 54.749cqw;
-      --ch: 11.732cqw;
-      --kw: 57.542cqw;
-      --kh: 25.698cqw;
-      --kp: 17.877cqw;
-      --big: 1.3;
-      --capy: 74.86cqw;
-    }
-    .story-stage [style] {
-      --x: var(--xm); --y: var(--ym); --w: var(--wm); --h: var(--hm);
-      --fx: var(--fxm); --fy: var(--fym); --cx: var(--cxm); --cy: var(--cym); --r: var(--rm);
-      --ox: var(--oxm); --oy: var(--oym);
-      --sx: var(--sxm); --sy: var(--sym); --sh: var(--shm);
-      --kx: var(--kxm); --ky: var(--kym); --qx: var(--qxm); --qy: var(--qym);
-    }
-    .story-wide { display: none; }
-    .story-narrow { display: block; }
-    .story-chip { font-size: 12px; }
-    .story-who b { font-size: 14px; white-space: nowrap; }
-    .story-card { gap: 3cqw; padding-inline: 2.5cqw; }
-    .story-meta { font-size: 10.5px; }
-  }
-
-  /* Hidden until hydration resets it to act 0, so the finished picture does
-     not flash first. If hydration never comes, it shows itself anyway. */
-  html.js .story:not([data-live]) .story-stage {
-    opacity: 0;
-    animation: story-fallback 0s 2.5s forwards;
-  }
-  @keyframes story-fallback { to { opacity: 1; } }
-  .story-stage[data-frozen] *,
-  .story-stage[data-frozen] *::after {
-    transition: none !important;
-    animation: none !important;
-  }
-
-  /* act tabs + replay */
-  .story-tabs {
-    display: flex;
-    gap: 4px;
-    padding: 4px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    font-size: 13px;
-  }
-  .story-tabs li {
-    padding: 5px 16px;
-    border-radius: 999px;
-    color: var(--text-subtle);
-    transition: background-color 400ms var(--ease-brand), color 400ms var(--ease-brand);
-  }
-  .story-tabs li[data-on] {
-    background: var(--color-gold);
-    color: var(--color-forest-deep);
-    font-weight: 700;
-  }
-  /* Round on purpose, like the hero CTAs (owner's call, 1405/07). It sits
-     under the drawing and rises in once the story has finished. */
-  .story-replay {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding-block: 6px;
-    padding-inline: 6px 18px;
-    border-radius: 999px;
-    border: 1px solid color-mix(in oklab, var(--color-gold) 45%, transparent);
-    background: color-mix(in oklab, var(--color-gold) 8%, transparent);
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 600;
-    opacity: 0;
-    visibility: hidden;
-    translate: 0 8px;
-    transition:
-      opacity 500ms var(--ease-brand),
-      translate 500ms var(--ease-brand),
-      visibility 500ms,
-      background-color 200ms,
-      border-color 200ms;
-  }
-  .story-replay[data-show] { opacity: 1; visibility: visible; translate: 0 0; }
-  .story-replay:hover {
-    background: color-mix(in oklab, var(--color-gold) 16%, transparent);
-    border-color: var(--color-gold);
-  }
-  .story-replay-icon {
-    display: grid;
-    place-items: center;
-    inline-size: 32px;
-    block-size: 32px;
-    border-radius: 50%;
-    background: var(--color-gold);
-    color: var(--color-forest-deep);
-    transition: rotate 600ms var(--ease-brand);
-  }
-  .story-replay-icon svg { inline-size: 16px; block-size: 16px; }
-  .story-replay:hover .story-replay-icon { rotate: -360deg; }
-
-  /* threads from the phone to each question */
-  .story-lines {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    inline-size: 100%;
-    block-size: auto;
-    overflow: visible;
-  }
-  .story-lines line {
-    stroke: var(--border-strong);
-    stroke-width: 1.4;
-    stroke-dasharray: 4 5;
-    vector-effect: non-scaling-stroke;
-    opacity: 0;
-    transition: opacity 400ms var(--ease-brand);
-  }
-  .story-stage[data-act='before'] .story-lines line {
-    opacity: 1;
-    transition-delay: calc(var(--i) * 600ms + 250ms);
-  }
-  .story-stage[data-act='consult'] .story-lines line { opacity: 0.2; }
-
-  /* the phone */
-  .story-phone {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    translate: var(--x) var(--y);
-    inline-size: var(--w);
-    block-size: var(--h);
-    padding: calc(var(--w) * 0.045);
-    border-radius: calc(var(--w) * 0.17);
-    background: var(--color-ink);
-    border: 1px solid var(--border-strong);
-    box-shadow: 0 30px 70px rgb(0 0 0 / 0.5);
-  }
-  .story-phone[data-buzz='0'] { animation: story-buzz-a 350ms; }
-  .story-phone[data-buzz='1'] { animation: story-buzz-b 350ms; }
-  @keyframes story-buzz-a { 25% { rotate: -2deg; } 75% { rotate: 2deg; } }
-  @keyframes story-buzz-b { 25% { rotate: 2deg; } 75% { rotate: -2deg; } }
-  .story-screen {
-    position: relative;
-    direction: rtl;
-    block-size: 100%;
-    overflow: hidden;
-    border-radius: calc(var(--w) * 0.13);
-    background: color-mix(in oklab, var(--color-ink) 82%, var(--color-gold));
-    transition: background-color 1200ms var(--ease-brand);
-  }
-  .story-stage[data-act='after'] .story-screen {
-    background: var(--color-forest);
-    transition-delay: 600ms;
-  }
-  /* Act 3 lands as one move: the phone settles with a gold pulse at the same
-     moment the questions snap into the process beside it. */
-  .story-stage[data-act='after'] .story-phone {
-    animation: story-settle 900ms var(--ease-brand) 600ms both;
-  }
-  @keyframes story-settle {
-    0% { scale: 1; box-shadow: 0 30px 70px rgb(0 0 0 / 0.5), 0 0 0 0 color-mix(in oklab, var(--color-gold) 60%, transparent); }
-    40% { scale: 1.035; }
-    100% { scale: 1; box-shadow: 0 30px 70px rgb(0 0 0 / 0.5), 0 0 0 14px transparent; border-color: color-mix(in oklab, var(--color-gold) 55%, transparent); }
-  }
-  .story-notch {
-    position: absolute;
-    inset-block-start: calc(var(--w) * 0.04);
-    inset-inline: 0;
-    margin-inline: auto;
-    inline-size: calc(var(--w) * 0.32);
-    block-size: calc(var(--w) * 0.09);
-    border-radius: var(--radius-lg);
-    background: var(--color-forest-deep);
-  }
-  .story-time {
-    padding-block-start: calc(var(--w) * 0.19);
-    text-align: center;
-    font-size: calc(var(--w) * 0.2);
-    font-weight: 300;
-    line-height: 1.2;
-  }
-  .story-day {
-    text-align: center;
-    color: var(--text-muted);
-    font-size: max(8px, calc(var(--w) * 0.055));
-  }
-  .story-badge {
-    position: absolute;
-    inset-block-start: calc(var(--w) * 0.17);
-    inset-inline-end: calc(var(--w) * 0.06);
-    padding: 1px 7px;
-    border-radius: var(--radius-sm);
-    background: var(--color-gold);
-    color: var(--color-forest-deep);
-    font-size: max(9px, calc(var(--w) * 0.06));
-    font-weight: 800;
-    transition: opacity 400ms;
-  }
-  .story-stage[data-act='after'] .story-badge { opacity: 0; }
-  .story-notes {
-    position: absolute;
-    inset-block-start: calc(var(--w) * 0.6);
-    inset-inline: calc(var(--w) * 0.04);
-  }
-  .story-notes li {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline: 0;
-    padding: calc(var(--w) * 0.035) calc(var(--w) * 0.05);
-    border-radius: var(--radius-lg);
-    background: color-mix(in oklab, var(--color-paper) 12%, transparent);
-    font-size: max(8.5px, calc(var(--w) * 0.055));
-    line-height: 1.5;
-    translate: 0 calc(var(--k) * var(--w) * 0.25);
-    scale: calc(1 - var(--k) * 0.03);
-    transition: translate 400ms var(--ease-brand), scale 400ms var(--ease-brand), opacity 400ms;
-    animation: story-note 400ms var(--ease-brand);
-  }
-  .story-notes li[data-hide] { opacity: 0; }
-  .story-notes b { display: block; font-weight: 700; }
-  .story-notes span { color: var(--text-muted); }
-  @keyframes story-note { from { opacity: 0; translate: 0 -24px; } }
-  .story-stage[data-act='after'] .story-notes li {
-    opacity: 0;
-    translate: 0 calc(var(--w) * 0.2);
-    scale: 0.85;
-    transition-delay: 350ms;
-  }
-  .story-report {
-    position: absolute;
-    inset-block-start: calc(var(--w) * 0.58);
-    inset-inline: calc(var(--w) * 0.05);
-    padding: calc(var(--w) * 0.05) calc(var(--w) * 0.06);
-    border: 1px solid color-mix(in oklab, var(--color-gold) 50%, transparent);
-    border-radius: var(--radius-lg);
-    background: color-mix(in oklab, var(--color-paper) 8%, transparent);
-    font-size: max(8.5px, calc(var(--w) * 0.055));
-    opacity: 0;
-    translate: 0 16px;
-    transition: opacity 700ms var(--ease-brand), translate 700ms var(--ease-brand);
-  }
-  .story-stage[data-act='after'] .story-report {
-    opacity: 1;
-    translate: 0 0;
-    transition-delay: 450ms;
-  }
-  /* Each report line ticks in with its own step of the process, one by one:
-     the same --k and the same cadence as the chips beside the phone. */
-  .story-report p:not(.story-report-title) {
-    opacity: 0;
-    translate: 0 6px;
-    transition: opacity 350ms var(--ease-brand), translate 350ms var(--ease-brand);
-  }
-  .story-stage[data-act='after'] .story-report p:not(.story-report-title) {
-    opacity: 1;
-    translate: 0 0;
-    transition-delay: calc(var(--story-t0) + var(--k) * var(--story-dt) + 120ms);
-  }
-  .story-report p { display: flex; gap: 6px; padding-block: 0.28em; border-block-start: 1px solid var(--border); }
-  .story-report i { font-style: normal; font-weight: 900; color: var(--color-gold-light); }
-  .story-report .story-report-title {
-    border: 0;
-    padding-block: 0 0.35em;
-    color: var(--color-gold-light);
-    font-weight: 700;
-    font-size: 1.15em;
-  }
-  /* the questions, later the process */
-  /* Positioned elements stay LTR: Chrome maps inset-inline-* through the
-     element's own direction, so an RTL chip would be placed from the right
-     edge. row-reverse puts the number on the reading-start side instead, and
-     the text spans are RTL. */
-  .story-chip {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: center;
-    gap: 10px;
-    padding-inline: 12px;
-    inline-size: var(--cw);
-    block-size: var(--ch);
-    font-size: 13.5px;
-    border-radius: var(--radius-lg);
-    background: var(--bg-raised);
-    border: 1px solid var(--border-strong);
-    box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
-    translate: var(--fx) var(--fy);
-    scale: 0.4;
-    opacity: 0;
-    transition:
-      translate 900ms var(--ease-brand),
-      scale 900ms var(--ease-brand),
-      rotate 900ms var(--ease-brand),
-      opacity 300ms,
-      filter 400ms,
-      background-color 600ms,
-      border-color 600ms;
-  }
-  .story-chip[data-in] {
-    translate: var(--cx) var(--cy);
-    rotate: var(--r);
-    scale: 1;
-    opacity: 1;
-    transition-delay: 220ms;
-  }
-  .story-stage[data-act='consult'] .story-chip {
-    opacity: 0.3;
-    filter: blur(1.5px);
-    transition-delay: 0ms;
-  }
-  .story-stage[data-act='after'] .story-chip {
-    translate: var(--ox) var(--oy);
-    rotate: 0deg;
-    scale: 1;
-    opacity: 1;
-    filter: none;
-    background: color-mix(in oklab, var(--color-forest) 70%, var(--color-forest-deep));
-    border-color: color-mix(in oklab, var(--color-gold) 45%, transparent);
-    transition-delay: calc(var(--story-t0) + var(--k) * var(--story-dt));
-  }
-  .story-num {
-    flex: none;
-    display: grid;
-    place-items: center;
-    inline-size: 1.8em;
-    block-size: 1.8em;
-    border-radius: var(--radius-sm);
-    font-size: 0.85em;
-    font-weight: 800;
-    color: var(--text-muted);
-    background: color-mix(in oklab, var(--color-paper) 10%, transparent);
-    transition: background-color 600ms, color 600ms;
-  }
-  .story-stage[data-act='after'] .story-num {
-    background: var(--color-gold);
-    color: var(--color-forest-deep);
-    transition-delay: calc(var(--story-t0) + var(--k) * var(--story-dt) + 200ms);
-  }
-  .story-text { position: relative; flex: 1; block-size: 100%; direction: rtl; }
-  .story-text > span {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    transition: opacity 400ms;
-  }
-  .story-s { opacity: 0; font-weight: 700; }
-  .story-stage[data-act='after'] .story-q { opacity: 0; transition-delay: calc(var(--story-t0) + var(--k) * var(--story-dt)); }
-  .story-stage[data-act='after'] .story-s { opacity: 1; transition-delay: calc(var(--story-t0) + var(--k) * var(--story-dt) + 200ms); }
-  .story-aitag {
-    flex: none;
-    display: none;
-    padding: 1px 7px;
-    border: 1px solid var(--color-gold);
-    border-radius: var(--radius-sm);
-    color: var(--color-gold-light);
-    font-size: 10.5px;
-    font-weight: 700;
-  }
-  .story-stage[data-act='after'] .story-aitag { display: inline-block; }
-
-  /* the process rail */
-  .story-spine {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    translate: var(--sx) var(--sy);
-    inline-size: 2px;
-    block-size: var(--sh);
-    background: var(--color-gold);
-    transform-origin: top;
-    scale: 1 0;
-    transition: scale calc(var(--story-dt) * 5) linear;
-  }
-  .story-stage[data-act='after'] .story-spine { scale: 1 1; transition-delay: calc(var(--story-t0) + 250ms); }
-  .story-dot {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    inline-size: 11px;
-    block-size: 11px;
-    margin: -5.5px 0 0 -4.5px;
-    border-radius: 50%;
-    background: var(--color-gold-light);
-    box-shadow: 0 0 14px var(--color-gold);
-    translate: var(--sx) var(--sy);
-    opacity: 0;
-  }
-  .story-stage[data-act='after'] .story-dot {
-    opacity: 1;
-    transition: opacity 400ms 3000ms;
-    animation: story-run 2.6s linear 3s infinite;
-  }
-  @keyframes story-run {
-    from { translate: var(--sx) var(--sy); }
-    to { translate: var(--sx) calc(var(--sy) + var(--sh)); }
-  }
-
-  /* the turn: everything else steps back and the card takes the stage */
-  .story-veil {
-    position: absolute;
-    inset: -2%;
-    border-radius: var(--radius-xl);
-    background: color-mix(in oklab, var(--color-forest-deep) 72%, transparent);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 600ms var(--ease-brand);
-  }
-  .story-stage[data-act='consult'] .story-veil { opacity: 1; }
-  .story-card {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: center;
-    gap: 4.5cqw;
-    inline-size: var(--kw);
-    block-size: var(--kh);
-    padding-inline: 3cqw;
-    border-radius: var(--radius-lg);
-    background: color-mix(in oklab, var(--color-forest-deep) 85%, var(--color-ink));
-    border: 1px solid color-mix(in oklab, var(--color-gold) 60%, transparent);
-    box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
-    translate: var(--qx) var(--qy);
-    scale: calc(var(--big) * 1.1);
-    opacity: 0;
-    filter: blur(8px);
-    transition:
-      translate 1000ms var(--ease-brand),
-      scale 1000ms var(--ease-brand),
-      opacity 500ms var(--ease-brand),
-      filter 700ms var(--ease-brand);
-  }
-  /* a gold ring that breaks outward once, as the card lands */
-  .story-card::after {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    border: 2px solid var(--color-gold);
-    opacity: 0;
-  }
-  .story-stage[data-act='consult'] .story-card {
-    scale: var(--big);
-    opacity: 1;
-    filter: none;
-  }
-  .story-stage[data-act='consult'] .story-card::after { animation: story-ring 1400ms var(--ease-brand) 500ms; }
-  @keyframes story-ring {
-    0% { opacity: 0.9; scale: 1; }
-    100% { opacity: 0; scale: 1.12; }
-  }
-  .story-stage[data-act='after'] .story-card {
-    translate: var(--kx) var(--ky);
-    scale: 1;
-    opacity: 1;
-    filter: none;
-  }
-  .story-photo {
-    position: relative;
-    flex: none;
-    inline-size: var(--kp);
-    block-size: var(--kp);
-  }
-  .story-photo img {
-    inline-size: 100%;
-    block-size: 100%;
-    object-fit: cover;
-    border-radius: var(--radius-lg);
-    border: 2px solid var(--color-gold);
-    clip-path: circle(0% at 50% 50%);
-    scale: 1.15;
-    transition: clip-path 900ms var(--ease-brand), scale 1200ms var(--ease-brand);
-  }
-  .story-stage:is([data-act='consult'], [data-act='after']) .story-photo img {
-    clip-path: circle(75% at 50% 50%);
-    scale: 1;
-    transition-delay: 250ms;
-  }
-  .story-check {
-    position: absolute;
-    inset-block-end: -6px;
-    inset-inline-start: -6px;
-    display: grid;
-    place-items: center;
-    inline-size: 22px;
-    block-size: 22px;
-    border-radius: 50%;
-    border: 2px solid var(--color-forest-deep);
-    background: var(--color-gold);
-    color: var(--color-forest-deep);
-    font-size: 12px;
-    font-weight: 900;
-    scale: 0;
-    transition: scale 400ms var(--ease-brand);
-  }
-  .story-stage[data-act='after'] .story-check { scale: 1; transition-delay: 3000ms; }
-  .story-who { display: flex; flex-direction: column; gap: 5px; min-inline-size: 0; direction: rtl; }
-  .story-who b { font-size: 18px; font-weight: 800; line-height: 1.3; }
-  .story-rule {
-    display: block;
-    inline-size: 36px;
-    block-size: 2px;
-    background: var(--color-gold);
-    scale: 0 1;
-    transition: scale 600ms var(--ease-brand);
-  }
-  .story-meta { font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
-  .story-meta em { font-style: normal; font-weight: 700; color: var(--color-gold-light); }
-  .story-who b,
-  .story-meta {
-    opacity: 0;
-    translate: 0 8px;
-    transition: opacity 500ms var(--ease-brand), translate 500ms var(--ease-brand);
-  }
-  .story-stage:is([data-act='consult'], [data-act='after']) :is(.story-who b, .story-meta) {
-    opacity: 1;
-    translate: 0 0;
-  }
-  .story-stage:is([data-act='consult'], [data-act='after']) .story-who b { transition-delay: 500ms; }
-  .story-stage:is([data-act='consult'], [data-act='after']) .story-rule { scale: 1 1; transition-delay: 700ms; }
-  .story-stage:is([data-act='consult'], [data-act='after']) .story-meta { transition-delay: 850ms; }
-  .story-stage:is([data-act='consult'], [data-act='after']) .story-meta:last-child { transition-delay: 1000ms; }
-  .story-caption {
-    position: absolute;
-    inset-block-start: var(--capy);
-    inset-inline: 0;
-    direction: rtl;
-    text-align: center;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--color-gold-light);
-    opacity: 0;
-    transition: opacity 500ms var(--ease-brand);
-  }
-  .story-stage[data-act='consult'] .story-caption { opacity: 1; transition-delay: 1200ms; }
-
-  /* Tilt card (portrait): JS writes --tx/--ty, CSS does the rest. */
-  .tilt {
-    transform: perspective(1000px) rotateX(var(--ty, 0deg)) rotateY(var(--tx, 0deg));
-    transition: transform 400ms var(--ease-brand);
-    transform-style: preserve-3d;
-  }
-  .tilt-pop { transform: translateZ(40px); }
-
-  /* Frame offset behind a photo — the gold marker, grown into a frame. */
-  .gold-frame {
-    position: relative;
-  }
-  .gold-frame::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    translate: -14px 14px;
-    border: 2px solid var(--accent);
-    border-radius: var(--radius-xl);
-    z-index: -1;
-  }
-
-  /* Timeline rail with a gold fill that grows as the list scrolls in. */
-  .rail-x {
-    position: relative;
-  }
-  .rail-x::before,
-  .rail-x::after {
-    content: '';
-    position: absolute;
-    inset-inline: 0;
-    inset-block-start: 11px;
-    block-size: 2px;
-    background: var(--border);
-  }
-  .rail-x::after {
-    background: var(--accent);
-    transform-origin: var(--origin, right);
-    transition: transform 2000ms var(--ease-brand) 200ms;
-  }
-  html.js .rail-x:not([data-shown])::after { transform: scaleX(0); }
-  .rail-x:dir(ltr) { --origin: left; }
-
-  /* Bigger, softer steps for the v2 process block. */
-  .steps-v2 > li::before {
-    inline-size: --spacing(12);
-    block-size: --spacing(12);
-    border: 1px solid var(--border-strong);
-    border-inline-start: 1px solid var(--border-strong);
-    border-radius: var(--radius-lg);
-    padding: 0;
-    font-size: var(--text-500);
-    font-weight: 700;
-    color: var(--text);
-    background: var(--bg-band);
-    position: relative;
-    z-index: 1;
-    margin-block-end: --spacing(5);
-  }
-  .steps-v2.rail-x::before,
-  .steps-v2.rail-x::after { inset-block-start: 24px; }
-  .steps-v2 > li { padding-inline-start: 0; }
-  .steps-v2 > li + li { margin-block-start: 0; }
 }
 
-/* v2 motion off: everything lands in its finished place at once. */
+/* motion off: everything lands in its finished place at once. */
 @media (prefers-reduced-motion: reduce) {
   html.js [data-reveal] { opacity: 1; transform: none; }
   html.js .draw path, html.js .draw line, html.js .draw polyline { stroke-dashoffset: 0; }
-  html.js .rail-x:not([data-shown])::after { transform: none; }
-  html.js .split-word > span, html.js .ink-sweep { animation: none; }
-  .flow, .marquee-track, .scroll-cue { animation: none !important; }
-  .story *, .offer *, .header-cta, .years-sticker, .years-ring { transition: none !important; animation: none !important; }
-  .tilt { transform: none !important; }
 }
 
-/* v2 small diagram motion (Pillars) */
-@layer components {
-  .bar-grow {
-    transform-box: fill-box;
-    transform-origin: bottom;
-  }
-  html.js [data-reveal] .bar-grow {
-    transform: scaleY(0.08);
-    transition: transform 1200ms var(--ease-spring);
-    transition-delay: calc(var(--d, 0) * 110ms + 300ms);
-  }
-  html.js [data-reveal][data-shown] .bar-grow { transform: none; }
-
-  .node-swap { animation: node-swap 4.5s var(--ease-brand) infinite; }
-  @keyframes node-swap {
-    0%, 35% { opacity: 1; }
-    45%, 55% { opacity: 0.15; }
-    70%, 100% { opacity: 1; }
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  html.js [data-reveal] .bar-grow { transform: none; }
-  .node-swap { animation: none; }
-  .spark { display: none; }
-}
-@media (width < 48rem) {
-  .rail-x::before,
-  .rail-x::after { display: none; }
-}
 @layer components {
   .ring-spin { animation: ring-spin 60s linear infinite; }
   @keyframes ring-spin { to { rotate: 360deg; } }
 }
 @media (prefers-reduced-motion: reduce) { .ring-spin { animation: none; } }
 
-/* Unlayered on purpose: the header's own `bg-bg/80` utility sits in the
-   utilities layer and would otherwise win, leaving an 80% night ground over the
-   paper body — which reads as grey, not as part of the hero. */
-body:has([data-hero]) .site-header {
-  background-color: color-mix(in oklab, var(--color-forest-deep) 94%, transparent);
+
+/* ============================================================
+   13. V3 — MINIMAL REDESIGN
+   Light hero art, soft cards, the horizontal timeline. Motion is slow and
+   small; every animation here is switched off under reduced motion.
+   ============================================================ */
+@layer components {
+  /* the soft card used across v3 pages: hairline, tiny shadow, lifts on hover */
+  .card-v3 {
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    background: var(--bg-raised);
+    box-shadow: 0 1px 2px var(--ink-06), 0 14px 34px -18px var(--ink-12);
+    transition:
+      transform 350ms var(--ease-brand),
+      box-shadow 350ms var(--ease-brand),
+      border-color 250ms var(--ease-brand);
+  }
+  .card-v3-hover:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+    box-shadow: 0 1px 2px var(--ink-06), 0 22px 44px -18px var(--ink-30);
+  }
+
+  /* chip rows scroll sideways on a phone instead of wrapping to four lines */
+  .scroll-x {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .scroll-x::-webkit-scrollbar { display: none; }
+
+  /* darker steps of two brand colours, for the sides of isometric solids */
+  .fill-sand-d1 { fill: color-mix(in oklab, var(--color-sand) 86%, var(--color-ink)); }
+  .fill-sand-d2 { fill: color-mix(in oklab, var(--color-sand) 78%, var(--color-ink)); }
+  .fill-gold-d1 { fill: color-mix(in oklab, var(--color-gold) 78%, var(--color-ink)); }
+  .fill-gold-d2 { fill: color-mix(in oklab, var(--color-gold) 90%, var(--color-ink)); }
+
+  /* ---- hero art -------------------------------------------------- */
+  .ha-in { animation: ha-in 1000ms var(--ease-brand) var(--dl, 0s) both; }
+  .ha-float { animation: ha-float var(--t, 8s) ease-in-out var(--dl, 0s) infinite; }
+  .ha-spin {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ha-spin var(--t, 120s) linear infinite;
+  }
+  .ha-flow { stroke-dasharray: 3 9; animation: ha-flow 7s linear infinite; }
+  .ha-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: ha-draw 2200ms var(--ease-brand) var(--dl, 0.4s) forwards;
+  }
+  .ha-pulse {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ha-pulse 4.8s ease-in-out var(--dl, 0s) infinite;
+  }
+  .ha-glow { animation: ha-glow 7s ease-in-out infinite; }
+
+  @keyframes ha-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes ha-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-9px); }
+  }
+  @keyframes ha-spin { to { rotate: 360deg; } }
+  @keyframes ha-flow { to { stroke-dashoffset: -48; } }
+  @keyframes ha-draw { to { stroke-dashoffset: 0; } }
+  @keyframes ha-pulse {
+    0%, 100% { opacity: 0.35; scale: 0.85; }
+    50% { opacity: 0.9; scale: 1.25; }
+  }
+  @keyframes ha-glow {
+    0%, 100% { opacity: 0.75; }
+    50% { opacity: 1; }
+  }
+
+  /* hero copy rises in once, in order */
+  .hero-rise { animation: ha-in 900ms var(--ease-brand) var(--dl, 0s) both; }
+
+  /* ---- timeline -------------------------------------------------- */
+  .tl-line {
+    position: absolute;
+    inset-inline: 0;
+    top: 0.5rem;
+    height: 2px;
+    background: var(--border-strong);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ha-in, .ha-float, .ha-spin, .ha-flow, .ha-pulse, .ha-glow, .hero-rise { animation: none; }
+  .ha-draw { animation: none; stroke-dashoffset: 0; }
 }

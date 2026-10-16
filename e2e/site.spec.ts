@@ -5,15 +5,16 @@ import { expect, test } from '@playwright/test'
  * easy to break without anyone noticing.
  */
 
-test('the homepage states who this is for within one screen', async ({ page }) => {
+test('the homepage states the promise within one screen', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('از مدیریت ریزه‌کاری‌ها تا رهبری یک کسب‌وکار خودمختار')
-  await expect(page.getByText('اگر گوشی شما اتاق فرمان')).toBeVisible()
-  await expect(page.getByRole('link', { name: 'آخرین مقالات' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('مدیریت واقعی')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('سیستم‌های هوشمند')
+  await expect(page.getByText('تجربه کسب‌وکار، سیستم‌سازی و هوش مصنوعی در یک مسیر')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'مسیر کاری من' })).toBeVisible()
 })
 
-test('an article opens from the homepage and is readable', async ({ page }) => {
-  await page.goto('/')
+test('an article opens from the list and is readable', async ({ page }) => {
+  await page.goto('/articles')
   await page.getByRole('heading', { level: 3 }).first().click()
   await expect(page).toHaveURL(/\/articles\//)
   await expect(page.locator('.prose p').first()).toBeVisible()
@@ -41,7 +42,7 @@ test('the document is right-to-left and in Persian', async ({ page }) => {
 })
 
 test('no page scrolls sideways', async ({ page }) => {
-  for (const path of ['/', '/articles', '/about', '/consult', '/newsletter']) {
+  for (const path of ['/', '/articles', '/about', '/projects', '/contact', '/consult', '/newsletter']) {
     await page.goto(path)
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -50,13 +51,19 @@ test('no page scrolls sideways', async ({ page }) => {
   }
 })
 
-test('the theme choice survives a reload', async ({ page }) => {
+test('the header carries the five links and one button, and nothing else', async ({ page, isMobile }) => {
   await page.goto('/')
-  await page.getByRole('button', { name: /تم/ }).click()
-  const chosen = await page.locator('html').getAttribute('data-theme')
-  expect(chosen).toBeTruthy()
-  await page.reload()
-  await expect(page.locator('html')).toHaveAttribute('data-theme', chosen!)
+  if (!isMobile) {
+    const nav = page.getByRole('navigation', { name: 'ناوبری اصلی' })
+    for (const label of ['خانه', 'درباره من', 'پروژه‌ها', 'یادداشت‌ها', 'تماس']) {
+      await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible()
+    }
+    await expect(page.getByRole('banner').getByRole('link', { name: 'شروع گفت‌وگو' })).toBeVisible()
+  }
+  // the telephone and street address were removed on purpose
+  const html = await page.content()
+  expect(html).not.toContain('tel:')
+  expect(html).not.toContain('بلوار خلیج فارس')
 })
 
 test('gold is never text on a light background', async ({ page }) => {

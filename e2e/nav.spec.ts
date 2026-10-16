@@ -38,7 +38,7 @@ test.describe('mobile navigation', () => {
     await page.getByRole('button', { name: 'باز کردن منو' }).click()
 
     const sheet = page.getByRole('dialog', { name: 'ناوبری سایت' })
-    await sheet.getByRole('link', { name: 'مقالات' }).click()
+    await sheet.getByRole('link', { name: 'یادداشت‌ها' }).click()
 
     await expect(page).toHaveURL(/\/articles$/)
     await expect(sheet).toBeHidden()
@@ -52,47 +52,11 @@ test.describe('mobile navigation', () => {
   })
 })
 
-test.describe('command palette', () => {
-  test.skip(({ isMobile }) => isMobile, 'the trigger is a desktop control')
-
-  test('opens with Ctrl+K, finds an article, and closes on Escape', async ({ page }) => {
-    await page.goto('/')
-    await page.keyboard.press('Control+k')
-
-    const palette = page.getByRole('dialog', { name: 'جست‌وجوی سریع' })
-    await expect(palette).toBeVisible()
-
-    await page.getByLabel('عبارت جست‌وجو').fill('مستند')
-    await expect(palette.getByRole('option').filter({ hasText: 'مستند' }).first()).toBeVisible()
-
-    await page.keyboard.press('Escape')
-    await expect(palette).toBeHidden()
-  })
-
-  test('does not steal the shortcut from a form field', async ({ page }) => {
-    await page.goto('/newsletter')
-    await page.getByPlaceholder('you@example.com').click()
-    await page.keyboard.press('Control+k')
-    await expect(page.getByRole('dialog', { name: 'جست‌وجوی سریع' })).toBeHidden()
-  })
-
-  test('gives the trigger, the dialog and the field three distinct names', async ({ page }) => {
-    // One string across all three announced identically to a screen reader and
-    // made getByLabel resolve to three elements.
-    await page.goto('/')
-    await expect(page.getByRole('button', { name: 'باز کردن جست‌وجوی سریع' })).toHaveCount(1)
-    await page.keyboard.press('Control+k')
-    await expect(page.getByRole('dialog', { name: 'جست‌وجوی سریع' })).toHaveCount(1)
-    await expect(page.getByLabel('عبارت جست‌وجو')).toHaveCount(1)
-  })
-
-  test('leaves the /search page label unambiguous', async ({ page }) => {
-    // Regression guard: if the palette ever reuses the #q label, this call
-    // resolves to two elements and Playwright's strict mode fails here rather
-    // than in whichever suite runs next.
-    await page.goto('/search')
-    await expect(page.getByLabel('جست‌وجو در مقالات')).toHaveCount(1)
-  })
+test('the /search page label is unambiguous', async ({ page }) => {
+  // the palette that once shared this label is gone; the guard stays so a
+  // second control with the same name cannot creep back in
+  await page.goto('/search')
+  await expect(page.getByLabel('جست‌وجو در مقالات')).toHaveCount(1)
 })
 
 test.describe('topics and pagination', () => {

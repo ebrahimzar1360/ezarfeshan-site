@@ -1,41 +1,38 @@
 import { expect, test } from '@playwright/test'
 
-test('the first h3 on the homepage is still an article link', async ({ page }) => {
-  // The load-bearing constraint for this phase. e2e/site.spec.ts clicks the
-  // first level-3 heading and expects to land on an article; anything new added
-  // above the article list must not introduce one.
-  await page.goto('/')
+test('the first h3 on the article list is an article link', async ({ page }) => {
+  // e2e/site.spec.ts clicks the first level-3 heading on /articles and expects
+  // to land on an article; anything added above the grid must not add an h3.
+  await page.goto('/articles')
   const first = page.getByRole('heading', { level: 3 }).first()
   const href = await first.locator('xpath=ancestor-or-self::a[1]').getAttribute('href')
   expect(href).toMatch(/^\/articles\//)
 })
 
-test('the process block is an ordered list, not three headings in a row', async ({ page }) => {
-  await page.goto('/')
-  const steps = page.locator('ol.steps > li')
-  await expect(steps).toHaveCount(3)
-
-  // The numbering has to be real — the counter is what makes it a sequence to
-  // anything that is not looking at it.
-  const marker = await steps.first().evaluate(
-    (el) => getComputedStyle(el, '::before').content
-  )
-  expect(marker).not.toBe('none')
+test('the six categories always show, and "همه" is current on /articles', async ({ page }) => {
+  await page.goto('/articles')
+  const chips = page.getByRole('navigation', { name: 'موضوع‌ها' })
+  for (const name of ['مدیریت', 'سیستم‌سازی', 'هوش مصنوعی', 'کسب‌وکار', 'رهبری و تیم', 'توسعه فردی']) {
+    await expect(chips.getByRole('link', { name, exact: true })).toHaveCount(1)
+  }
+  await expect(chips.locator('[aria-current="page"]')).toHaveCount(1)
 })
 
-test('the topic chips on the homepage do not claim to be the current page', async ({ page }) => {
-  // They are navigation here, not a filter state: the homepage is not a topic
-  // listing, so aria-current="page" would be a lie to a screen reader.
-  await page.goto('/')
-  const chips = page.getByRole('navigation', { name: 'موضوع‌ها' })
-  await expect(chips).toBeVisible()
-  await expect(chips.locator('[aria-current]')).toHaveCount(0)
-
-  // ...while the same component still marks the current page on /articles.
+test('every note ends with the references statement', async ({ page }) => {
   await page.goto('/articles')
-  await expect(
-    page.getByRole('navigation', { name: 'موضوع‌ها' }).locator('[aria-current="page"]')
-  ).toHaveCount(1)
+  await expect(page.getByRole('heading', { name: 'منابع و ایده‌های مرجع' })).toBeVisible()
+})
+
+test('the homepage follows the briefed order', async ({ page }) => {
+  await page.goto('/')
+  const headings = await page.getByRole('heading', { level: 2 }).allInnerTexts()
+  expect(headings).toEqual([
+    'از شفافیت تا هوشمندی',
+    'تجربه‌ای از دل کسب‌وکار واقعی',
+    'پروژه‌های در حال توسعه',
+    'یادداشت‌ها و تجربه‌ها',
+    'برای گفت‌وگو آماده‌ام',
+  ])
 })
 
 test.describe('consult FAQ', () => {

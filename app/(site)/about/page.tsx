@@ -1,231 +1,227 @@
 import type { Metadata } from 'next'
 import type { CSSProperties } from 'react'
 import Image from 'next/image'
+import { CtaBand } from '@/components/site/CtaBand'
+import { PageBand } from '@/components/site/PageBand'
 import { FieldExample } from '@/components/site/home/FieldExample'
-import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
-import { CountUp } from '@/components/ui/CountUp'
-import { SectionHead } from '@/components/ui/SectionHead'
-import { Tilt } from '@/components/ui/Tilt'
-import {
-  credentials,
-  currentRoles,
-  fa,
-  milestones,
-  yearsSince,
-} from '@/lib/content/bio'
-import { site, socials } from '@/lib/site'
+import { Icon, type IconName } from '@/components/ui/Icon'
+import { currentRoles, fa, milestones, today, yearsSince } from '@/lib/content/bio'
+import { site } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'درباره',
+  title: 'درباره من',
   description: `${site.positioning} — ${site.description}`,
+  alternates: { canonical: '/about' },
+}
+
+const KEYWORDS = ['مدیریت', 'سیستم‌سازی', 'مذاکره', 'بازاریابی', 'هوش مصنوعی']
+
+/** A king, drawn flat: the page's single image of "a decision". Decorative. */
+function Chess() {
+  return (
+    <svg viewBox="0 0 200 250" aria-hidden focusable="false" className="h-auto w-44 md:w-56">
+      <ellipse cx="100" cy="232" rx="78" ry="10" className="fill-black/30" />
+      <rect x="95.5" y="10" width="9" height="30" rx="3" className="fill-gold" />
+      <rect x="86" y="19" width="28" height="9" rx="3" className="fill-gold" />
+      <circle cx="100" cy="64" r="26" className="fill-gold" />
+      <circle cx="91" cy="56" r="8" className="fill-white/30" />
+      <rect x="68" y="88" width="64" height="11" rx="5.5" className="fill-gold-d1" />
+      <path d="M78 99 Q72 168 52 204 L148 204 Q128 168 122 99 Z" className="fill-gold" />
+      <path d="M122 99 Q128 168 148 204 L118 204 Q112 160 110 99 Z" className="fill-gold-d1" />
+      <rect x="40" y="204" width="120" height="20" rx="10" className="fill-gold-d1" />
+      <rect x="40" y="204" width="120" height="8" rx="4" className="fill-gold-d2" />
+    </svg>
+  )
 }
 
 /**
- * Every figure on this page is a duration Ebrahim stated, computed from its
- * start year so it cannot go stale. There are no outcome claims — no revenue,
- * no client counts, no percentages — because none were supplied.
+ * Every figure on this page is a duration the owner stated, computed from its
+ * start year so it cannot go stale. No outcome claims — no revenue, no client
+ * counts, no percentages — because none were supplied.
  *
- * v2 layout: a night-ground masthead with the portrait on its gold frame; the
- * turning point as an editorial spread; the field example (shared with the
- * homepage); the road as a vertical rail; today's roles and training as two
- * panels; contact on the night ground again.
+ * Order, as briefed: masthead with portrait → three figures → the turning point
+ * → the road → today's roles → learning → one real example → invitation.
  */
 export default function AboutPage() {
-  const figures = [
-    { value: yearsSince(1380), label: 'سال در حوزهٔ خودرو' },
-    { value: yearsSince(1389), label: 'سال مدیریت نمایندگی' },
-    { value: yearsSince(1391), label: 'سال در پخش قطعات' },
+  const figures: { icon: IconName; value: number; label: string }[] = [
+    { icon: 'car', value: yearsSince(1380), label: 'در صنعت خودرو' },
+    { icon: 'user', value: yearsSince(1389), label: 'مدیریت نمایندگی' },
+    { icon: 'box', value: yearsSince(1391), label: 'فعالیت در قطعات یدکی خودرو' },
+  ]
+
+  const stops = [
+    ...milestones.map((m) => ({ key: String(m.year), when: fa(m.year), title: m.title, body: m.body, now: false })),
+    { key: 'today', when: today.title, title: '', body: today.body, now: true },
   ]
 
   return (
     <>
-      <header className="tone-inverse tone-deep bp-grid relative overflow-hidden">
-        <span aria-hidden className="glow-emerald -top-40 start-[-10%] size-[36rem] opacity-50" />
-        <Container className="grid items-center gap-14 py-16 md:grid-cols-12 md:py-24">
-          <div className="md:col-span-7">
-            <p className="eyebrow enter">درباره</p>
-            <h1 className="enter mt-5 text-display-sm font-black leading-[1.2]" style={{ animationDelay: '100ms' }}>
-              مشاوری که هم از <span className="text-gold-light">میدان</span> آمده، هم از{' '}
-              <span className="text-gold-light">آینده</span>
-            </h1>
-            <div
-              className="enter mt-8 max-w-(--container-measure) space-y-5 text-400 leading-prose text-text-muted"
-              style={{ animationDelay: '220ms' }}
-            >
-              <p>
-                {fa(yearsSince(1380))} سال است در حوزهٔ خودرو کار می‌کنم. از فروش قطعات شروع
-                کردم و {fa(yearsSince(1389))} سال است نمایندگی سایپا را مدیریت می‌کنم.
-              </p>
-              <p>
-                یعنی مشکلاتی که دربارهٔ آن‌ها می‌نویسم را از بیرون تماشا نکرده‌ام. نیروی کلیدی
-                از دست داده‌ام. فرایندی که فقط در سر خودم بود باعث توقف کار شده. انبار و
-                زنجیرهٔ تأمینی را اداره کرده‌ام که بدون فرایند نوشته‌شده از دست خارج می‌شود.
-              </p>
-            </div>
-            <dl
-              className="enter mt-10 grid max-w-xl grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border"
-              style={{ animationDelay: '340ms' }}
-            >
-              {figures.map((f) => (
-                <div key={f.label} className="bg-bg px-4 py-4">
-                  <dt className="sr-only">{f.label}</dt>
-                  <dd>
-                    <CountUp value={f.value} className="text-700 font-black text-gold-light" />
-                    <span className="mt-1 block text-200 text-text-muted">{f.label}</span>
-                  </dd>
-                </div>
-              ))}
-            </dl>
+      <PageBand
+        title={
+          <>
+            مشاوری که هم از <span className="text-gold-light">میدان</span> آمده، هم از{' '}
+            <span className="text-gold-light">آینده</span>
+          </>
+        }
+        lead={
+          <>
+            {fa(yearsSince(1380))} سال تجربه در صنعت خودرو،
+            <br />
+            {fa(yearsSince(1389))} سال مدیریت نمایندگی،
+            <br />و امروز تمرکز بر سیستم‌سازی و هوش مصنوعی برای کسب‌وکارهای واقعی.
+          </>
+        }
+        aside={
+          <div className="relative mx-auto w-full max-w-xs self-end md:max-w-sm">
+            <Image
+              src="/photos/portrait-studio.jpg"
+              alt="ابراهیم زرفشان"
+              width={997}
+              height={1330}
+              sizes="(min-width: 768px) 24rem, 80vw"
+              priority
+              className="aspect-[4/4.6] w-full rounded-t-3xl object-cover object-top"
+            />
           </div>
+        }
+      />
 
-          <div className="enter md:col-span-5" style={{ animationDelay: '200ms' }}>
-            <Tilt className="gold-frame mx-auto max-w-sm md:max-w-none">
-              <Image
-                src="/photos/portrait-about.jpg"
-                alt="پرترهٔ ابراهیم زرفشان"
-                width={1030}
-                height={1373}
-                sizes="(min-width: 768px) 40vw, 100vw"
-                priority
-                className="rounded-xl border border-border"
-              />
-            </Tilt>
-          </div>
-        </Container>
-      </header>
-
-      {/* The turning point, as an editorial spread: the conclusion is the pull
-          quote, the reasoning runs beside it. */}
-      <section className="py-24 md:py-36">
+      <section className="py-10 md:py-14">
         <Container>
-          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:gap-20">
-            <div data-reveal>
-              <SectionHead eyebrow="نقطهٔ تغییر" title="چه چیزی مرا به اینجا رساند" />
-              <p className="border-s-4 border-accent ps-6 text-700 font-black leading-snug text-text md:text-800">
-                وقتی یک مشکل با هر آدمی تکرار شود، دیگر مشکل آدم نیست.
-              </p>
-            </div>
-            <div className="space-y-5 text-400 leading-prose text-text-muted lg:pt-20" data-reveal style={{ '--d': 1 } as CSSProperties}>
+          <dl className="grid gap-4 sm:grid-cols-3 sm:gap-6">
+            {figures.map((f, i) => (
+              <div
+                key={f.label}
+                data-reveal
+                style={{ '--d': i } as CSSProperties}
+                className="card-v3 flex items-center gap-5 px-6 py-6"
+              >
+                <span aria-hidden className="grid size-14 flex-none place-items-center rounded-xl bg-gold/20 text-700 text-forest">
+                  <Icon name={f.icon} />
+                </span>
+                <div>
+                  <dd className="text-800 font-black leading-none text-forest">
+                    {fa(f.value)} <span className="text-400 font-bold">سال</span>
+                  </dd>
+                  <dt className="mt-2 text-300 text-text-muted">{f.label}</dt>
+                </div>
+              </div>
+            ))}
+          </dl>
+        </Container>
+      </section>
+
+      <section className="tone-inverse bg-forest-deep py-16 md:py-24">
+        <Container className="grid items-center gap-10 md:grid-cols-[auto_1fr] md:gap-16">
+          <div className="mx-auto" data-reveal>
+            <Chess />
+          </div>
+          <div data-reveal>
+            <p className="inline-flex rounded-md bg-gold px-3 py-1 text-200 font-bold text-forest-deep">
+              نقطه عطف
+            </p>
+            <h2 className="mt-5 max-w-2xl text-700 font-extrabold leading-[1.45] text-gold-light md:text-800">
+              وقتی یک مشکل با آدم‌های مختلف تکرار می‌شود، دیگر فقط مشکل آدم‌ها نیست.
+            </h2>
+            <div className="mt-7 max-w-2xl space-y-5 text-400 leading-prose text-text-muted">
               <p>
-                سال‌ها فکر می‌کردم مشکل از آدم‌هاست. نیروی خوب پیدا نمی‌شود، آموزش نمی‌گیرد،
-                می‌رود. هر بار از صفر شروع می‌کردم و هر بار به همان‌جا می‌رسیدم.
+                سال‌ها فکر می‌کردم بسیاری از مشکلات با نیروی بهتر حل می‌شوند. اما وقتی همان مسئله
+                در بخش‌های مختلف و با افراد مختلف تکرار شد، فهمیدم:
               </p>
+              <p className="text-500 font-extrabold text-text">مشکل از سیستم است.</p>
               <p>
-                نقطهٔ تغییر وقتی بود که دیدم الگو تکرار می‌شود — با آدم‌های مختلف، در بخش‌های
-                مختلف، حتی در کسب‌وکار جدیدی که از صفر ساختم.
-              </p>
-              <p className="text-500 font-bold text-text">مشکل از سیستم است.</p>
-              <p>
-                از آن به بعد کارم عوض شد: به‌جای اینکه هر بار خودم مسئله را حل کنم، شروع کردم
-                به نوشتن اینکه چطور حل می‌شود. این تفاوت بین کار کردن در کسب‌وکار و کار کردن
-                روی کسب‌وکار است.
+                از همان‌جا مسیر من از مدیریت روزمره به سمت سیستم‌سازی و بعد استفاده کاربردی از
+                هوش مصنوعی تغییر کرد.
               </p>
             </div>
           </div>
         </Container>
       </section>
 
-      <FieldExample />
-
-      <section className="bg-bg-band py-24 md:py-36">
+      <section className="py-16 md:py-24">
         <Container>
-          <SectionHead eyebrow="مسیر" title="از کجا آمده‌ام" />
-          <ol className="relative max-w-3xl border-s-2 border-border ps-8 md:ps-12">
-            {milestones.map((m, i) => (
-              <li key={m.year} className="relative pb-14 last:pb-0" data-reveal style={{ '--d': i } as CSSProperties}>
+          <header className="mb-12 md:mb-16" data-reveal>
+            <h2 className="text-700 font-extrabold md:text-800">مسیر حرفه‌ای من</h2>
+            <span aria-hidden className="mt-5 block h-1 w-14 rounded-full bg-gold" />
+          </header>
+
+          <ol className="relative ms-2 grid gap-9 border-s-2 border-border-strong md:ms-0 md:grid-cols-5 md:gap-5 md:border-s-0">
+            <span aria-hidden className="tl-line hidden md:block" />
+            {stops.map((s, i) => (
+              <li
+                key={s.key}
+                data-reveal
+                style={{ '--d': i } as CSSProperties}
+                className="relative ps-7 md:ps-0 md:pt-10"
+              >
                 <span
                   aria-hidden
-                  className={`absolute -start-[calc(2rem+8px)] top-2 size-3.5 rotate-45 border-2 border-accent md:-start-[calc(3rem+8px)] ${
-                    m.ongoing ? 'bg-accent' : 'bg-bg-band'
+                  className={`absolute -start-[0.6rem] top-1.5 size-4 rounded-full border-2 md:start-0 md:top-0 ${
+                    s.now ? 'border-gold bg-gold' : 'border-forest bg-bg'
                   }`}
                 />
-                <p className="text-800 font-black leading-none text-text">{fa(m.year)}</p>
-                <h3 className="mt-3 text-500 font-bold">{m.title}</h3>
-                <p className="mt-3 max-w-(--container-measure) text-300 leading-prose text-text-muted">{m.body}</p>
-                {m.ongoing && (
-                  <p className="mt-3 inline-flex rounded-md border border-border-strong px-2.5 py-1 text-200 text-text-muted">
-                    تا امروز — {fa(yearsSince(m.year))} سال
-                  </p>
-                )}
+                <p className="text-600 font-black text-forest">{s.when}</p>
+                {s.title && <h3 className="mt-1 text-400 font-extrabold leading-snug">{s.title}</h3>}
+                <p className="mt-2 text-300 leading-normal text-text-muted">{s.body}</p>
               </li>
             ))}
           </ol>
         </Container>
       </section>
 
-      <section className="py-24 md:py-36">
+      <section className="bg-bg-band py-16 md:py-24">
         <Container>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="panel p-8 md:p-10" data-reveal>
-              <p className="eyebrow">امروز</p>
-              <h2 className="mt-3 text-600 font-bold">نقش‌های فعلی</h2>
-              <ul className="mt-8 divide-y divide-border">
-                {currentRoles.map((r) => (
-                  <li key={r.title} className="flex items-baseline justify-between gap-4 py-4">
-                    <span className="text-400 font-medium">{r.title}</span>
-                    <span className="shrink-0 text-200 text-text-subtle">{r.detail}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="panel p-8 md:p-10" data-reveal style={{ '--d': 1 } as CSSProperties}>
-              <p className="eyebrow">آموزش</p>
-              <h2 className="mt-3 text-600 font-bold">مدارک و دوره‌ها</h2>
-              <ul className="mt-8 flex flex-wrap gap-2.5">
-                {credentials.map((c) => (
-                  <li key={c.title} className="rounded-lg border border-border-strong px-4 py-2.5">
-                    <span className="latin text-400 font-bold">{c.title}</span>
-                    {c.note && <span className="ms-2 text-200 text-text-subtle">· {c.note}</span>}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-8 text-300 leading-prose text-text-muted">
-                هوش مصنوعی برای من موضوع تازه‌ای است که دارم یاد می‌گیرم، نه چیزی که سال‌ها
-                در آن کار کرده باشم. آنچه اضافه می‌کنم این است که می‌دانم کجای یک کسب‌وکار
-                واقعی به آن نیاز دارد.
-              </p>
-            </div>
-          </div>
-        </Container>
-      </section>
-
-      <section className="tone-inverse tone-deep bp-grid relative overflow-hidden py-24 md:py-32">
-        <Container>
-          <div className="grid gap-12 md:grid-cols-2 md:items-end">
-            <div data-reveal>
-              <p className="eyebrow">تماس</p>
-              <h2 className="mt-4 text-700 font-black md:text-800">
-                اگر مسئله‌ات از جنس همین حرف‌هاست، <span className="text-gold-light">بنویس.</span>
-              </h2>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button href="/consult" size="lg">
-                  درخواست مشاوره
-                </Button>
-                <Button href="/articles" size="lg" variant="outline">
-                  از مقالات شروع کن
-                </Button>
-              </div>
-            </div>
-            <ul className="space-y-3" data-reveal style={{ '--d': 1 } as CSSProperties}>
-              <li>
-                <a href={`mailto:${site.email}`} className="latin text-400">
-                  {site.email}
-                </a>
+          <header className="mb-10 md:mb-14" data-reveal>
+            <h2 className="text-700 font-extrabold md:text-800">نقش‌های فعلی من</h2>
+            <span aria-hidden className="mt-5 block h-1 w-14 rounded-full bg-gold" />
+          </header>
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {currentRoles.map((r, i) => (
+              <li
+                key={r.title}
+                data-reveal
+                style={{ '--d': i % 3 } as CSSProperties}
+                className="card-v3 flex items-center gap-4 p-6"
+              >
+                <span aria-hidden className="mt-2 size-2.5 flex-none rounded-full bg-gold" />
+                <p className="text-400 font-bold leading-snug">{r.title}</p>
               </li>
-              {socials.map((s) => (
-                <li key={s.href}>
-                  <a href={s.href} target="_blank" rel="noopener noreferrer" className="text-400">
-                    {s.label}
-                    {s.handle && <span className="latin text-text-subtle"> · {s.handle}</span>}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+            ))}
+          </ul>
         </Container>
       </section>
+
+      <section className="py-16 md:py-24">
+        <Container className="grid items-center gap-8 md:grid-cols-2 md:gap-16">
+          <div data-reveal>
+            <h2 className="text-700 font-extrabold md:text-800">یادگیری و توسعه</h2>
+            <span aria-hidden className="mt-5 block h-1 w-14 rounded-full bg-gold" />
+            <p className="mt-7 max-w-[30rem] text-500 leading-prose text-text-muted">
+              برای من یادگیری زمانی ارزش دارد که بتوان آن را در یک کسب‌وکار واقعی به کار گرفت.
+            </p>
+          </div>
+          <ul className="flex flex-wrap gap-3" data-reveal>
+            {KEYWORDS.map((k) => (
+              <li
+                key={k}
+                className="rounded-xl border border-border-strong bg-bg-raised px-5 py-3 text-400 font-bold"
+              >
+                {k}
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </section>
+
+      <FieldExample />
+
+      <CtaBand
+        title="برای گفت‌وگو آماده‌ام"
+        text="اگر کسب‌وکار شما به نظم بیشتر، سیستم بهتر یا استفاده کاربردی‌تر از هوش مصنوعی نیاز دارد، می‌توانیم گفت‌وگو را شروع کنیم."
+        primary={{ label: 'شروع گفت‌وگو', href: '/contact' }}
+        secondary={{ label: 'پروژه‌ها را ببینید', href: '/projects' }}
+      />
     </>
   )
 }

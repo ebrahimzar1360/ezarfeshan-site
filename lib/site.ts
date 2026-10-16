@@ -18,38 +18,16 @@ export const site = {
 
   email: 'ebrahimzarfeshan@gmail.com',
 
-  /**
-   * Confirmed 1405/06/24. Three separate forms because three consumers need
-   * different ones and none may be derived at the call site:
-   *   - `display` is what a Persian reader sees, in Persian digits
-   *   - `href` is the tel: target, which must be E.164 Latin or iOS ignores it
-   *   - `e164` is what schema.org/telephone expects
-   * A component that formats its own phone number is a component that will
-   * disagree with the next one.
-   */
-  phone: {
-    display: '۰۷۱–۵۲۳۴۸۸۸۳',
-    href: 'tel:+987152348883',
-    e164: '+987152348883',
-  },
-
-  address: {
-    display: 'فارس، لار، شهر قدیم، بلوار خلیج فارس',
-    city: 'لار',
-    region: 'فارس',
-    country: 'IR',
-    street: 'شهر قدیم، بلوار خلیج فارس',
-  },
+  /** Shown as typed; wa.me needs the international form without + or 0. */
+  whatsapp: { display: '۰۹۱۷۱۸۱۴۷۷۳', e164: '989171814773' },
+  linkedinDisplay: 'linkedin.com/in/ebrahim-zarfeshan-6bb688423',
+  instagramHandle: 'mindfullmanager1',
 
   /**
-   * `display` is the human line; `schema` is the schema.org openingHours
-   * syntax, which only accepts English day abbreviations and 24-hour times.
-   * Saturday–Thursday is the Iranian working week.
+   * Phone, street address and opening hours were removed on 1405/07/24 at the
+   * owner's request: the site routes people to email, WhatsApp, LinkedIn and
+   * Instagram, and shows no physical address.
    */
-  hours: {
-    display: 'شنبه تا پنج‌شنبه، ۹ تا ۱۷',
-    schema: 'Sa,Su,Mo,Tu,We,Th 09:00-17:00',
-  },
 
   locale: 'fa-IR',
   dir: 'rtl',
@@ -74,25 +52,25 @@ export const socials: readonly SocialLink[] = [
   },
   {
     label: 'واتس‌اپ',
-    href: 'https://wa.me/qr/56AZQE4QDCMEN1',
+    href: 'https://wa.me/989171814773',
     handle: null,
   },
   {
     label: 'اینستاگرام',
-    href: 'https://instagram.com/mindfulmanager1',
-    handle: 'mindfulmanager1',
+    href: 'https://instagram.com/mindfullmanager1',
+    handle: 'mindfullmanager1',
   },
 ]
 
 export const nav = [
-  { label: 'مقالات', href: '/articles' },
-  { label: 'موضوع‌ها', href: '/topics' },
-  { label: 'منابع', href: '/resources' },
-  { label: 'درباره', href: '/about' },
+  { label: 'خانه', href: '/' },
+  { label: 'درباره من', href: '/about' },
+  { label: 'پروژه‌ها', href: '/projects' },
+  { label: 'یادداشت‌ها', href: '/articles' },
+  { label: 'تماس', href: '/contact' },
 ] as const
 
 export const legalNav = [
   { label: 'حریم خصوصی', href: '/privacy' },
   { label: 'شرایط استفاده', href: '/terms' },
-  { label: 'تماس', href: '/contact' },
 ] as const

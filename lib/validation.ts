@@ -65,6 +65,35 @@ export const leadSchema = z.object({
   website: honeypot,
 })
 
+/**
+ * The /contact form: four fields and nothing else. `contact` is deliberately
+ * free text — an email, a phone number or a WhatsApp number — because the
+ * person is told to leave whichever way they like to be reached.
+ */
+export const CONTACT_SUBJECTS = [
+  'مشاوره مدیریت',
+  'سیستم‌سازی',
+  'هوش مصنوعی در کسب‌وکار',
+  'پروژه‌ها و همکاری',
+  'سایر',
+] as const
+
+export const contactSchema = z.object({
+  name: z.string().trim().min(2, 'نامت را وارد کن.').max(80, 'نام بیش از حد طولانی است.'),
+  contact: z
+    .string()
+    .trim()
+    .min(5, 'ایمیل یا شمارهٔ تماست را بنویس.')
+    .max(120, 'راه ارتباطی بیش از حد طولانی است.'),
+  subject: z.enum(CONTACT_SUBJECTS, { message: 'یک موضوع انتخاب کن.' }),
+  message: z
+    .string()
+    .trim()
+    .min(10, 'پیامت خیلی کوتاه است — دست‌کم چند کلمه بنویس.')
+    .max(2000, 'پیام بیش از حد طولانی است. خلاصه‌ترش کن.'),
+  website: honeypot,
+})
+
 export const downloadSchema = z.object({
   email,
   website: honeypot,
@@ -89,5 +118,6 @@ export const chatSchema = z.object({
 
 export type SubscribeInput = z.infer<typeof subscribeSchema>
 export type LeadInput = z.infer<typeof leadSchema>
+export type ContactInput = z.infer<typeof contactSchema>
 export type DownloadInput = z.infer<typeof downloadSchema>
 export type ChatInput = z.infer<typeof chatSchema>

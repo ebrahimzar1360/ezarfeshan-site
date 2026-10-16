@@ -114,6 +114,9 @@ const ROOT_ARGS = typeof process.getuid === 'function' && process.getuid() === 0
     await page.send('Runtime.evaluate', {
       awaitPromise: true,
       expression: `(async () => {
+        // html { scroll-behavior: smooth } would turn every scrollTo into a slow
+        // animation that never reaches the lower sections within the 120ms step
+        document.documentElement.style.scrollBehavior = 'auto';
         const step = window.innerHeight * 0.8;
         for (let y = 0; y < document.body.scrollHeight; y += step) {
           window.scrollTo(0, y);

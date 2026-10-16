@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { ComponentProps, ReactNode } from 'react'
 import { Spinner } from './Spinner'
 
-type Variant = 'solid' | 'outline' | 'text'
+type Variant = 'solid' | 'outline' | 'text' | 'brand' | 'gold'
 type Size = 'sm' | 'md' | 'lg'
 
 /**
@@ -15,6 +15,10 @@ const variants: Record<Variant, string> = {
   solid: 'bg-solid-bg text-solid-text hover:bg-solid-bg-hover',
   outline: 'border border-border-strong text-text hover:border-accent hover:bg-accent/8',
   text: 'text-link underline underline-offset-4 hover:text-link-hover',
+  // v3: the forest-green primary on light grounds, and its gold twin on dark
+  // bands. Gold sits behind ink, never in front of paper (2.10:1).
+  brand: 'bg-forest text-paper hover:bg-emerald hover:text-paper',
+  gold: 'bg-gold text-forest-deep hover:bg-gold-light hover:text-forest-deep',
 }
 
 const sizes: Record<Size, string> = {
@@ -31,7 +35,11 @@ const base =
 function classesFor(variant: Variant, size: Size, round: boolean, className: string) {
   // the text variant is a link, not a control: no fixed height or padding
   const sizing = variant === 'text' ? 'text-300' : sizes[size]
-  const radius = round ? 'rounded-full' : 'rounded-md'
+  const radius = round
+    ? 'rounded-full'
+    : variant === 'brand' || variant === 'gold'
+      ? 'rounded-lg'
+      : 'rounded-md'
   return `${base} ${radius} ${variants[variant]} ${sizing} ${className}`
 }
 

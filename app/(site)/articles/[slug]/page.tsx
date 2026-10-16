@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { ArticleJsonLd } from '@/components/seo/JsonLd'
+import { ReferencesNote } from '@/components/site/ReferencesNote'
 import { ArticleGrid } from '@/components/ui/ArticleGrid'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import {
@@ -168,6 +169,10 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
           <TableOfContentsSticky headings={headings} />
         </div>
+      </Container>
+
+      <Container className="pb-10">
+        <ReferencesNote className="max-w-4xl" />
       </Container>
 
       <Container className="pb-16">

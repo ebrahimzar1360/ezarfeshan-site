@@ -1,10 +1,9 @@
 import Link from 'next/link'
-import { faNum } from '@/lib/format'
 
-export type TopicChip = { slug: string; name: string; count: number }
+export type TopicChip = { slug: string; name: string; count?: number }
 
 /**
- * Topic row for /articles and /topics/[slug].
+ * Category row for /articles and /topics/[slug].
  *
  * There is no `?topic=` filter, deliberately. It would flip /articles to dynamic
  * and cost `revalidate = 3600`, it would create a second URL for content that
@@ -13,8 +12,10 @@ export type TopicChip = { slug: string; name: string; count: number }
  * the in-place switching without any of that: "همه" is active on /articles and
  * links back there from a topic page.
  *
- * Gold appears as a border and a 10% wash, never as the label colour — it is
- * 2.10:1 on paper and an e2e test watches for exactly this mistake.
+ * v3: the six categories always show, with or without articles in them, and the
+ * row scrolls sideways on a phone instead of wrapping to several lines. The
+ * active chip is forest with paper text; gold is never the label colour (2.10:1
+ * on paper — an e2e test watches for exactly this mistake).
  */
 export function TopicChips({
   topics,
@@ -25,24 +26,24 @@ export function TopicChips({
   /** Omit on /articles, where "همه" is the active chip. */
   activeSlug?: string
   /**
-   * Whether one of these chips represents the page being viewed.
-   *
-   * False on the homepage: nothing there is a topic listing, so marking "همه"
-   * as aria-current="page" would tell a screen reader it is already on a page
-   * it is not on. The chips still work as navigation; they just stop claiming
-   * to be where you are.
+   * Whether one of these chips represents the page being viewed — false where
+   * nothing is a topic listing, so a screen reader is not told it is on a page
+   * it is not on.
    */
   current?: boolean
 }) {
   if (topics.length === 0) return null
 
   const base =
-    'inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-200 no-underline transition-colors duration-150'
-  const on = 'border-accent bg-accent/10 font-medium text-text'
-  const off = 'border-border text-text-muted hover:border-border-strong hover:text-text'
+    'inline-flex flex-none items-center rounded-lg border px-4 py-2 text-300 no-underline transition-colors duration-150'
+  const on = 'border-forest bg-forest font-bold text-paper hover:text-paper'
+  const off = 'border-border-strong bg-bg-raised text-text-muted hover:border-forest hover:text-text'
 
   return (
-    <nav aria-label="موضوع‌ها" className="mb-10 flex flex-wrap gap-2">
+    <nav
+      aria-label="موضوع‌ها"
+      className="scroll-x -mx-[clamp(1.25rem,5vw,4rem)] mb-10 flex gap-2 px-[clamp(1.25rem,5vw,4rem)] pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
+    >
       <Link
         href="/articles"
         aria-current={current && !activeSlug ? 'page' : undefined}
@@ -61,9 +62,6 @@ export function TopicChips({
             className={`${base} ${current && active ? on : off}`}
           >
             {topic.name}
-            <span aria-hidden className="text-text-subtle">
-              {faNum(topic.count)}
-            </span>
           </Link>
         )
       })}

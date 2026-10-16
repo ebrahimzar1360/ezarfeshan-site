@@ -20,6 +20,14 @@ import { cn } from '@/lib/utils'
  */
 
 const PATHS = {
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
+  linkedin: <><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M8 10v7" /><path d="M8 7v.01" /><path d="M12 17v-4a2 2 0 0 1 4 0v4" /><path d="M12 10v7" /></>,
+  whatsapp: <><path d="M3 21l1.65-4.9A8.5 8.5 0 1 1 8 19.4Z" /><path d="M9 10c0 3 2 5 5 5l1.2-1.4-1.9-1-.9.7a3 3 0 0 1-1.6-1.6l.7-.9-1-1.9Z" /></>,
+  instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><path d="M17.5 6.5v.01" /></>,
+  arrow: <><path d="M19 12H5" /><path d="m11 18-6-6 6-6" /></>,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" /></>,
+  car: <><path d="M5 16l1.5-5.5A2 2 0 0 1 8.4 9h7.2a2 2 0 0 1 1.9 1.5L19 16" /><rect x="3" y="16" width="18" height="4" rx="1.5" /><path d="M7 18h.01M17 18h.01" /></>,
+  box: <><path d="M21 8 12 3 3 8v8l9 5 9-5Z" /><path d="m3 8 9 5 9-5" /><path d="M12 13v8" /></>,
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
   menu: <><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></>,
   close: <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,

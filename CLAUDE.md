@@ -97,16 +97,30 @@ Three rules that are easy to break and were broken at least once each:
 Tailwind scans source text, so a constructed class name (`bg-${x}`) produces no CSS.
 Write the full name.
 
-### v2 redesign — the system language
+### v3 redesign — minimal, light, calm
 
-The 2026 redesign (docs/DESIGN-PLAN.md §13) added a night ground (`forest-deep`,
-`.tone-inverse.tone-deep`), `gold-light` for gold *text on dark grounds only*, a
-warm `--bg-band` surface, `--radius-xl` for large panels, blueprint grids
-(`.bp-grid`), and an animated hero story (`components/site/home/HeroStory.tsx`,
-`.story-*` in globals.css): a busy phone, the consultant's card, then one written
-process. It replaced a 3D slab stack nobody could read. Positions are cqw
-custom-property pairs picked by a container query; the server renders the
-finished state, which is also what reduced-motion and no-JS visitors keep.
+The v3 redesign (1405/07/24, from the owner's five-page reference pack) replaced
+the night-ground v2 look: light paper, forest-green bands, soft white cards
+(`.card-v3`), one forest button (`Button variant="brand"`, `"gold"` on dark
+bands). Five pages and a five-link nav: خانه · درباره من · پروژه‌ها · یادداشت‌ها ·
+تماس. `/consult` still exists, out of the nav, because the chatbot's knowledge
+(`lib/chat/knowledge.ts`) quotes it.
+
+- **Hero art** (`components/site/home/HeroArt.tsx`) is one inline SVG: isometric
+  slab, the EZ monogram, four floating glass cards, nodes and lines. Motion is CSS
+  only (`.ha-*` in globals.css §13) and all of it stops under reduced motion.
+  Colours come from tokens; shades for solids are `.fill-sand-d1`, `.fill-gold-d1`…
+  (`color-mix` of the palette) — never a raw hex.
+- **Inner pages** open with `PageBand` (forest, grid, one line of lead); closing
+  invitation is `CtaBand`. Gold *type* is allowed only on forest.
+- **Logo**: `public/brand/ez-monogram*.webp` are cut from the owner's logo sheet by
+  `tools/logo/crop-sheet.mjs`; `Logo` renders them with live text beside.
+- **Projects** are data (`lib/content/projects.ts`) with drawn placeholder mocks.
+  Replace the mocks with screenshots when they exist.
+- **Contact** has four channels and a four-field form → `/api/contact`, stored as a
+  `Lead`. No phone, no address anywhere (removed on purpose).
+- Biography copy (`lib/content/bio.ts`) feeds /about *and* the chatbot — change it
+  once.
 
 Scroll reveals: add `data-reveal` (optionally `style={{'--d': i}}` for stagger).
 `RevealObserver` marks them with a `data-shown` **attribute**, never a class —
@@ -114,9 +128,6 @@ a class on a not-yet-hydrated streamed element is a hydration mismatch and a
 re-render would strip it. Any page rendered outside `app/(site)/layout.tsx`
 that uses `SectionHead` or `data-reveal` must mount `<RevealObserver />`
 itself (the 404 does), or the content stays invisible.
-
-The homepage's first `<h3>` must be an article title (e2e) — the bento tiles
-use `<p>` titles for that reason.
 
 The UI/UX Pro Max skill is installed in `.claude/skills/ui-ux-pro-max` for
 visual work: `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <ux|style|color|…>`.

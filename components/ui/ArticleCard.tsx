@@ -85,14 +85,16 @@ export function ArticleCard({
 }
 
 /**
- * Vertical card for grids (/articles). Cover, meta, title, two lines of
- * excerpt. Hairline and a lift on hover — no resting shadow.
+ * Vertical card for grids (/articles, the homepage). Cover with the category on
+ * it, title, date and reading time, and a "مطالعه مطلب" button. The whole card is
+ * one link, so the button is a visual cue, not a second tab stop.
  */
 export function ArticleTile({ article, priority = false }: { article: ArticleCardData; priority?: boolean }) {
+  const topic = article.topics[0]
   return (
-    <article className="group panel panel-hover flex flex-col overflow-hidden">
+    <article className="group card-v3 card-v3-hover flex h-full flex-col overflow-hidden">
       <Link href={`/articles/${article.slug}`} className="flex h-full flex-col no-underline">
-        <div className="overflow-hidden border-b border-border">
+        <div className="relative overflow-hidden">
           <Image
             src={coverUrl(article)}
             alt={coverAlt(article)}
@@ -102,16 +104,29 @@ export function ArticleTile({ article, priority = false }: { article: ArticleCar
             priority={priority}
             className="w-full transition-transform duration-700 ease-brand group-hover:scale-[1.04]"
           />
+          {topic && (
+            <span className="absolute end-3 top-3 rounded-md bg-gold/95 px-2.5 py-1 text-200 font-bold text-forest-deep">
+              {topic.name}
+            </span>
+          )}
         </div>
         <div className="flex flex-1 flex-col p-6">
-          <Meta article={article} />
-          <h3 className="mt-3 text-500 font-bold leading-snug text-text transition-colors duration-150 group-hover:text-link">
+          <h3 className="text-500 font-extrabold leading-snug text-text transition-colors duration-150 group-hover:text-link">
             {article.title}
           </h3>
-          <p className="mt-3 line-clamp-3 text-300 leading-normal text-text-muted">{article.excerpt}</p>
-          <div className="mt-auto">
-            <ReadMore />
-          </div>
+          <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-200 text-text-subtle">
+            {article.publishedAt && (
+              <time dateTime={article.publishedAt.toISOString()}>{formatDate(article.publishedAt)}</time>
+            )}
+            <span aria-hidden>·</span>
+            <span>{faNum(article.readingMinutes)} دقیقه مطالعه</span>
+          </p>
+          <span className="mt-auto inline-flex items-center gap-2 pt-6 text-300 font-bold text-link">
+            مطالعه مطلب
+            <span aria-hidden className="transition-transform duration-300 ease-brand group-hover:-translate-x-1.5">
+              ←
+            </span>
+          </span>
         </div>
       </Link>
     </article>

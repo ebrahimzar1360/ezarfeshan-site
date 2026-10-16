@@ -25,27 +25,19 @@ const db = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 
 const CONTENT_DIR = join(import.meta.dirname, 'seed-content')
 
+// The six v3 categories. Same rows as migration 20261016000000_topics_v3, which
+// is what production gets; keep the two in step.
 const topics = [
+  { slug: 'management', name: 'مدیریت', description: 'تجربه‌های مدیریتی از میدان کسب‌وکار.' },
   {
     slug: 'system-building',
     name: 'سیستم‌سازی',
     description: 'نوشتن فرایند، تعریف مرز تصمیم، و کم کردن وابستگی کار به حافظهٔ آدم‌ها.',
   },
-  {
-    slug: 'ai',
-    name: 'هوش مصنوعی',
-    description: 'استفادهٔ عملی از هوش مصنوعی در تیم کوچک — بعد از اینکه فرایند نوشته شد.',
-  },
-  {
-    slug: 'team',
-    name: 'مدیریت تیم',
-    description: 'استخدام، آموزش، و انتقال دانش طوری که رفتن یک نفر شروع دوباره نباشد.',
-  },
-  {
-    slug: 'metrics',
-    name: 'شاخص‌های عملیاتی',
-    description: 'انتخاب عددی که تصمیم عوض می‌کند، به‌جای داشبوردی که فقط گزارش می‌دهد.',
-  },
+  { slug: 'ai', name: 'هوش مصنوعی', description: 'استفادهٔ کاربردی از هوش مصنوعی در کسب‌وکار واقعی.' },
+  { slug: 'business', name: 'کسب‌وکار', description: 'نگاه عملی به رشد، عملیات و تصمیم‌گیری در کسب‌وکارها.' },
+  { slug: 'team', name: 'رهبری و تیم', description: 'استخدام، آموزش، انتقال دانش و رهبری تیم.' },
+  { slug: 'personal-growth', name: 'توسعه فردی', description: 'یادگیری و رشد فردی برای مدیران.' },
 ]
 
 type SeedArticle = {
@@ -111,7 +103,7 @@ const articles: SeedArticle[] = [
     title: 'کدام عدد را باید هر هفته نگاه کنی',
     excerpt:
       'داشبوردی که سی شاخص دارد، هیچ شاخصی ندارد. معیار انتخاب عددی که واقعاً تصمیم عوض می‌کند.',
-    topic: 'metrics',
+    topic: 'management',
     publishedAt: '2026-06-02',
   },
 ]

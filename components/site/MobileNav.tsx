@@ -55,7 +55,10 @@ export function MobileNav() {
           <nav aria-label="ناوبری موبایل" className="flex-1 overflow-y-auto p-3">
             <ul>
               {nav.map((item) => {
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                const active =
+          item.href === '/'
+            ? pathname === '/'
+            : pathname === item.href || pathname.startsWith(`${item.href}/`)
                 return (
                   <li key={item.href}>
                     <Link
@@ -78,17 +81,13 @@ export function MobileNav() {
             </ul>
           </nav>
 
-          <div className="shrink-0 border-t border-border p-3">
+          <div className="shrink-0 border-t border-border p-4">
             <Link
-              href="/search"
-              className="block rounded-md px-4 py-3 text-300 text-text-muted no-underline transition-colors duration-150 hover:text-text"
+              href="/contact"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-forest text-300 font-bold text-paper no-underline transition-colors duration-150 hover:bg-emerald hover:text-paper"
             >
-              <Icon name="search" className="me-2" />
-              {/* not "جست‌وجو در مقالات": that exact string is the sr-only label
-                  of the #q input on /search, which e2e reaches with getByLabel.
-                  getByLabel does not match link text, but leaving a second copy
-                  of a load-bearing string around is how a suite starts flaking. */}
-              جست‌وجو
+              شروع گفت‌وگو
+              <Icon name="arrow" className="text-400" />
             </Link>
           </div>
         </div>
