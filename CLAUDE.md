@@ -144,6 +144,16 @@ bands). Five pages and a five-link nav: خانه · درباره من · پرو�
   only (`.ha-*` in globals.css §13) and all of it stops under reduced motion.
   Colours come from tokens; shades for solids are `.fill-sand-d1`, `.fill-gold-d1`…
   (`color-mix` of the palette) — never a raw hex.
+- **3D hero** sits on top of that SVG: `HeroStage` lazy-loads three.js
+  (`hero-scene.ts`) when the hero is near the viewport and the browser is idle,
+  and extrudes the monogram from hand-traced outlines (`monogram-shapes.ts`).
+  The five pieces fly in and assemble; then the mark sways, follows the
+  pointer, spreads apart on hover/scroll, spins on tap. The SVG is the poster
+  and the fallback (no WebGL, Save-Data, low memory, lost context); after the
+  first frame `data-stage="3d"` hides only its slab+monogram (`.ha-core`).
+  Reduced motion draws one still 3D frame. Materials read the tokens at
+  runtime (no hex) and re-read them when the theme flips. Keep three.js out of
+  the first-load bundle — import it only from `hero-scene.ts`.
 - **Inner pages** open with `PageBand` (forest, grid, one line of lead); closing
   invitation is `CtaBand`. Gold *type* is allowed only on forest.
 - **Logo**: `public/brand/ez-monogram*.webp` are cut from the owner's logo sheet by
