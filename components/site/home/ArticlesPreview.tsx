@@ -5,14 +5,18 @@ import { Container } from '@/components/ui/Container'
 import { Icon } from '@/components/ui/Icon'
 import { getSection } from '@/lib/cms/content'
 import type { ArticleCardData } from '@/lib/content/queries'
+import { renderedCovers } from '@/lib/content/renders'
+import { Tilt } from '@/components/ui/Tilt'
 
 /**
  * "یادداشت‌ها و تجربه‌ها" on the homepage: the heading, one line, and the latest
- * pieces. With nothing published yet it shows a quiet empty card rather than
- * filler. Copy: CMS home.articles.
+ * pieces, each with a 3D illustration of its topic (lib/content/renders.ts)
+ * and a slight tilt towards the mouse. With nothing published yet it shows a
+ * quiet empty card rather than filler. Copy: CMS home.articles.
  */
 export async function ArticlesPreview({ articles }: { articles: ArticleCardData[] }) {
   const s = await getSection('home.articles')
+  const covers = renderedCovers(articles)
 
   return (
     <section className="bg-bg-band py-16 md:py-24">
@@ -37,7 +41,9 @@ export async function ArticlesPreview({ articles }: { articles: ArticleCardData[
           <div className="grid gap-5 md:grid-cols-3 md:gap-6">
             {articles.map((a, i) => (
               <div key={a.slug} data-reveal style={{ '--d': i } as CSSProperties}>
-                <ArticleTile article={a} />
+                <Tilt>
+                  <ArticleTile article={a} cover={covers.get(a.slug)} />
+                </Tilt>
               </div>
             ))}
           </div>

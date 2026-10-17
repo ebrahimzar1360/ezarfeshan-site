@@ -44,7 +44,7 @@ npm run test:e2e
 because tokens are hashed before storage and never appear in a response.
 
 Asset regeneration (rarely needed, all deterministic):
-`npm run fonts` · `npm run logo` · `npm run photos`
+`npm run fonts` · `npm run logo` · `npm run photos` · `npm run renders`
 
 ## Architecture
 
@@ -152,8 +152,29 @@ bands). Five pages and a five-link nav: خانه · درباره من · پرو�
   and the fallback (no WebGL, Save-Data, low memory, lost context); after the
   first frame `data-stage="3d"` hides only its slab+monogram (`.ha-core`).
   Reduced motion draws one still 3D frame. Materials read the tokens at
-  runtime (no hex) and re-read them when the theme flips. Keep three.js out of
-  the first-load bundle — import it only from `hero-scene.ts`.
+  runtime (no hex) and re-read them when the theme flips. The four floating
+  cards around the mark were removed at the owner's request (1405/07/26); the
+  mark is lacquered green with gold edges, lit by a small baked studio
+  (`studioScene()`), after the RCA site's logo.
+- **3D beyond the hero** (all lazy, all with a static fallback, all pausing
+  off-screen; shared helpers in `components/site/three/` — `gate.ts` has no
+  three.js and is the only part client islands may import, `kit.ts` is for the
+  scene modules):
+  - *Pillars* ("از شفافیت تا هوشمندی") are scroll beats like the RCA site's
+    R/C/A: `PillarsJourney` + `pillars-scene.ts`, one particle cloud that takes
+    each card's shape (`pillar-forms.ts`). The drawn `PillarIllustration` is the
+    poster and the no-WebGL picture.
+  - *Projects* on the homepage are a roadmap grouped by the CMS status
+    (`ProjectsRoadmap` + `projects-scene.ts`), like RCA's "از ایده تا محصول".
+  - *Articles* on the homepage get 3D topic renders and a mouse tilt (`Tilt`).
+  - Renders live in `public/renders/`, made by `npm run renders`
+    (`tools/render/`); `lib/content/renders.ts` picks them. Homepage only —
+    article pages keep their generated covers.
+- **Sound**: `lib/sound.ts` (Web Audio, no files), off by default, toggled by
+  `SoundToggle` in the header and remembered. Turning it on replays the logo's
+  assembly with its sound. Keep sounds short, quiet and throttled.
+- Keep three.js out of the first-load bundle — import it only from the
+  `*-scene.ts` modules and `three/kit.ts`.
 - **Inner pages** open with `PageBand` (forest, grid, one line of lead); closing
   invitation is `CtaBand`. Gold *type* is allowed only on forest.
 - **Logo**: `public/brand/ez-monogram*.webp` are cut from the owner's logo sheet by

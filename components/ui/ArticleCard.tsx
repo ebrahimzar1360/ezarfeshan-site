@@ -89,15 +89,24 @@ export function ArticleCard({
  * it, title, date and reading time, and a "مطالعه مطلب" button. The whole card is
  * one link, so the button is a visual cue, not a second tab stop.
  */
-export function ArticleTile({ article, priority = false }: { article: ArticleCardData; priority?: boolean }) {
+export function ArticleTile({
+  article,
+  priority = false,
+  cover,
+}: {
+  article: ArticleCardData
+  priority?: boolean
+  /** a decorative picture to show instead of the generated cover (the homepage's 3D renders) */
+  cover?: string
+}) {
   const topic = article.topics[0]
   return (
     <article className="group card-v3 card-v3-hover flex h-full flex-col overflow-hidden">
       <Link href={`/articles/${article.slug}`} className="flex h-full flex-col no-underline">
         <div className="relative overflow-hidden">
           <Image
-            src={coverUrl(article)}
-            alt={coverAlt(article)}
+            src={cover ?? coverUrl(article)}
+            alt={cover ? '' : coverAlt(article)}
             width={COVER_RATIO.width}
             height={COVER_RATIO.height}
             sizes="(min-width: 1024px) 24rem, (min-width: 640px) 50vw, 100vw"

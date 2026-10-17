@@ -5,6 +5,7 @@ import { Logo } from '@/components/ui/Logo'
 import { getIdentity, getMainNav } from '@/lib/cms/site'
 import { MobileNav } from './MobileNav'
 import { NavLinks } from './NavLinks'
+import { SoundToggle } from './SoundToggle'
 
 /**
  * v3 header: logo, the main links, one forest-green button. Links and the
@@ -29,6 +30,7 @@ export async function Header() {
         <NavLinks items={nav.items} />
 
         <div className="flex items-center gap-2">
+          <SoundToggle />
           {cta && (
             <Link
               href={cta.href}

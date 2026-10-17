@@ -852,7 +852,6 @@ samp {
     transform-origin: center;
     animation: ha-spin var(--t, 120s) linear infinite;
   }
-  .ha-flow { stroke-dasharray: 3 9; animation: ha-flow 7s linear infinite; }
   .ha-draw {
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
@@ -881,10 +880,6 @@ samp {
   .ha-core { transition: opacity 500ms var(--ease-brand); }
   [data-stage='3d'] .ha-canvas { opacity: 1; }
   [data-stage='3d'] .ha-core { opacity: 0; }
-  /* cards drift with the pointer at their own depth; HeroStage sets --hx/--hy */
-  .ha-par {
-    transform: translate(calc(var(--hx, 0) * var(--z, 0) * 1px), calc(var(--hy, 0) * var(--z, 0) * 1px));
-  }
 
   @keyframes ha-in {
     from { opacity: 0; transform: translateY(14px) scale(0.98); }
@@ -895,7 +890,6 @@ samp {
     50% { transform: translateY(-9px); }
   }
   @keyframes ha-spin { to { rotate: 360deg; } }
-  @keyframes ha-flow { to { stroke-dashoffset: -48; } }
   @keyframes ha-draw { to { stroke-dashoffset: 0; } }
   @keyframes ha-pulse {
     0%, 100% { opacity: 0.35; scale: 0.85; }
@@ -905,6 +899,122 @@ samp {
     0%, 100% { opacity: 0.75; }
     50% { opacity: 1; }
   }
+
+  /* ---- pillars journey (PillarsJourney) ---------------------------
+     The stage shows the active card's drawn illustration until the particle
+     scene has drawn, then the canvas takes over. */
+  .pj-poster {
+    opacity: 0;
+    transform: scale(0.94);
+    transition: opacity 500ms var(--ease-brand), transform 700ms var(--ease-brand);
+  }
+  .pj-poster.is-on { opacity: 1; transform: none; }
+  [data-live] .pj-poster { opacity: 0; }
+  .pj-canvas { opacity: 0; transition: opacity 800ms var(--ease-brand); }
+  [data-live] .pj-canvas { opacity: 1; }
+  /* the big index beside each card's title, like the RCA letters */
+  .pj-glyph {
+    font-size: clamp(3.2rem, 2.4rem + 3vw, 4.6rem);
+    font-weight: 900;
+    line-height: 1;
+    color: var(--link);
+    padding-inline-end: --spacing(5);
+    border-inline-end: 3px solid var(--accent);
+  }
+  .pj-step {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: --spacing(1.5) --spacing(3);
+    font-size: var(--text-200);
+    font-weight: 700;
+    color: var(--text-subtle);
+    transition: background-color 300ms var(--ease-brand), color 300ms var(--ease-brand);
+  }
+  .pj-step.is-on {
+    border-color: var(--color-forest);
+    background: var(--color-forest);
+    color: var(--color-paper);
+  }
+
+  /* ---- projects roadmap (ProjectsRoadmap), rm- = roadmap -------------------------- */
+  .rm-roadmap {
+    position: relative;
+    display: grid;
+    gap: --spacing(5);
+    padding-inline-start: --spacing(6);
+  }
+  .rm-roadmap::before {
+    content: '';
+    position: absolute;
+    top: --spacing(2);
+    bottom: --spacing(2);
+    inset-inline-start: 5px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--color-emerald);
+    opacity: 0.35;
+  }
+  .rm-status {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: --spacing(2);
+    font-size: var(--text-300);
+    font-weight: 800;
+    color: var(--link);
+  }
+  .rm-status i {
+    position: absolute;
+    inset-inline-start: calc(--spacing(6) * -1);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-emerald);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-emerald) 22%, transparent);
+  }
+  .rm-item {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    align-items: start;
+    gap: --spacing(4);
+    padding: --spacing(3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: border-color 250ms var(--ease-brand), background-color 250ms var(--ease-brand), transform 350ms var(--ease-brand);
+  }
+  .rm-item.is-on {
+    border-color: var(--accent);
+    background: color-mix(in oklab, var(--accent) 7%, var(--bg-raised));
+  }
+  .rm-thumb {
+    display: block;
+    aspect-ratio: 8 / 5;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--bg-band);
+  }
+
+  /* ---- tilt (components/ui/Tilt) ---------------------------------- */
+  .tilt {
+    position: relative;
+    height: 100%;
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 500ms var(--ease-brand);
+    will-change: transform;
+  }
+  .tilt[data-hover] { transition-duration: 120ms; }
+  .tilt-glare {
+    position: absolute;
+    inset: 0;
+    border-radius: 1.25rem;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(circle at var(--gx, 50%) var(--gy, 0%), color-mix(in oklab, white 55%, transparent), transparent 55%);
+    mix-blend-mode: soft-light;
+    transition: opacity 300ms var(--ease-brand);
+  }
+  .tilt[data-hover] .tilt-glare { opacity: 1; }
 
   /* hero copy rises in once, in order */
   .hero-rise { animation: ha-in 900ms var(--ease-brand) var(--dl, 0s) both; }
@@ -919,6 +1029,8 @@ samp {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ha-in, .ha-float, .ha-spin, .ha-flow, .ha-pulse, .ha-glow, .hero-rise { animation: none; }
+  .ha-in, .ha-float, .ha-spin, .ha-pulse, .ha-glow, .hero-rise { animation: none; }
+  .pj-poster, .pj-canvas, .pj-step { transition: none; }
+  .tilt { transform: none !important; }
   .ha-draw { animation: none; stroke-dashoffset: 0; }
 }

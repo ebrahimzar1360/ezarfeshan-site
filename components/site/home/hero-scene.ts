@@ -17,14 +17,16 @@ import {
   Scene,
   Shape,
   SphereGeometry,
-  SRGBColorSpace,
   TorusGeometry,
   Vector3,
   WebGLRenderer,
   type BufferGeometry,
+  BoxGeometry,
+  CircleGeometry,
   type Material,
 } from 'three'
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+import { playLock, playMorph, playPing, playResolve, SOUND_EVENT, soundEnabled } from '@/lib/sound'
+import { makeResolver, shadowTexture } from '../three/kit'
 import { ORIGIN, PIECES, type Cmd, type Piece } from './monogram-shapes'
 
 /**
@@ -81,31 +83,6 @@ const easeOutBack = (k: number) => {
 }
 const smooth = (a: number, b: number, x: number) => MathUtils.smoothstep(x, a, b)
 
-/* ---- colour from tokens -------------------------------------------- */
-
-/**
- * Resolves any CSS colour expression (a token, a color-mix…) to RGB by letting
- * the browser compute it on a probe and painting the result on a 1×1 canvas,
- * which handles every colour syntax the cascade can produce.
- */
-function makeResolver(host: HTMLElement) {
-  const paint = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
-  return (expr: string, out: Color) => {
-    const probe = document.createElement('span')
-    probe.style.color = expr
-    probe.style.display = 'none'
-    host.appendChild(probe)
-    const computed = getComputedStyle(probe).color
-    probe.remove()
-    if (!paint || !computed) return out
-    paint.clearRect(0, 0, 1, 1)
-    paint.fillStyle = computed
-    paint.fillRect(0, 0, 1, 1)
-    const [r, g, b] = paint.getImageData(0, 0, 1, 1).data
-    return out.setRGB(r! / 255, g! / 255, b! / 255, SRGBColorSpace)
-  }
-}
-
 /* ---- geometry ------------------------------------------------------ */
 
 function toShape(path: Cmd[]) {
@@ -151,22 +128,38 @@ function tier(size: number, height: number, bevel: number) {
   return g
 }
 
-/** a soft round contact shadow, drawn once into a small texture */
-function shadowTexture(rgb: Color) {
-  const c = document.createElement('canvas')
-  c.width = c.height = 128
-  const ctx = c.getContext('2d')!
-  const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64)
-  const srgb = rgb.getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace)
-  const [r, g, b] = [srgb.r, srgb.g, srgb.b].map((v) => Math.round(v * 255))
-  grad.addColorStop(0, `rgba(${r},${g},${b},0.55)`)
-  grad.addColorStop(0.55, `rgba(${r},${g},${b},0.18)`)
-  grad.addColorStop(1, `rgba(${r},${g},${b},0)`)
-  ctx.fillStyle = grad
-  ctx.fillRect(0, 0, 128, 128)
-  const t = new CanvasTexture(c)
-  t.colorSpace = SRGBColorSpace
-  return t
+/**
+ * A small photo studio, baked once into the environment map: a dark room with
+ * a softbox overhead, a long cool strip on one side, a warm one on the other
+ * and a ring in front. Glossy lacquer and gold pick these up as clean,
+ * moving highlights — the look of the RCA mark — where a bright room would
+ * wash the green out. Neutral and warm whites only; no brand colour is baked.
+ */
+function studioScene() {
+  const s = new Scene()
+  s.background = new Color(0.02, 0.022, 0.02)
+  const light = (r: number, g: number, b: number) => new MeshBasicMaterial({ color: new Color(r, g, b) })
+  const box = new Mesh(new CircleGeometry(2.4, 32), light(5, 5, 4.8))
+  box.position.set(0, 7, -2)
+  box.lookAt(0, 0, 0)
+  const cool = new Mesh(new BoxGeometry(0.6, 14, 0.1), light(2.2, 2.4, 2.6))
+  cool.position.set(-7, 1, 1)
+  cool.lookAt(0, 1, 1)
+  const warm = new Mesh(new BoxGeometry(0.8, 14, 0.1), light(3, 2.6, 1.9))
+  warm.position.set(8, 0, -1)
+  warm.lookAt(0, 0, -1)
+  // two warm bands behind the camera: what flat gold facing the viewer mirrors.
+  // Bright above, dim below, so the sway runs a gradient across the gold.
+  const front = new Mesh(new BoxGeometry(14, 2.6, 0.1), light(1.9, 1.62, 1.15))
+  front.position.set(0, 0.6, 10)
+  front.lookAt(0, 0.6, 0)
+  const low = new Mesh(new BoxGeometry(14, 3, 0.1), light(0.55, 0.45, 0.32))
+  low.position.set(0, -2.6, 10)
+  low.lookAt(0, -2.6, 0)
+  const floor = new Mesh(new BoxGeometry(30, 0.1, 30), light(0.06, 0.06, 0.055))
+  floor.position.y = -6
+  s.add(box, cool, warm, front, low, floor)
+  return s
 }
 
 /* ---- the scene ----------------------------------------------------- */
@@ -183,10 +176,10 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
 
   const scene = new Scene()
   const pmrem = new PMREMGenerator(renderer)
-  const room = new RoomEnvironment()
-  const env = pmrem.fromScene(room, 0.04).texture
+  const studio = studioScene()
+  const env = pmrem.fromScene(studio, 0.02).texture
   scene.environment = env
-  room.traverse((o) => {
+  studio.traverse((o) => {
     if (o instanceof Mesh) {
       o.geometry.dispose()
       ;(o.material as Material).dispose()
@@ -208,22 +201,25 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
   }
 
   const mat = {
-    // satin, not gloss: a clear coat mirrors the white room and greys the green
+    // deep lacquer: a dark studio reflects as crisp strips, not a grey film
     eFace: new MeshPhysicalMaterial({
-      roughness: 0.62,
-      metalness: 0,
-      sheen: 0.4,
-      envMapIntensity: 0.3,
+      roughness: 0.26,
+      metalness: 0.2,
+      clearcoat: 1,
+      clearcoatRoughness: 0.07,
+      envMapIntensity: 0.6,
+      emissiveIntensity: 0.14,
     }),
-    eSide: new MeshStandardMaterial({ roughness: 0.6, metalness: 0, envMapIntensity: 0.3 }),
+    // every side and bevel of the E is gold, so the mark is drawn in a gold line
+    eSide: new MeshStandardMaterial({ roughness: 0.24, metalness: 1, envMapIntensity: 1.6 }),
     zFace: new MeshPhysicalMaterial({
-      roughness: 0.3,
-      metalness: 0.92,
-      clearcoat: 0.25,
-      clearcoatRoughness: 0.3,
-      envMapIntensity: 1.9,
+      roughness: 0.2,
+      metalness: 1,
+      clearcoat: 0.6,
+      clearcoatRoughness: 0.12,
+      envMapIntensity: 1.7,
     }),
-    zSide: new MeshStandardMaterial({ roughness: 0.38, metalness: 0.9, envMapIntensity: 1.5 }),
+    zSide: new MeshStandardMaterial({ roughness: 0.3, metalness: 1, envMapIntensity: 1.3 }),
     base: new MeshStandardMaterial({ roughness: 0.85, metalness: 0, envMapIntensity: 0.5 }),
     rim: new MeshStandardMaterial({ roughness: 0.3, metalness: 0.9, envMapIntensity: 1.8 }),
     top: new MeshPhysicalMaterial({ roughness: 0.65, metalness: 0, envMapIntensity: 0.3 }),
@@ -282,9 +278,9 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
       new ExtrudeGeometry(toShape(p.path), {
         depth,
         bevelEnabled: true,
-        bevelThickness: 0.05,
-        bevelSize: 0.035,
-        bevelSegments: 3,
+        bevelThickness: 0.08,
+        bevelSize: 0.045,
+        bevelSegments: 4,
         curveSegments: isZ ? 28 : 4,
       }),
     )
@@ -338,14 +334,14 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
     resolve('var(--color-forest-deep)', C.deep)
     resolve('var(--bg-band)', C.band)
 
-    const lacquer = C.forest.clone().lerp(C.emerald, 0.15)
+    const lacquer = C.forest.clone().lerp(C.emerald, 0.55)
     // polished gold reads darker than its swatch; lift it toward gold-light
     const polished = C.gold.clone().lerp(C.goldLight, 0.35)
     mat.eFace.color.copy(lacquer)
-    mat.eFace.sheenColor.copy(C.emerald)
-    mat.eSide.color.copy(C.forest).lerp(C.deep, 0.4)
+    mat.eFace.emissive.copy(C.emerald)
+    mat.eSide.color.copy(polished)
     mat.zFace.color.copy(polished)
-    mat.zSide.color.copy(C.gold).multiplyScalar(0.85)
+    mat.zSide.color.copy(C.gold).multiplyScalar(0.72)
     mat.base.color.copy(C.band)
     mat.rim.color.copy(polished)
     mat.top.color.copy(lacquer)
@@ -372,8 +368,6 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
   const target = { yaw: 0, pitch: 0, hover: 0 }
   const now = { yaw: 0, pitch: 0, hover: 0, scroll: 0, spin: 0, spinVel: 0, spinTo: 0 }
   let scrollTarget = 0
-  let cssX = 0
-  let cssY = 0
 
   const onPointerMove = (e: PointerEvent) => {
     if (e.pointerType === 'touch') return
@@ -390,7 +384,18 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
     target.hover = 0
   }
   const onTap = () => {
-    if (!still) now.spinTo += Math.PI * 2
+    if (still) return
+    now.spinTo += Math.PI * 2
+    playPing(620 + Math.random() * 200)
+  }
+  // turning the sound on replays the assembly, so its sound is heard once
+  const onSound = () => {
+    if (!still && soundEnabled() && visible && t > assembled) {
+      t = 0
+      landed.fill(false)
+      resolved = false
+      playMorph(392)
+    }
   }
   const onScroll = () => {
     const r = host.getBoundingClientRect()
@@ -404,6 +409,8 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
   let raf = 0
   let visible = true
   let ready = false
+  const landed = pieces.map(() => false)
+  let resolved = still
 
   function pose(dt: number) {
     const k = 1 - Math.exp(-dt * 4)
@@ -420,9 +427,14 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
     const intro = still ? 1 : easeOutExpo(MathUtils.clamp(t / (assembled + 0.4), 0, 1))
     const spread = still ? 0 : Math.max(now.hover * 0.35, now.scroll)
 
-    for (const p of pieces) {
+    pieces.forEach((p, i) => {
       const k = MathUtils.clamp((t - p.delay) / ASSEMBLE, 0, 1)
       p.mesh.visible = k > 0
+      // the click comes as the piece seats, not when it sets off
+      if (!landed[i] && k > 0.32) {
+        landed[i] = true
+        if (!still) playLock(i)
+      }
       const ep = easeOutExpo(k)
       const er = easeOutBack(k)
       p.mesh.position
@@ -431,6 +443,10 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
         .addScaledVector(p.spread, spread)
       p.mesh.rotation.set(p.turn[0] * (1 - er), p.turn[1] * (1 - er), p.turn[2] * (1 - er))
       p.mesh.scale.setScalar(0.3 + 0.7 * ep)
+    })
+    if (!resolved && t > assembled - 0.9) {
+      resolved = true
+      playResolve(523)
     }
 
     // the mark turns in from the side as it assembles, then sways and follows the pointer
@@ -454,15 +470,6 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
     })
     orbit.scale.setScalar(0.85 + 0.15 * intro)
 
-    // card parallax in the SVG poster follows the same, smoothed pointer
-    const hx = Math.round((now.yaw / 0.5) * 1000) / 1000
-    const hy = Math.round((now.pitch / 0.22) * 1000) / 1000
-    if (hx !== cssX || hy !== cssY) {
-      cssX = hx
-      cssY = hy
-      host.style.setProperty('--hx', String(hx))
-      host.style.setProperty('--hy', String(hy))
-    }
   }
 
   function render() {
@@ -538,6 +545,7 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
     host.addEventListener('pointerenter', onEnter)
     host.addEventListener('pointerleave', onLeave)
     host.addEventListener('click', onTap)
+    window.addEventListener(SOUND_EVENT, onSound)
     onScroll()
   }
 
@@ -557,8 +565,7 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
     host.removeEventListener('pointerleave', onLeave)
     host.removeEventListener('click', onTap)
     canvas.removeEventListener('webglcontextlost', onContextLost)
-    host.style.removeProperty('--hx')
-    host.style.removeProperty('--hy')
+    window.removeEventListener(SOUND_EVENT, onSound)
     geometries.forEach((g) => g.dispose())
     Object.values(mat).forEach((m) => m.dispose())
     groundShadowMat.dispose()

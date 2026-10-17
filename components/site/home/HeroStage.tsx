@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { reducedMotion, shouldSkip3d, webglAvailable, whenNear } from '../three/gate'
 
 /**
  * Mounts the WebGL monogram (hero-scene.ts) over the SVG poster in HeroArt.
@@ -23,21 +24,10 @@ export function HeroStage() {
     const host = canvas?.parentElement
     if (!canvas || !host) return
 
-    const nav = navigator as Navigator & {
-      connection?: { saveData?: boolean }
-      deviceMemory?: number
-    }
-    if (nav.connection?.saveData) return
-    if (nav.deviceMemory !== undefined && nav.deviceMemory < 2) return
-    const probe = document.createElement('canvas')
-    const gl = probe.getContext('webgl2') ?? probe.getContext('webgl')
-    if (!gl) return
-    // browsers cap live contexts; give the probe's back at once
-    gl.getExtension('WEBGL_lose_context')?.loseContext()
+    if (shouldSkip3d() || !webglAvailable()) return
 
     let cancelled = false
     let dispose: (() => void) | undefined
-    let idle = 0
 
     const load = () => {
       import('./hero-scene')
@@ -46,7 +36,7 @@ export function HeroStage() {
           dispose = mountHeroScene({
             canvas,
             host,
-            still: matchMedia('(prefers-reduced-motion: reduce)').matches,
+            still: reducedMotion(),
             onReady: () => {
               host.dataset.stage = '3d'
             },
@@ -60,22 +50,11 @@ export function HeroStage() {
         })
     }
 
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) return
-        io.disconnect()
-        if ('requestIdleCallback' in window) idle = requestIdleCallback(load, { timeout: 1200 })
-        else idle = setTimeout(load, 300) as unknown as number
-      },
-      { rootMargin: '200px' },
-    )
-    io.observe(host)
+    const cancelNear = whenNear(host, load)
 
     return () => {
       cancelled = true
-      io.disconnect()
-      if ('cancelIdleCallback' in window) cancelIdleCallback(idle)
-      clearTimeout(idle)
+      cancelNear()
       dispose?.()
       delete host.dataset.stage
     }

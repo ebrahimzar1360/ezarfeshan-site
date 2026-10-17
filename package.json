@@ -13,6 +13,7 @@
     "fonts": "node tools/fonts/fetch-fonts.js",
     "logo": "node tools/logo/build-logo.js",
     "photos": "powershell -ExecutionPolicy Bypass -File tools/photos/build-photos.ps1",
+    "renders": "node tools/render/render.mjs",
     "db": "powershell -ExecutionPolicy Bypass -File tools/db/pg.ps1",
     "db:migrate": "prisma migrate dev",
     "db:seed": "node --experimental-strip-types prisma/seed.mts",
