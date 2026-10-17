@@ -100,7 +100,7 @@ export function PillarsJourney({ cards }: { cards: Card[] }) {
 
       <div>
         {cards.map((c, i) => (
-          <div key={i} data-beat={i} className="flex min-h-[72svh] items-end py-8 lg:min-h-[88svh] lg:items-center">
+          <div key={i} data-beat={i} className="flex min-h-[72svh] items-end py-8 lg:min-h-[calc(100svh-5rem)] lg:items-center">
             <article className="card-v3 w-full max-w-[33rem] p-7 md:p-10" data-reveal>
               <div className="flex items-center gap-5">
                 <span aria-hidden className="pj-glyph">

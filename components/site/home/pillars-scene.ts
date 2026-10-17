@@ -27,7 +27,7 @@ import { buildForm, type Form } from './pillar-forms'
  * the visitor scrolls — the RCA site's R/C/A beats, redrawn for this brand on
  * its own light paper.
  *
- * One draw call of points plus two flat rings and a shadow, so it costs very
+ * One draw call of points plus a thin ring and a shadow, so it costs very
  * little; weak devices get fewer particles and a lower pixel ratio. The loop
  * stops off-screen and in background tabs. Reduced motion swaps shapes
  * without the flight and holds them still.
@@ -117,7 +117,7 @@ const frag = /* glsl */ `
 export function mountPillarsScene({ canvas, host, kinds, still, onReady, onLost }: PillarsOptions) {
   const q = quality()
   const coarse = matchMedia('(pointer: coarse)').matches
-  const N = Math.round(12000 * q.density)
+  const N = Math.round(10000 * q.density)
 
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: q.antialias, powerPreference: 'default' })
   renderer.setPixelRatio(q.dpr)
@@ -125,8 +125,9 @@ export function mountPillarsScene({ canvas, host, kinds, still, onReady, onLost 
 
   const scene = new Scene()
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 60)
-  camera.position.set(0, 3.1, 9.4)
-  camera.lookAt(0, -0.25, 0)
+  camera.position.set(0, 2.4, 9.6)
+  // aimed at the figure's centre, so it sits level with the card beside it
+  camera.lookAt(0, 0, 0)
 
   /* forms, built once for the distinct kinds in use */
   const forms = new Map<string, Form>()
@@ -158,7 +159,7 @@ export function mountPillarsScene({ canvas, host, kinds, still, onReady, onLost 
     uniforms: {
       uT: { value: 0 },
       uTime: { value: 0 },
-      uSize: { value: q.tier === 2 ? 0.036 : 0.027 },
+      uSize: { value: q.tier === 2 ? 0.032 : 0.024 },
       uScale: { value: 1 },
       uMotion: { value: still ? 0 : 1 },
       uPal: { value: pal },
@@ -175,18 +176,17 @@ export function mountPillarsScene({ canvas, host, kinds, still, onReady, onLost 
   world.add(figure)
   scene.add(world)
 
-  /* the plinth under the figure: two flat rings and a soft shadow */
+  /* a quiet plinth: one thin gold ring and a faint shadow, kept small */
   const floor = new Group()
-  floor.position.y = -2.15
-  const ringA = new Mesh(new TorusGeometry(1.95, 0.012, 4, 160), new MeshBasicMaterial({ transparent: true, opacity: 0.85 }))
-  const ringB = new Mesh(new TorusGeometry(1.45, 0.008, 4, 6), new MeshBasicMaterial({ transparent: true, opacity: 0.7 }))
-  ringA.rotation.x = ringB.rotation.x = Math.PI / 2
-  const shadowGeo = new PlaneGeometry(5.2, 5.2)
+  floor.position.y = -1.95
+  const ringA = new Mesh(new TorusGeometry(1.25, 0.008, 4, 128), new MeshBasicMaterial({ transparent: true, opacity: 0.5 }))
+  ringA.rotation.x = Math.PI / 2
+  const shadowGeo = new PlaneGeometry(3.2, 3.2)
   shadowGeo.rotateX(-Math.PI / 2)
-  const shadowMat = new MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0.4 })
+  const shadowMat = new MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0.22 })
   const shadow = new Mesh(shadowGeo, shadowMat)
   shadow.position.y = -0.02
-  floor.add(shadow, ringA, ringB)
+  floor.add(shadow, ringA)
   world.add(floor)
 
   /* theme */
@@ -204,7 +204,6 @@ export function mountPillarsScene({ canvas, host, kinds, still, onReady, onLost 
       resolve('var(--link)', pal[0])
     }
     ;(ringA.material as MeshBasicMaterial).color.copy(pal[2])
-    ;(ringB.material as MeshBasicMaterial).color.copy(pal[1])
     shadowTex?.dispose()
     shadowTex = shadowTexture(resolve('var(--color-forest-deep)'), 0.35)
     shadowMat.map = shadowTex
@@ -334,7 +333,9 @@ export function mountPillarsScene({ canvas, host, kinds, still, onReady, onLost 
     camera.fov = FOV
     camera.updateProjectionMatrix()
     // the phone stage is a short, wide band: scale to its height so nothing clips
-    world.scale.setScalar(w > h ? Math.min(1, Math.max(0.6, (h / w) * 0.85)) : 1)
+    // fit the figure in both directions: it needs about 2.7 units each side and 2.3 up and down
+    const half = camera.position.length() * Math.tan(MathUtils.degToRad(FOV / 2))
+    world.scale.setScalar(Math.min(1, (half * camera.aspect) / 2.7, half / 2.3))
     mat.uniforms.uScale!.value = (h * q.dpr * 0.5) / Math.tan(MathUtils.degToRad(camera.fov / 2))
     if (still || !raf) {
       pose(0)
@@ -380,9 +381,7 @@ export function mountPillarsScene({ canvas, host, kinds, still, onReady, onLost 
     geo.dispose()
     mat.dispose()
     ringA.geometry.dispose()
-    ringB.geometry.dispose()
     ;(ringA.material as MeshBasicMaterial).dispose()
-    ;(ringB.material as MeshBasicMaterial).dispose()
     shadowGeo.dispose()
     shadowMat.dispose()
     shadowTex?.dispose()

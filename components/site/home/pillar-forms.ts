@@ -74,8 +74,8 @@ function writer(n: number) {
 
 /** the path the steps sit on: from the right (start) to the left (end), rising, bowing towards the viewer */
 function flow(t: number): [number, number, number] {
-  const x = 2.5 - 5 * t
-  const y = -1.45 + 1.9 * t + Math.sin(t * Math.PI * 2) * 0.18
+  const x = 2.2 - 4.4 * t
+  const y = -0.95 + 1.9 * t + Math.sin(t * Math.PI * 2) * 0.18
   const z = Math.sin(t * Math.PI) * 0.45
   return [x, y, z]
 }
@@ -85,8 +85,8 @@ const STEPS = [0.06, 0.36, 0.65, 0.94]
 function processes(n: number): Form {
   const r = rng(11)
   const { put, finish } = writer(n)
-  const half = 0.46
-  const rad = 0.14
+  const half = 0.42
+  const rad = 0.13
 
   // a rounded-square outline, two layers deep so it reads as a frame
   const frame = (cx: number, cy: number, cz: number, count: number, tone: number, pulse: number) => {
@@ -123,7 +123,7 @@ function processes(n: number): Form {
         }
         s -= (Math.PI / 2) * rad
       }
-      const depth = r() < 0.5 ? -0.05 : 0.05
+      const depth = r() < 0.5 ? -0.02 : 0.02
       put(cx + x, cy + y, cz + depth + (r() - 0.5) * 0.02, tone, pulse)
     }
   }
@@ -139,7 +139,7 @@ function processes(n: number): Form {
     // document lines inside the first three steps; the last holds the check
     if (i < 3) {
       for (let k = 0; k < lineShare / 3; k++) {
-        const row = Math.floor(r() * 3)
+        const row = Math.floor(r() * 2)
         const w = row === 0 ? 0.42 : row === 1 ? 0.56 : 0.34
         put(x + 0.28 - r() * w, y + 0.2 - row * 0.19, z + (r() - 0.5) * 0.03, row === 0 ? EMERALD : DEEP, t)
       }
