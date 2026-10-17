@@ -18,6 +18,11 @@
  *   $env:DATABASE_URL="<production connection string>"
  *   npm run admin:create -- you@example.com "نام" "گذرواژه"
  *
+ * On the Arvan server the script runs inside the web container, which already
+ * has DATABASE_URL:
+ *
+ *   ssh root@<vm> 'docker exec ezarfeshan-web node tools/db/create-admin.mjs you@example.com "نام" "گذرواژه"'
+ *
  * The host is echoed before anything is written, because "created the admin"
  * against the wrong database looks identical to success until you try to log in.
  */
@@ -26,7 +31,14 @@ import { hash } from '@node-rs/argon2'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 
-process.loadEnvFile('.env')
+// Locally the URL comes from .env. Inside the production container there is no
+// .env — DATABASE_URL is already in the environment from docker compose — and
+// loadEnvFile throws ENOENT on a missing file, so it is optional here.
+try {
+  process.loadEnvFile('.env')
+} catch (error) {
+  if (error?.code !== 'ENOENT') throw error
+}
 
 const connectionString = process.env.DATABASE_URL
 if (!connectionString) {

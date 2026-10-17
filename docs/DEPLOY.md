@@ -91,6 +91,17 @@ docker compose exec app node tools/db/create-admin.mjs \
   you@example.com "ابراهیم زرفشان" "یک-گذرواژهٔ-بلند"
 ```
 
+روی سرور آروان (استقرار خودکار با GitHub Actions) کانتینر `ezarfeshan-web` نام دارد و
+`DATABASE_URL` را از قبل دارد:
+
+```bash
+ssh root@188.121.125.13
+docker exec ezarfeshan-web node tools/db/create-admin.mjs \
+  you@example.com "ابراهیم زرفشان" "یک-گذرواژهٔ-بلند"
+```
+
+حساب‌های بعدی (ویراستار، نویسنده) از داخل پنل، بخش «کاربران و دسترسی» ساخته می‌شوند.
+
 حداقل ۱۲ کاراکتر. **مسیر بازیابی گذرواژه با ایمیل وجود ندارد** — همین دستور با
 همان ایمیل، گذرواژه را عوض می‌کند و همان مسیر بازیابی است.
 
