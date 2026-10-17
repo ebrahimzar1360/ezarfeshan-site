@@ -2,7 +2,7 @@
  * Verifies the 503 fallback: when the daily model quota is spent, the chat
  * widget must OPEN the lead form rather than tell the visitor to go find one.
  *
- *   node tools/audit/chat-fallback.mjs https://ezarfeshan-site.vercel.app
+ *   node tools/audit/chat-fallback.mjs http://localhost:3210
  *
  * /api/chat is intercepted and forced to the real 503 body, so this holds
  * whether or not the quota happens to be exhausted right now — the failure it
