@@ -63,18 +63,51 @@ renders.
 
 1. `middleware.ts` — checks a session **cookie exists**. Edge runtime, no database,
    no signature check. It is a cheap redirect, *not* security.
-2. `app/admin/(protected)/layout.tsx` — calls `auth()`. **This is the real boundary.**
-   The login page sits outside this route group so it cannot redirect to itself.
-3. Every server action in `lib/admin/actions.ts` calls `requireAdmin()` itself.
-   Server actions are POST endpoints whether or not a page renders their form.
+2. `app/admin/(protected)/layout.tsx` — calls `currentUser()`. **This is the real
+   boundary.** The login page sits outside this route group so it cannot redirect to
+   itself; it also uses `currentUser()`, not `auth()`, or a disabled account's still-
+   valid cookie loops between the two.
+3. Every server action (`lib/admin/actions.ts`, `lib/admin/cms-actions.ts`) and the
+   media API call `requirePermission()` themselves. Server actions are POST endpoints
+   whether or not a page renders their form. Admin pages call `guard(permission)`.
 
-Single admin account, created only via `npm run admin:create`. No signup, no email
-password reset — a second way in for a door one person uses is a second way in.
+`currentUser()` re-reads the account from the database on every request — the JWT
+is only an id. A disabled user or a changed role takes effect immediately.
+
+Roles: ADMIN / EDITOR / AUTHOR, matrix in `lib/admin/permissions.ts` (unit-tested).
+The first ADMIN is created via `npm run admin:create`; others in `/admin/users`.
+No signup, no email password reset. The last active ADMIN cannot demote themselves.
 
 `DUMMY_HASH` in `lib/auth.ts` must remain a **real** Argon2id hash. A hash-shaped
 fake is rejected on parse in a fraction of the time, and the timing gap tells an
 attacker which addresses have accounts. Its parameters must match
 `tools/db/create-admin.mjs`.
+
+### CMS — site copy, media, pages (docs/CMS.md)
+
+Every visible string on the main pages, every button/link, the menus, footer,
+contact channels, projects list and per-page SEO is a **section** in
+`lib/cms/registry.ts`: fields + the shipped copy as defaults. Stored in `settings`
+as `content:<key>`; read with `await getSection('<key>')` (`lib/cms/content.ts`,
+one query per request). `normalize.ts` falls back per field on read and validates
+strictly on save; the admin form is generated from the same field list. To add
+editable copy: add the field + default to the registry, read it in the component.
+Never hardcode a visitor-facing string that already has a section.
+
+- Inline syntax in copy (`lib/cms/tokens.ts`): `*accent*`, `**bold**`, `[a](/b)`,
+  newline, `{{years:1380}}`, `{{year}}`. No HTML path. Render with `<Inline>`.
+- Hrefs are checked by `isSafeHref` (no `javascript:`/`data:`/`//host`).
+- Saving calls `revalidatePath('/', 'layout')` — static pages refresh too.
+- Media: bytes in Postgres (`media`), served by `app/media/[id]/[name]`, immutable
+  cache. Uploads go through `/api/admin/media` (route handler: actions cap at 1 MB),
+  type sniffed from bytes (`lib/media/detect.ts`, SVG refused), re-encoded to WebP
+  by sharp, EXIF stripped. In-use files cannot be deleted (`mediaUsage`).
+- Free pages: `Page` model, route group `app/(cms)/[slug]` — deliberately *not*
+  under `(site)`, whose `loading.tsx` streams a 200 before `notFound()` can set 404.
+  A page with slug `privacy`/`terms` replaces that built-in page.
+- Articles keep up to 50 `ArticleRevision`s (manual saves only), have cover/alt,
+  OG image, canonical URL, noindex; `/admin/preview/*` renders unpublished MDX.
+- `AuditLog` gets a row from every admin mutation (`lib/admin/audit.ts`).
 
 ### Design tokens are the only source of colour and size
 
@@ -115,12 +148,12 @@ bands). Five pages and a five-link nav: خانه · درباره من · پرو�
   invitation is `CtaBand`. Gold *type* is allowed only on forest.
 - **Logo**: `public/brand/ez-monogram*.webp` are cut from the owner's logo sheet by
   `tools/logo/crop-sheet.mjs`; `Logo` renders them with live text beside.
-- **Projects** are data (`lib/content/projects.ts`) with drawn placeholder mocks.
-  Replace the mocks with screenshots when they exist.
+- **Projects** are the CMS section `projects.items`, mapped by `getProjects()` in
+  `lib/content/projects.ts`. A project without an image shows a drawn mock.
 - **Contact** has four channels and a four-field form → `/api/contact`, stored as a
   `Lead`. No phone, no address anywhere (removed on purpose).
-- Biography copy (`lib/content/bio.ts`) feeds /about *and* the chatbot — change it
-  once.
+- Biography copy (CMS sections `about.*`) feeds /about, the JSON-LD *and* the
+  chatbot — change it once, in the admin.
 
 Scroll reveals: add `data-reveal` (optionally `style={{'--d': i}}` for stagger).
 `RevealObserver` marks them with a `data-shown` **attribute**, never a class —
@@ -156,7 +189,8 @@ site is shown to anyone.**
 ### Numbers on the site are computed, never written down
 
 `lib/content/bio.ts` derives every duration from its start year
-(`yearsSince(1380)`), so "۲۵ سال" cannot silently go stale at Nowruz. `lib/format.ts`
+(`yearsSince(1380)`), so "۲۵ سال" cannot silently go stale at Nowruz. CMS copy
+keeps this: metric lists store a start year, prose uses `{{years:1380}}`. `lib/format.ts`
 `faNum()` disables locale grouping — the `fa-IR` default renders `1380` as `۱٬۳۸۰`,
 which is wrong for a year. Both are covered by tests; do not "simplify" them back
 into literals.
@@ -240,3 +274,4 @@ Windows. Two traps that cost real time:
 - `docs/OPEN-QUESTIONS.md` — every placeholder, every default taken without an answer,
   and the reasoning behind the non-obvious decisions
 - `docs/DEPLOY.md` — Docker deployment and a troubleshooting table
+- `docs/CMS.md` — the admin: what is editable, roles, media rules, how it works

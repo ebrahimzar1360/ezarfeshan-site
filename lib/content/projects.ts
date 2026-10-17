@@ -1,5 +1,8 @@
+import { getSection } from '@/lib/cms/content'
+import type { ImageValue } from '@/lib/cms/fields'
+
 /**
- * The three products on /projects and the homepage preview.
+ * The products on /projects and the homepage preview.
  *
  * Copy is the owner's, verbatim (brief of 1405/07/24). All three are "در حال
  * توسعه": nothing here claims a launch, a client or a result.
@@ -28,55 +31,39 @@ export type Project = {
   readonly status: string
   readonly mock?: 'performance' | 'tama' | 'intelligence'
   readonly image?: ProjectImage
+  readonly link?: { readonly label: string; readonly href: string }
 }
 
-export const projects: readonly Project[] = [
-  {
-    slug: 'performance-evaluation',
-    title: 'سیستم ارزیابی عملکرد',
-    text: 'سیستمی برای ارزیابی شفاف‌تر، بازخورد مؤثرتر و تصمیم‌گیری بهتر برای رشد تیم‌ها',
-    status: 'در حال توسعه',
-    mock: 'performance',
-  },
-  {
-    slug: 'tama',
-    title: 'TAMA | نوبت‌دهی هوشمند نمایندگی خودرو',
-    text: 'مدیریت بهتر مراجعات، ظرفیت و منابع با داشبورد تحلیلی مدیریتی',
-    status: 'در حال توسعه',
-    mock: 'tama',
-  },
-  {
-    slug: 'organizational-intelligence',
-    title: 'اپلیکیشن هوش سازمانی',
-    text: 'تبدیل داده‌ها و گزارش‌های پراکنده به بینش مدیریتی برای تصمیم‌گیری',
-    status: 'در حال توسعه',
-    mock: 'intelligence',
-  },
-  {
-    slug: 'budgetyar',
-    title: 'بودجه‌یار | سامانه بودجه‌بندی سالیانه',
-    text: 'مدیریت مالی و بودجهٔ نمایندگی‌ها؛ تصمیم‌های بهتر با اطلاعات دقیق‌تر',
-    status: 'در حال توسعه',
-    image: {
-      src: '/projects/budget-yar.webp',
-      width: 1400,
-      height: 933,
-      alt: 'صفحهٔ ورود سامانهٔ بودجه‌یار برای نمایندگی خودرو',
-      fit: 'cover',
-    },
-  },
-  {
-    slug: 'gam',
-    title: 'گام | پلنر',
-    text: 'پلنر برای هدف‌ها، عادت‌ها و برنامه‌ریزی روزانه؛ هر روز، یک گام نزدیک‌تر',
-    status: 'در حال توسعه',
-    image: {
-      src: '/projects/gam.webp',
-      width: 554,
-      height: 1100,
-      alt: 'صفحهٔ آغاز اپلیکیشن گام روی گوشی',
-      fit: 'contain',
-      bg: 'rgb(250 248 246)',
-    },
-  },
-]
+/**
+ * Projects now live in the CMS (section `projects.items`, defaults in
+ * lib/cms/registry.ts). This maps them onto the shape the cards and mocks
+ * already draw, and drops hidden ones.
+ */
+export async function getProjects(): Promise<Project[]> {
+  const { items } = await getSection('projects.items')
+  return items
+    .filter((p) => !p.hidden)
+    .map((p) => {
+      const image = p.image as ImageValue
+      const hasImage = Boolean(image.src && image.width && image.height)
+      return {
+        slug: p.slug,
+        title: p.title,
+        text: p.text,
+        status: p.status,
+        mock: p.mock as Project['mock'],
+        link: p.link.label && p.link.href ? p.link : undefined,
+        image: hasImage
+          ? {
+              src: image.src,
+              alt: image.alt,
+              width: image.width!,
+              height: image.height!,
+              fit: p.fit === 'contain' ? 'contain' : 'cover',
+              // near-white frame for a portrait device shown whole
+              bg: p.fit === 'contain' ? 'rgb(250 248 246)' : undefined,
+            }
+          : undefined,
+      }
+    })
+}

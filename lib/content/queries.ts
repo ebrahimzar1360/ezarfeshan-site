@@ -127,7 +127,10 @@ export async function getFeaturedArticle(): Promise<ArticleCardData | null> {
 export async function getArticleBySlug(slug: string) {
   return db.article.findFirst({
     where: { slug, ...publicFilter() },
-    include: { topics: { select: { slug: true, name: true } } },
+    include: {
+      topics: { select: { slug: true, name: true } },
+      author: { select: { name: true } },
+    },
   })
 }
 
@@ -197,5 +200,17 @@ export async function getPublishedArticlesBySlugs(slugs: string[]): Promise<Arti
   return db.article.findMany({
     where: { ...publicFilter(), slug: { in: slugs } },
     select: { slug: true, title: true, readingMinutes: true },
+  })
+}
+
+/**
+ * For the sitemap: published articles a search engine should index here —
+ * not noindex'd, and not canonical to another site.
+ */
+export async function getIndexableArticles() {
+  return db.article.findMany({
+    where: { ...publicFilter(), noindex: false, canonicalUrl: null },
+    select: { slug: true, updatedAt: true },
+    orderBy: { publishedAt: 'desc' },
   })
 }

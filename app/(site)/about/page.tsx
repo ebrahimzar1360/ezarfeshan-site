@@ -1,21 +1,21 @@
 import type { Metadata } from 'next'
 import type { CSSProperties } from 'react'
-import Image from 'next/image'
-import { CtaBand } from '@/components/site/CtaBand'
+import { CmsCta } from '@/components/cms/CmsCta'
+import { CmsImage } from '@/components/cms/CmsImage'
+import { Inline } from '@/components/cms/Inline'
 import { PageBand } from '@/components/site/PageBand'
 import { FieldExample } from '@/components/site/home/FieldExample'
 import { Container } from '@/components/ui/Container'
 import { Icon, type IconName } from '@/components/ui/Icon'
-import { currentRoles, fa, milestones, today, yearsSince } from '@/lib/content/bio'
-import { site } from '@/lib/site'
+import { getSection } from '@/lib/cms/content'
+import { cmsMetadata } from '@/lib/cms/metadata'
+import { fa, yearsSince } from '@/lib/content/bio'
 
-export const metadata: Metadata = {
-  title: 'درباره من',
-  description: `${site.positioning} — ${site.description}`,
-  alternates: { canonical: '/about' },
+export const revalidate = 3600
+
+export async function generateMetadata(): Promise<Metadata> {
+  return cmsMetadata('about.seo', '/about', 'درباره من')
 }
-
-const KEYWORDS = ['مدیریت', 'سیستم‌سازی', 'مذاکره', 'بازاریابی', 'هوش مصنوعی']
 
 /** A king, drawn flat: the page's single image of "a decision". Decorative. */
 function Chess() {
@@ -40,77 +40,72 @@ function Chess() {
  * start year so it cannot go stale. No outcome claims — no revenue, no client
  * counts, no percentages — because none were supplied.
  *
- * Order, as briefed: masthead with portrait → three figures → the turning point
- * → the road → today's roles → learning → one real example → invitation.
+ * Order, as briefed: masthead with portrait → figures → the turning point →
+ * the road → today's roles → learning → one real example → invitation. All
+ * copy is the CMS's (about.*); the chatbot reads the same sections.
  */
-export default function AboutPage() {
-  const figures: { icon: IconName; value: number; label: string }[] = [
-    { icon: 'car', value: yearsSince(1380), label: 'در صنعت خودرو' },
-    { icon: 'user', value: yearsSince(1389), label: 'مدیریت نمایندگی' },
-    { icon: 'box', value: yearsSince(1391), label: 'فعالیت در قطعات یدکی خودرو' },
-  ]
+export default async function AboutPage() {
+  const [band, figuresS, turning, path, roles, learning] = await Promise.all([
+    getSection('about.band'),
+    getSection('about.figures'),
+    getSection('about.turning'),
+    getSection('about.path'),
+    getSection('about.roles'),
+    getSection('about.learning'),
+  ])
 
   const stops = [
-    ...milestones.map((m) => ({ key: String(m.year), when: fa(m.year), title: m.title, body: m.body, now: false })),
-    { key: 'today', when: today.title, title: '', body: today.body, now: true },
+    ...path.milestones.map((m, i) => ({ key: `${m.year}-${i}`, when: fa(m.year), title: m.title, body: m.body, now: false })),
+    ...(path.todayTitle || path.todayBody
+      ? [{ key: 'today', when: path.todayTitle, title: '', body: path.todayBody, now: true }]
+      : []),
   ]
 
   return (
     <>
       <PageBand
-        title={
-          <>
-            مشاوری که هم از <span className="text-gold-light">میدان</span> آمده، هم از{' '}
-            <span className="text-gold-light">آینده</span>
-          </>
-        }
-        lead={
-          <>
-            {fa(yearsSince(1380))} سال تجربه در صنعت خودرو،
-            <br />
-            {fa(yearsSince(1389))} سال مدیریت نمایندگی،
-            <br />و امروز تمرکز بر سیستم‌سازی و هوش مصنوعی برای کسب‌وکارهای واقعی.
-          </>
-        }
+        title={<Inline text={band.title} accentClass="text-gold-light" />}
+        lead={band.lead ? <Inline text={band.lead} accentClass="text-gold-light" /> : undefined}
         aside={
-          <div className="relative mx-auto w-full max-w-xs self-end md:max-w-sm">
-            <Image
-              src="/photos/portrait-studio.jpg"
-              alt="ابراهیم زرفشان"
-              width={997}
-              height={1330}
-              sizes="(min-width: 768px) 24rem, 80vw"
-              priority
-              className="aspect-[4/4.6] w-full rounded-t-3xl object-cover object-top"
-            />
-          </div>
+          band.portrait.src ? (
+            <div className="relative mx-auto w-full max-w-xs self-end md:max-w-sm">
+              <CmsImage
+                image={band.portrait}
+                sizes="(min-width: 768px) 24rem, 80vw"
+                priority
+                className="aspect-[4/4.6] w-full rounded-t-3xl object-cover object-top"
+              />
+            </div>
+          ) : undefined
         }
       />
 
-      <section className="py-10 md:py-14">
-        <Container>
-          <dl className="grid gap-4 sm:grid-cols-3 sm:gap-6">
-            {figures.map((f, i) => (
-              <div
-                key={f.label}
-                data-reveal
-                style={{ '--d': i } as CSSProperties}
-                className="card-v3 flex items-center gap-5 px-6 py-6"
-              >
-                <span aria-hidden className="grid size-14 flex-none place-items-center rounded-xl bg-gold/20 text-700 text-forest">
-                  <Icon name={f.icon} />
-                </span>
-                <div>
-                  <dd className="text-800 font-black leading-none text-forest">
-                    {fa(f.value)} <span className="text-400 font-bold">سال</span>
-                  </dd>
-                  <dt className="mt-2 text-300 text-text-muted">{f.label}</dt>
+      {figuresS.items.length > 0 && (
+        <section className="py-10 md:py-14">
+          <Container>
+            <dl className="grid gap-4 sm:grid-cols-3 sm:gap-6">
+              {figuresS.items.map((f, i) => (
+                <div
+                  key={`${f.label}-${i}`}
+                  data-reveal
+                  style={{ '--d': i } as CSSProperties}
+                  className="card-v3 flex items-center gap-5 px-6 py-6"
+                >
+                  <span aria-hidden className="grid size-14 flex-none place-items-center rounded-xl bg-gold/20 text-700 text-forest">
+                    <Icon name={f.icon as IconName} />
+                  </span>
+                  <div>
+                    <dd className="text-800 font-black leading-none text-forest">
+                      {fa(yearsSince(f.startYear))} <span className="text-400 font-bold">سال</span>
+                    </dd>
+                    <dt className="mt-2 text-300 text-text-muted">{f.label}</dt>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </dl>
-        </Container>
-      </section>
+              ))}
+            </dl>
+          </Container>
+        </section>
+      )}
 
       <section className="tone-inverse bg-forest-deep py-16 md:py-24">
         <Container className="grid items-center gap-10 md:grid-cols-[auto_1fr] md:gap-16">
@@ -118,110 +113,109 @@ export default function AboutPage() {
             <Chess />
           </div>
           <div data-reveal>
-            <p className="inline-flex rounded-md bg-gold px-3 py-1 text-200 font-bold text-forest-deep">
-              نقطه عطف
-            </p>
+            {turning.badge && (
+              <p className="inline-flex rounded-md bg-gold px-3 py-1 text-200 font-bold text-forest-deep">
+                {turning.badge}
+              </p>
+            )}
             <h2 className="mt-5 max-w-2xl text-700 font-extrabold leading-[1.45] text-gold-light md:text-800">
-              وقتی یک مشکل با آدم‌های مختلف تکرار می‌شود، دیگر فقط مشکل آدم‌ها نیست.
+              {turning.title}
             </h2>
             <div className="mt-7 max-w-2xl space-y-5 text-400 leading-prose text-text-muted">
-              <p>
-                سال‌ها فکر می‌کردم بسیاری از مشکلات با نیروی بهتر حل می‌شوند. اما وقتی همان مسئله
-                در بخش‌های مختلف و با افراد مختلف تکرار شد، فهمیدم:
-              </p>
-              <p className="text-500 font-extrabold text-text">مشکل از سیستم است.</p>
-              <p>
-                از همان‌جا مسیر من از مدیریت روزمره به سمت سیستم‌سازی و بعد استفاده کاربردی از
-                هوش مصنوعی تغییر کرد.
-              </p>
+              {turning.before && <p><Inline text={turning.before} accentClass="text-gold-light" /></p>}
+              {turning.emphasis && <p className="text-500 font-extrabold text-text">{turning.emphasis}</p>}
+              {turning.after && <p><Inline text={turning.after} accentClass="text-gold-light" /></p>}
             </div>
           </div>
         </Container>
       </section>
 
-      <section className="py-16 md:py-24">
-        <Container>
-          <header className="mb-12 md:mb-16" data-reveal>
-            <h2 className="text-700 font-extrabold md:text-800">مسیر حرفه‌ای من</h2>
-            <span aria-hidden className="mt-5 block h-1 w-14 rounded-full bg-gold" />
-          </header>
+      {stops.length > 0 && (
+        <section className="py-16 md:py-24">
+          <Container>
+            <header className="mb-12 md:mb-16" data-reveal>
+              <h2 className="text-700 font-extrabold md:text-800">{path.title}</h2>
+              <span aria-hidden className="mt-5 block h-1 w-14 rounded-full bg-gold" />
+            </header>
 
-          <ol className="relative ms-2 grid gap-9 border-s-2 border-border-strong md:ms-0 md:grid-cols-5 md:gap-5 md:border-s-0">
-            <span aria-hidden className="tl-line hidden md:block" />
-            {stops.map((s, i) => (
-              <li
-                key={s.key}
-                data-reveal
-                style={{ '--d': i } as CSSProperties}
-                className="relative ps-7 md:ps-0 md:pt-10"
-              >
-                <span
-                  aria-hidden
-                  className={`absolute -start-[0.6rem] top-1.5 size-4 rounded-full border-2 md:start-0 md:top-0 ${
-                    s.now ? 'border-gold bg-gold' : 'border-forest bg-bg'
-                  }`}
-                />
-                <p className="text-600 font-black text-forest">{s.when}</p>
-                {s.title && <h3 className="mt-1 text-400 font-extrabold leading-snug">{s.title}</h3>}
-                <p className="mt-2 text-300 leading-normal text-text-muted">{s.body}</p>
-              </li>
-            ))}
-          </ol>
-        </Container>
-      </section>
+            <ol className="relative ms-2 grid gap-9 border-s-2 border-border-strong md:ms-0 md:grid-cols-5 md:gap-5 md:border-s-0">
+              <span aria-hidden className="tl-line hidden md:block" />
+              {stops.map((s, i) => (
+                <li
+                  key={s.key}
+                  data-reveal
+                  style={{ '--d': i } as CSSProperties}
+                  className="relative ps-7 md:ps-0 md:pt-10"
+                >
+                  <span
+                    aria-hidden
+                    className={`absolute -start-[0.6rem] top-1.5 size-4 rounded-full border-2 md:start-0 md:top-0 ${
+                      s.now ? 'border-gold bg-gold' : 'border-forest bg-bg'
+                    }`}
+                  />
+                  <p className="text-600 font-black text-forest">{s.when}</p>
+                  {s.title && <h3 className="mt-1 text-400 font-extrabold leading-snug">{s.title}</h3>}
+                  <p className="mt-2 text-300 leading-normal text-text-muted">{s.body}</p>
+                </li>
+              ))}
+            </ol>
+          </Container>
+        </section>
+      )}
 
-      <section className="bg-bg-band py-16 md:py-24">
-        <Container>
-          <header className="mb-10 md:mb-14" data-reveal>
-            <h2 className="text-700 font-extrabold md:text-800">نقش‌های فعلی من</h2>
-            <span aria-hidden className="mt-5 block h-1 w-14 rounded-full bg-gold" />
-          </header>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {currentRoles.map((r, i) => (
-              <li
-                key={r.title}
-                data-reveal
-                style={{ '--d': i % 3 } as CSSProperties}
-                className="card-v3 flex items-center gap-4 p-6"
-              >
-                <span aria-hidden className="mt-2 size-2.5 flex-none rounded-full bg-gold" />
-                <p className="text-400 font-bold leading-snug">{r.title}</p>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
+      {roles.items.length > 0 && (
+        <section className="bg-bg-band py-16 md:py-24">
+          <Container>
+            <header className="mb-10 md:mb-14" data-reveal>
+              <h2 className="text-700 font-extrabold md:text-800">{roles.title}</h2>
+              <span aria-hidden className="mt-5 block h-1 w-14 rounded-full bg-gold" />
+            </header>
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {roles.items.map((r, i) => (
+                <li
+                  key={`${r.title}-${i}`}
+                  data-reveal
+                  style={{ '--d': i % 3 } as CSSProperties}
+                  className="card-v3 flex items-center gap-4 p-6"
+                >
+                  <span aria-hidden className="mt-2 size-2.5 flex-none rounded-full bg-gold" />
+                  <p className="text-400 font-bold leading-snug">{r.title}</p>
+                </li>
+              ))}
+            </ul>
+          </Container>
+        </section>
+      )}
 
       <section className="py-16 md:py-24">
         <Container className="grid items-center gap-8 md:grid-cols-2 md:gap-16">
           <div data-reveal>
-            <h2 className="text-700 font-extrabold md:text-800">یادگیری و توسعه</h2>
+            <h2 className="text-700 font-extrabold md:text-800">{learning.title}</h2>
             <span aria-hidden className="mt-5 block h-1 w-14 rounded-full bg-gold" />
-            <p className="mt-7 max-w-[30rem] text-500 leading-prose text-text-muted">
-              برای من یادگیری زمانی ارزش دارد که بتوان آن را در یک کسب‌وکار واقعی به کار گرفت.
-            </p>
+            {learning.text && (
+              <p className="mt-7 max-w-[30rem] text-500 leading-prose text-text-muted">
+                <Inline text={learning.text} />
+              </p>
+            )}
           </div>
-          <ul className="flex flex-wrap gap-3" data-reveal>
-            {KEYWORDS.map((k) => (
-              <li
-                key={k}
-                className="rounded-xl border border-border-strong bg-bg-raised px-5 py-3 text-400 font-bold"
-              >
-                {k}
-              </li>
-            ))}
-          </ul>
+          {learning.keywords.length > 0 && (
+            <ul className="flex flex-wrap gap-3" data-reveal>
+              {learning.keywords.map((k, i) => (
+                <li
+                  key={`${k.text}-${i}`}
+                  className="rounded-xl border border-border-strong bg-bg-raised px-5 py-3 text-400 font-bold"
+                >
+                  {k.text}
+                </li>
+              ))}
+            </ul>
+          )}
         </Container>
       </section>
 
       <FieldExample />
 
-      <CtaBand
-        title="برای گفت‌وگو آماده‌ام"
-        text="اگر کسب‌وکار شما به نظم بیشتر، سیستم بهتر یا استفاده کاربردی‌تر از هوش مصنوعی نیاز دارد، می‌توانیم گفت‌وگو را شروع کنیم."
-        primary={{ label: 'شروع گفت‌وگو', href: '/contact' }}
-        secondary={{ label: 'پروژه‌ها را ببینید', href: '/projects' }}
-      />
+      <CmsCta section="about.cta" />
     </>
   )
 }

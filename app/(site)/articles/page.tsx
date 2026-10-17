@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Inline } from '@/components/cms/Inline'
 import { PageBand } from '@/components/site/PageBand'
 import { ReferencesNote } from '@/components/site/ReferencesNote'
 import { ArticleGrid } from '@/components/ui/ArticleGrid'
@@ -6,27 +7,30 @@ import { Container } from '@/components/ui/Container'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
 import { TopicChips } from '@/components/ui/TopicChips'
+import { getSection } from '@/lib/cms/content'
+import { cmsMetadata } from '@/lib/cms/metadata'
 import { pageCount } from '@/lib/content/pagination'
 import { getPublishedArticlesPage, getTopics } from '@/lib/content/queries'
 
 export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: 'یادداشت‌ها و تجربه‌ها',
-  description:
-    'مرور ایده‌ها، تجربه‌های مدیریتی و استفاده کاربردی از هوش مصنوعی در کسب‌وکارها',
-  alternates: { canonical: '/articles' },
+export async function generateMetadata(): Promise<Metadata> {
+  return cmsMetadata('articles.seo', '/articles', 'یادداشت‌ها')
 }
 
 export default async function ArticlesPage() {
-  const [{ items, total }, topics] = await Promise.all([getPublishedArticlesPage(1), getTopics()])
+  const [{ items, total }, topics, copy] = await Promise.all([
+    getPublishedArticlesPage(1),
+    getTopics(),
+    getSection('articles.index'),
+  ])
   const chips = topics.map((t) => ({ slug: t.slug, name: t.name }))
 
   return (
     <>
       <PageBand
-        title="یادداشت‌ها و تجربه‌ها"
-        lead="مرور ایده‌ها، تجربه‌های مدیریتی و استفاده کاربردی از هوش مصنوعی در کسب‌وکارها"
+        title={<Inline text={copy.title} accentClass="text-gold-light" />}
+        lead={copy.lead ? <Inline text={copy.lead} accentClass="text-gold-light" /> : undefined}
       />
 
       <Container className="py-12 md:py-16">
@@ -34,9 +38,9 @@ export default async function ArticlesPage() {
 
         {items.length === 0 ? (
           <EmptyState
-            title="هنوز یادداشتی منتشر نشده"
-            body="اولین یادداشت‌ها به‌زودی اینجا می‌آیند."
-            action={{ label: 'درباره من', href: '/about' }}
+            title={copy.emptyTitle}
+            body={copy.emptyText}
+            action={copy.emptyAction.label && copy.emptyAction.href ? copy.emptyAction : undefined}
           />
         ) : (
           <>

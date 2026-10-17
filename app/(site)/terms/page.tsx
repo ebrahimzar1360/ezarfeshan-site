@@ -1,14 +1,24 @@
 import type { Metadata } from 'next'
+import { CmsPageView, cmsPageMetadata } from '@/components/cms/CmsPageView'
+import { getPublishedPage } from '@/lib/cms/pages'
 import Link from 'next/link'
 import { Container } from '@/components/ui/Container'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate } from '@/lib/format'
 import { site } from '@/lib/site'
 
-export const metadata: Metadata = {
+const builtInMetadata: Metadata = {
   title: 'شرایط استفاده',
   description: 'شرایط استفاده از محتوای این سایت و مرز مسئولیت آن.',
   alternates: { canonical: '/terms' },
+}
+
+export const revalidate = 3600
+
+/** A published CMS page with the slug `terms` replaces the built-in text below. */
+export async function generateMetadata(): Promise<Metadata> {
+  const override = await getPublishedPage('terms')
+  return override ? cmsPageMetadata(override) : builtInMetadata
 }
 
 /** Bumped by hand when the text below changes; rendered as a Jalali date. */
@@ -19,7 +29,10 @@ const LAST_UPDATED = '2026-09-10'
  * cover. What matters here is three things: the writing is mine, using it
  * needs attribution, and reading it is not a consulting engagement.
  */
-export default function TermsPage() {
+export default async function TermsPage() {
+  const override = await getPublishedPage('terms')
+  if (override) return <CmsPageView page={override} />
+
   return (
     <>
     <PageHeader eyebrow="شرایط استفاده" title="قاعده‌های ساده" width="measure" />

@@ -1,3 +1,4 @@
+import { guard } from '@/lib/admin/guard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { getSubscribers } from '@/lib/admin/queries'
 import { faNum, formatDate } from '@/lib/format'
@@ -11,6 +12,7 @@ const STATUS = {
 } as const
 
 export default async function SubscribersPage() {
+  await guard('subscribers.view')
   const subscribers = await getSubscribers()
   const confirmed = subscribers.filter((s) => s.status === 'CONFIRMED').length
 

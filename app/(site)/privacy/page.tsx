@@ -1,14 +1,24 @@
 import type { Metadata } from 'next'
+import { CmsPageView, cmsPageMetadata } from '@/components/cms/CmsPageView'
+import { getPublishedPage } from '@/lib/cms/pages'
 import Link from 'next/link'
 import { Container } from '@/components/ui/Container'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate } from '@/lib/format'
 import { site } from '@/lib/site'
 
-export const metadata: Metadata = {
+const builtInMetadata: Metadata = {
   title: 'حریم خصوصی',
   description: 'چه داده‌ای جمع می‌شود، چرا، و چطور حذفش کنی.',
   alternates: { canonical: '/privacy' },
+}
+
+export const revalidate = 3600
+
+/** A published CMS page with the slug `privacy` replaces the built-in text below. */
+export async function generateMetadata(): Promise<Metadata> {
+  const override = await getPublishedPage('privacy')
+  return override ? cmsPageMetadata(override) : builtInMetadata
 }
 
 /** Bumped by hand when the text below changes; rendered as a Jalali date. */
@@ -20,7 +30,10 @@ const LAST_UPDATED = '2026-09-10'
  * `lib/rate-limit.ts`, `lib/tokens.ts` and `prisma/schema.prisma`. If one of
  * those changes, this text changes with it.
  */
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const override = await getPublishedPage('privacy')
+  if (override) return <CmsPageView page={override} />
+
   return (
     <>
     <PageHeader eyebrow="حریم خصوصی" title="چه چیزی از تو نگه می‌دارم" width="measure" />

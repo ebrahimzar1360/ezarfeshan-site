@@ -1,21 +1,16 @@
 import { db } from '@/lib/db'
-import {
-  credentials,
-  currentRoles,
-  fa,
-  fieldExample,
-  milestones,
-  stats,
-} from '@/lib/content/bio'
-import { site, socials } from '@/lib/site'
+import { getSection } from '@/lib/cms/content'
+import { getChannels, getIdentity } from '@/lib/cms/site'
+import { plainInline } from '@/lib/cms/tokens'
+import { fa, yearsSince } from '@/lib/content/bio'
 
 /**
  * The chatbot's entire world. Nothing here is fetched from anywhere but this
  * codebase and this database — no outside knowledge ever enters the prompt.
  *
  * Two layers:
- *   1. Static facts — identity, bio, consult pricing/policy, contact. Cheap,
- *      always included, and the reason the assistant can answer "who is this"
+ *   1. Static facts — identity, bio, consult pricing/policy, contact. Read
+ *      from the same CMS sections the pages render, always included, and the reason the assistant can answer "who is this"
  *      or "how much does it cost" without a database round trip.
  *   2. Retrieved articles — the same pg_trgm similarity query api/search uses,
  *      run against the visitor's message so article-specific questions pull in
@@ -26,20 +21,29 @@ import { site, socials } from '@/lib/site'
  * first-time visitor actually asks.
  */
 
-function staticFacts(): string {
-  const roles = currentRoles.map((r) => `- ${r.title} (${r.detail})`).join('\n')
-  const creds = credentials.map((c) => `- ${c.title}${c.note ? ` — ${c.note}` : ''}`).join('\n')
-  const path = milestones
+async function staticFacts(): Promise<string> {
+  const [site, channels, path, rolesS, credsS, metrics, fieldExample] = await Promise.all([
+    getIdentity(),
+    getChannels(),
+    getSection('about.path'),
+    getSection('about.roles'),
+    getSection('about.credentials'),
+    getSection('home.metrics'),
+    getSection('about.example'),
+  ])
+  const roles = rolesS.items.map((r) => `- ${r.title}${r.detail ? ` (${r.detail})` : ''}`).join('\n')
+  const creds = credsS.items.map((c) => `- ${c.title}${c.note ? ` — ${c.note}` : ''}`).join('\n')
+  const milestones = path.milestones
     .map((m) => `- ${fa(m.year)}: ${m.title} — ${m.body}`)
     .join('\n')
-  const figures = stats.map((s) => `- ${s.value} ${s.unit} ${s.label}`).join('\n')
-  const socialLines = socials.map((s) => `- ${s.label}: ${s.href}`).join('\n')
+  const figures = metrics.items.map((m) => `- ${fa(yearsSince(m.startYear))} سال ${m.label}`).join('\n')
+  const contactLines = channels.map((c) => `- ${c.label}: ${c.value} (${c.href})`).join('\n')
 
   return `
 درباره سایت و صاحب آن:
 نام: ${site.name} (${site.nameLatin})
 نقش: ${site.role}
-جمله‌ی موقعیت‌یابی: ${site.positioning}
+جمله‌ی موقعیت‌یابی: ${plainInline(site.positioning)}
 توضیح کوتاه: ${site.description}
 
 آمار کلیدی:
@@ -52,7 +56,8 @@ ${roles}
 ${creds}
 
 مسیر حرفه‌ای:
-${path}
+${milestones}
+- ${path.todayTitle}: ${path.todayBody}
 
 یک مثال میدانی (${fieldExample.title}):
 مسئله: ${fieldExample.problem}
@@ -66,9 +71,7 @@ ${path}
 - در صفحه‌ی /contact نوشته شده که بعد از ارسال فرم، ظرف ۴۸ ساعت کاری جواب داده می‌شود — حتی اگر جواب این باشد که کار در حوزه‌ی کاری او نیست.
 
 راه‌های تماس (صفحه‌ی /contact):
-- شمارهٔ واتس‌اپ: ${site.whatsapp.display}
-- ایمیل: ${site.email}
-${socialLines}
+${contactLines}
 - تلفن و نشانی فیزیکی روی سایت منتشر نمی‌شود؛ تماس از راه ایمیل، واتس‌اپ، لینکدین، اینستاگرام یا فرم صفحهٔ /contact است.
 
 اطلاعاتی که روی سایت منتشر نشده — اگر دربارهٔ این‌ها پرسیدند، صریح بگو روی سایت نیست و به /contact یا فرم /consult ارجاع بده. هرگز برایشان جواب نساز:
@@ -142,5 +145,5 @@ export async function buildSiteContext(userMessage: string): Promise<string> {
         .join('\n\n')
     : '\n\nهیچ مقاله‌ی منتشرشده‌ای با این سؤال هم‌خوانی نداشت.'
 
-  return staticFacts() + articleBlock
+  return (await staticFacts()) + articleBlock
 }

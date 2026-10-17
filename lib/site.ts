@@ -1,7 +1,12 @@
 /**
- * Single source of truth for identity and contact details.
- * Anything still unknown is `null` — components must skip nulls rather than
- * render a dead link. Open items are tracked in docs/OPEN-QUESTIONS.md.
+ * Fixed configuration: the site URL, locale, and the identity used where the
+ * CMS cannot reach — transactional email, the OG image route, the chatbot's
+ * system prompt, the lead-notification address.
+ *
+ * Everything a visitor reads on the pages (name, role, description, contact
+ * channels, menus) is edited in /admin/content and read through lib/cms/;
+ * its defaults live in lib/cms/registry.ts. Keep the two in step when the
+ * name or the email address itself changes.
  */
 
 export const site = {
@@ -32,45 +37,3 @@ export const site = {
   locale: 'fa-IR',
   dir: 'rtl',
 } as const
-
-type SocialLink = {
-  readonly label: string
-  readonly href: string
-  readonly handle: string | null
-}
-
-/**
- * Only confirmed destinations appear here — an unknown link is left out rather
- * than pointed somewhere plausible. Tracking parameters are stripped: the
- * `utm_*` tail on a shared LinkedIn URL identifies the share, not the profile.
- */
-export const socials: readonly SocialLink[] = [
-  {
-    label: 'لینکدین',
-    href: 'https://www.linkedin.com/in/ebrahim-zarfeshan-6bb688423',
-    handle: null,
-  },
-  {
-    label: 'واتس‌اپ',
-    href: 'https://wa.me/989171814773',
-    handle: null,
-  },
-  {
-    label: 'اینستاگرام',
-    href: 'https://instagram.com/mindfullmanager1',
-    handle: 'mindfullmanager1',
-  },
-]
-
-export const nav = [
-  { label: 'خانه', href: '/' },
-  { label: 'درباره من', href: '/about' },
-  { label: 'پروژه‌ها', href: '/projects' },
-  { label: 'یادداشت‌ها', href: '/articles' },
-  { label: 'تماس', href: '/contact' },
-] as const
-
-export const legalNav = [
-  { label: 'حریم خصوصی', href: '/privacy' },
-  { label: 'شرایط استفاده', href: '/terms' },
-] as const

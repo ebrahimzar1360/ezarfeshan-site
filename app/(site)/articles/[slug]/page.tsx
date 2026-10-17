@@ -19,6 +19,10 @@ import { createMdxComponents } from '@/components/ui/mdx'
 import { extractHeadings, hasDraftMarker, prepareMdx } from '@/lib/content/mdx'
 import { getArticleBySlug, getPublishedArticles, getRelatedArticles } from '@/lib/content/queries'
 import { faNum, formatDate } from '@/lib/format'
+import { Inline } from '@/components/cms/Inline'
+import { getSection } from '@/lib/cms/content'
+import { absoluteUrl, ogFallback } from '@/lib/cms/metadata'
+import { getIdentity } from '@/lib/cms/site'
 import { site } from '@/lib/site'
 
 export const revalidate = 3600
@@ -32,9 +36,10 @@ export const revalidate = 3600
 export const dynamicParams = true
 
 
-/** Absolute, because Open Graph consumers do not resolve relative URLs. */
-function ogUrl(title: string) {
-  return `${site.url}/api/og?title=${encodeURIComponent(title)}&kicker=${encodeURIComponent('مقاله')}`
+/** The share image: the article's own OG image, else its cover, else the generated card. */
+function shareImage(article: { title: string; ogImage: string | null; coverImage: string | null }) {
+  const own = article.ogImage || article.coverImage
+  return own ? absoluteUrl(own) : ogFallback(article.title, 'مقاله')
 }
 
 export async function generateStaticParams() {
@@ -51,24 +56,30 @@ export async function generateMetadata({
   const article = await getArticleBySlug(slug)
   if (!article) return {}
 
+  const identity = await getIdentity()
+  const image = shareImage(article)
+  const description = article.seoDescription ?? article.excerpt
+
   return {
     title: article.seoTitle ?? article.title,
-    description: article.seoDescription ?? article.excerpt,
-    alternates: { canonical: `/articles/${article.slug}` },
+    description,
+    alternates: { canonical: article.canonicalUrl || `/articles/${article.slug}` },
+    ...(article.noindex ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       type: 'article',
-      title: article.title,
-      description: article.excerpt,
+      title: article.seoTitle ?? article.title,
+      description,
       publishedTime: article.publishedAt?.toISOString(),
       modifiedTime: article.updatedAt.toISOString(),
-      authors: [site.name],
-      images: [{ url: ogUrl(article.title), width: 1200, height: 630, alt: article.title }],
+      authors: [article.author?.name ?? identity.name],
+      tags: article.topics.map((t) => t.name),
+      images: [{ url: image, alt: article.coverAlt || article.title }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: article.title,
-      description: article.excerpt,
-      images: [ogUrl(article.title)],
+      title: article.seoTitle ?? article.title,
+      description,
+      images: [image],
     },
   }
 }
@@ -79,7 +90,14 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   if (!article) notFound()
 
   const topicSlugs = article.topics.map((t) => t.slug)
-  const related = await getRelatedArticles(article.slug, topicSlugs)
+  const [related, identity, author, copy] = await Promise.all([
+    getRelatedArticles(article.slug, topicSlugs),
+    getIdentity(),
+    getSection('misc.author'),
+    getSection('articles.index'),
+  ])
+  const authorName = article.author?.name ?? identity.name
+  const portrait = identity.portrait.src ? identity.portrait : null
   const url = `${site.url}/articles/${article.slug}`
   const headings = extractHeadings(article.body)
 
@@ -103,6 +121,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         updatedAt={article.updatedAt}
         readingMinutes={article.readingMinutes}
         topics={article.topics}
+        image={shareImage(article)}
       />
       <header className="bp-grid relative overflow-hidden border-b border-border bg-bg-band">
         <Container className="py-12 md:py-20">
@@ -123,15 +142,17 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               {article.excerpt}
             </p>
             <div className="enter mt-8 flex items-center gap-4" style={{ animationDelay: '240ms' }}>
-              <Image
-                src="/photos/portrait-square.jpg"
-                alt=""
-                width={48}
-                height={48}
-                className="size-12 rounded-lg border border-border object-cover"
-              />
+              {portrait && (
+                <Image
+                  src={portrait.src}
+                  alt=""
+                  width={48}
+                  height={48}
+                  className="size-12 rounded-lg border border-border object-cover"
+                />
+              )}
               <div>
-                <p className="text-300 font-bold text-text">{site.name}</p>
+                <p className="text-300 font-bold text-text">{authorName}</p>
                 <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-200 text-text-subtle">
                   <span>{faNum(article.readingMinutes)} دقیقه مطالعه</span>
                   {article.publishedAt && (
@@ -148,6 +169,22 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
         </Container>
       </header>
+
+      {article.coverImage && (
+        <Container className="pt-10 md:pt-14">
+          <figure className="max-w-4xl">
+            <Image
+              src={article.coverImage}
+              alt={article.coverAlt ?? ''}
+              width={1600}
+              height={900}
+              sizes="(min-width: 1024px) 56rem, 100vw"
+              priority
+              className="aspect-[16/9] w-full rounded-xl border border-border object-cover"
+            />
+          </figure>
+        </Container>
+      )}
 
       {/* Two columns from lg up. The contents sits in the *second* grid column,
           which under dir="rtl" renders on the left — the arrangement
@@ -184,25 +221,30 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       <section className="pb-16 md:pb-24">
         <Container>
           <div className="tone-inverse tone-deep bp-grid relative grid max-w-4xl items-center gap-8 overflow-hidden rounded-xl p-8 sm:grid-cols-[auto_1fr] md:p-10">
-            <Image
-              src="/photos/portrait-square.jpg"
-              alt=""
-              width={112}
-              height={112}
-              className="size-24 rounded-xl border border-border object-cover md:size-28"
-            />
+            {portrait && (
+              <Image
+                src={portrait.src}
+                alt=""
+                width={112}
+                height={112}
+                className="size-24 rounded-xl border border-border object-cover md:size-28"
+              />
+            )}
             <div>
-              <p className="eyebrow">نویسنده</p>
-              <p className="mt-3 text-600 font-bold">{site.name}</p>
-              <p className="mt-1 text-300 text-text-muted">{site.role}</p>
-              <p className="mt-4 text-300 leading-prose text-text-muted">{site.description}</p>
+              {author.eyebrow && <p className="eyebrow">{author.eyebrow}</p>}
+              <p className="mt-3 text-600 font-bold">{authorName}</p>
+              <p className="mt-1 text-300 text-text-muted">{identity.role}</p>
+              <p className="mt-4 text-300 leading-prose text-text-muted">
+                <Inline text={author.bio || identity.description} />
+              </p>
               <p className="mt-5 flex flex-wrap gap-x-6 gap-y-2">
-                <Link href="/about" className="text-300 font-medium">
-                  دربارهٔ من ←
-                </Link>
-                <Link href="/newsletter" className="text-300 font-medium">
-                  عضویت در خبرنامه ←
-                </Link>
+                {[author.primary, author.secondary]
+                  .filter((l) => l.label && l.href)
+                  .map((l) => (
+                    <Link key={l.href} href={l.href} className="text-300 font-medium">
+                      {l.label}
+                    </Link>
+                  ))}
               </p>
             </div>
           </div>
@@ -212,7 +254,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       {related.length > 0 && (
         <section className="border-t border-border bg-bg-band py-16 md:py-24">
           <Container>
-            <h2 className="gold-marker mb-10 text-700 font-black">خواندن بعدی</h2>
+            <h2 className="gold-marker mb-10 text-700 font-black">{copy.relatedTitle}</h2>
             <ArticleGrid items={related} />
           </Container>
         </section>

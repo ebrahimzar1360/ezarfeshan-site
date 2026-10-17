@@ -1,9 +1,11 @@
+import { guard } from '@/lib/admin/guard'
 import { TopicManager } from '@/components/admin/TopicManager'
 import { getAllTopics } from '@/lib/admin/queries'
 
 export const dynamic = 'force-dynamic'
 
 export default async function TopicsPage() {
+  await guard('topics.manage')
   const topics = await getAllTopics()
   return (
     <>

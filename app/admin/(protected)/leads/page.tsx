@@ -1,3 +1,4 @@
+import { guard } from '@/lib/admin/guard'
 import { LeadRow } from '@/components/admin/LeadRow'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { getLeads } from '@/lib/admin/queries'
@@ -5,6 +6,7 @@ import { getLeads } from '@/lib/admin/queries'
 export const dynamic = 'force-dynamic'
 
 export default async function LeadsPage() {
+  await guard('leads.view')
   const leads = await getLeads()
 
   return (

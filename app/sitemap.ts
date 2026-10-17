@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { pageCount } from '@/lib/content/pagination'
-import { getPublishedArticles, getTopics } from '@/lib/content/queries'
+import { getPublishedPages } from '@/lib/cms/pages'
+import { getIndexableArticles, getPublishedArticles, getTopics } from '@/lib/content/queries'
 import { site } from '@/lib/site'
 
 export const revalidate = 3600
@@ -14,7 +15,12 @@ export const revalidate = 3600
  * to index a dead end.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, topics] = await Promise.all([getPublishedArticles(), getTopics()])
+  const [articles, indexable, topics, pages] = await Promise.all([
+    getPublishedArticles(),
+    getIndexableArticles(),
+    getTopics(),
+    getPublishedPages(),
+  ])
   const base = site.url
 
   const staticPages: MetadataRoute.Sitemap = [
@@ -25,8 +31,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/newsletter`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/consult`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/contact`, changeFrequency: 'yearly', priority: 0.5 },
-    { url: `${base}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
-    { url: `${base}/terms`, changeFrequency: 'yearly', priority: 0.2 },
+    // privacy and terms come from the CMS list below when a page replaces them
+    ...(['privacy', 'terms'] as const)
+      .filter((slug) => !pages.some((p) => p.slug === slug))
+      .map((slug) => ({ url: `${base}/${slug}`, changeFrequency: 'yearly' as const, priority: 0.2 })),
   ]
 
   /**
@@ -55,9 +63,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...staticPages,
     ...articlePages,
     ...topicsIndex,
-    ...articles.map((a) => ({
+    ...pages.map((p) => ({
+      url: `${base}/${p.slug}`,
+      lastModified: p.updatedAt,
+      changeFrequency: 'yearly' as const,
+      priority: 0.4,
+    })),
+    ...indexable.map((a) => ({
       url: `${base}/articles/${a.slug}`,
-      lastModified: a.publishedAt ?? undefined,
+      lastModified: a.updatedAt,
       changeFrequency: 'monthly' as const,
       priority: 0.8,
     })),

@@ -1,33 +1,15 @@
 import type { CSSProperties } from 'react'
 import { Container } from '@/components/ui/Container'
+import { getSection } from '@/lib/cms/content'
 
 /**
- * "از شفافیت تا هوشمندی" — three cards, in reading order: processes, systems,
- * AI. Each pairs a small drawn illustration with a title, a one-word state and
- * a single line. The illustrations are decorative SVG in the brand colours.
+ * "از شفافیت تا هوشمندی" — cards in reading order, each a small drawn
+ * illustration with a title, a one-word state and a single line. Copy and
+ * order come from the CMS (home.pillars); the illustrations are decorative SVG.
  */
-const cards = [
-  {
-    kind: 'processes',
-    title: 'فرایندها',
-    tag: 'شفاف',
-    text: 'تحلیل و بهینه‌سازی فرایندهای کسب‌وکار',
-  },
-  {
-    kind: 'systems',
-    title: 'سیستم‌ها',
-    tag: 'منظم',
-    text: 'طراحی و پیاده‌سازی سیستم‌های کارآمد',
-  },
-  {
-    kind: 'ai',
-    title: 'هوش مصنوعی',
-    tag: 'هوشمند',
-    text: 'استفاده کاربردی از هوش مصنوعی در کسب‌وکار واقعی',
-  },
-] as const
+type Kind = 'processes' | 'systems' | 'ai'
 
-function Illustration({ kind }: { kind: (typeof cards)[number]['kind'] }) {
+function Illustration({ kind }: { kind: Kind }) {
   return (
     <svg viewBox="0 0 96 96" aria-hidden focusable="false" className="size-32">
       <ellipse cx="48" cy="84" rx="30" ry="6" className="fill-forest-deep/10" />
@@ -93,29 +75,34 @@ function Illustration({ kind }: { kind: (typeof cards)[number]['kind'] }) {
   )
 }
 
-export function Pillars() {
+export async function Pillars() {
+  const { title, cards } = await getSection('home.pillars')
+  if (cards.length === 0) return null
+
   return (
     <section className="py-16 md:py-24">
       <Container>
         <header className="mb-12 text-center md:mb-16" data-reveal>
-          <h2 className="text-700 font-extrabold md:text-800">از شفافیت تا هوشمندی</h2>
+          <h2 className="text-700 font-extrabold md:text-800">{title}</h2>
           <span aria-hidden className="mx-auto mt-5 block h-1 w-14 rounded-full bg-gold" />
         </header>
 
         <div className="grid gap-5 md:grid-cols-3 md:gap-6">
           {cards.map((c, i) => (
             <article
-              key={c.kind}
+              key={`${c.kind}-${i}`}
               data-reveal
               style={{ '--d': i } as CSSProperties}
               className="card-v3 card-v3-hover flex flex-col items-center px-6 py-9 text-center"
             >
-              <Illustration kind={c.kind} />
+              <Illustration kind={c.kind as Kind} />
               <h3 className="mt-5 text-600 font-extrabold">{c.title}</h3>
-              <p className="mt-2 inline-flex items-center gap-2 text-300 font-bold text-emerald">
-                <span aria-hidden className="size-1.5 rounded-full bg-gold" />
-                {c.tag}
-              </p>
+              {c.tag && (
+                <p className="mt-2 inline-flex items-center gap-2 text-300 font-bold text-emerald">
+                  <span aria-hidden className="size-1.5 rounded-full bg-gold" />
+                  {c.tag}
+                </p>
+              )}
               <p className="mt-4 max-w-[16rem] text-300 leading-normal text-text-muted">{c.text}</p>
             </article>
           ))}

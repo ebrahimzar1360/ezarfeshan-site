@@ -15,7 +15,21 @@ type Status = 'idle' | 'sending' | 'sent' | 'error'
  * the message and again on the server for the protection (rate limit, honeypot).
  * A failed request keeps what was typed.
  */
-export function ContactForm() {
+export type ContactFormCopy = {
+  nameLabel: string
+  namePlaceholder: string
+  contactLabel: string
+  contactPlaceholder: string
+  subjectLabel: string
+  subjectPlaceholder: string
+  messageLabel: string
+  messagePlaceholder: string
+  submit: string
+  successTitle: string
+  successText: string
+}
+
+export function ContactForm({ copy }: { copy: ContactFormCopy }) {
   const [status, setStatus] = useState<Status>('idle')
   const [serverError, setServerError] = useState<string | null>(null)
 
@@ -53,9 +67,9 @@ export function ContactForm() {
         <span aria-hidden className="mx-auto mb-4 grid size-12 place-items-center rounded-full bg-emerald text-500 text-paper">
           <Icon name="check" />
         </span>
-        <p className="text-500 font-extrabold">پیامت رسید</p>
+        <p className="text-500 font-extrabold">{copy.successTitle}</p>
         <p className="mt-3 text-300 leading-prose text-text-muted">
-          پیام را می‌خوانم و خودم جواب می‌دهم.
+          {copy.successText}
         </p>
       </div>
     )
@@ -65,29 +79,29 @@ export function ContactForm() {
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="relative space-y-5">
       <Honeypot register={register('website')} />
 
-      <FormField id="name" label="نام" required error={errors.name?.message}>
+      <FormField id="name" label={copy.nameLabel} required error={errors.name?.message}>
         <input
           id="name"
           autoComplete="name"
-          placeholder="نام و نام خانوادگی"
+          placeholder={copy.namePlaceholder}
           aria-invalid={errors.name ? true : undefined}
           className={inputClass}
           {...register('name')}
         />
       </FormField>
 
-      <FormField id="contact" label="راه ارتباطی" required error={errors.contact?.message}>
+      <FormField id="contact" label={copy.contactLabel} required error={errors.contact?.message}>
         <input
           id="contact"
           autoComplete="email"
-          placeholder="ایمیل یا شماره تماس"
+          placeholder={copy.contactPlaceholder}
           aria-invalid={errors.contact ? true : undefined}
           className={inputClass}
           {...register('contact')}
         />
       </FormField>
 
-      <FormField id="subject" label="موضوع" required error={errors.subject?.message}>
+      <FormField id="subject" label={copy.subjectLabel} required error={errors.subject?.message}>
         <select
           id="subject"
           defaultValue=""
@@ -96,7 +110,7 @@ export function ContactForm() {
           {...register('subject')}
         >
           <option value="" disabled>
-            انتخاب کنید
+            {copy.subjectPlaceholder}
           </option>
           {CONTACT_SUBJECTS.map((s) => (
             <option key={s} value={s}>
@@ -106,11 +120,11 @@ export function ContactForm() {
         </select>
       </FormField>
 
-      <FormField id="message" label="پیام" required error={errors.message?.message}>
+      <FormField id="message" label={copy.messageLabel} required error={errors.message?.message}>
         <textarea
           id="message"
           rows={5}
-          placeholder="توضیح کوتاهی درباره درخواست خود بنویسید…"
+          placeholder={copy.messagePlaceholder}
           aria-invalid={errors.message ? true : undefined}
           className={textareaClass}
           {...register('message')}
@@ -125,7 +139,7 @@ export function ContactForm() {
       )}
 
       <Button type="submit" variant="brand" size="lg" loading={status === 'sending'} className="w-full">
-        ارسال پیام
+        {copy.submit}
         <Icon name="arrow" />
       </Button>
     </form>

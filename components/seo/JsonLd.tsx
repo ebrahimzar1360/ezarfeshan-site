@@ -1,5 +1,8 @@
-import { credentials, currentRoles } from '@/lib/content/bio'
-import { site, socials } from '@/lib/site'
+import { getSection } from '@/lib/cms/content'
+import { absoluteUrl } from '@/lib/cms/metadata'
+import { getChannels, getIdentity } from '@/lib/cms/site'
+import { plainInline } from '@/lib/cms/tokens'
+import { site } from '@/lib/site'
 
 /**
  * Structured data.
@@ -26,29 +29,37 @@ function Script({ data }: { data: object }) {
 const PERSON_ID = `${site.url}/#person`
 const SITE_ID = `${site.url}/#website`
 
-export function PersonJsonLd() {
+export async function PersonJsonLd() {
+  const [identity, channels, creds, roles, band] = await Promise.all([
+    getIdentity(),
+    getChannels(),
+    getSection('about.credentials'),
+    getSection('about.roles'),
+    getSection('about.band'),
+  ])
+  const portrait = band.portrait.src || identity.portrait.src
   return (
     <Script
       data={{
         '@context': 'https://schema.org',
         '@type': 'Person',
         '@id': PERSON_ID,
-        name: site.name,
-        alternateName: site.nameLatin,
-        jobTitle: site.role,
-        description: site.description,
+        name: identity.name,
+        alternateName: identity.nameLatin,
+        jobTitle: identity.role,
+        description: plainInline(identity.description),
         url: site.url,
-        image: `${site.url}/photos/portrait-about.jpg`,
-        // only the destinations lib/site.ts actually confirms
-        sameAs: socials.map((s) => s.href),
+        ...(portrait ? { image: absoluteUrl(portrait) } : {}),
+        // only the web profiles the CMS lists as contact channels
+        sameAs: channels.filter((c) => /^https?:\/\//.test(c.href)).map((c) => c.href),
         knowsAbout: ['سیستم‌سازی', 'مدیریت عملیات', 'هوش مصنوعی کاربردی', 'مدیریت تیم'],
-        hasCredential: credentials
+        hasCredential: creds.items
           .filter((c) => !c.note)
           .map((c) => ({
             '@type': 'EducationalOccupationalCredential',
             name: c.title,
           })),
-        hasOccupation: currentRoles.map((r) => ({
+        hasOccupation: roles.items.map((r) => ({
           '@type': 'Occupation',
           name: r.title,
         })),
@@ -57,16 +68,17 @@ export function PersonJsonLd() {
   )
 }
 
-export function WebSiteJsonLd() {
+export async function WebSiteJsonLd() {
+  const identity = await getIdentity()
   return (
     <Script
       data={{
         '@context': 'https://schema.org',
         '@type': 'WebSite',
         '@id': SITE_ID,
-        name: site.name,
+        name: identity.name,
         url: site.url,
-        description: site.description,
+        description: plainInline(identity.description),
         inLanguage: 'fa-IR',
         publisher: { '@id': PERSON_ID },
         potentialAction: {
@@ -90,6 +102,7 @@ export function ArticleJsonLd({
   updatedAt,
   readingMinutes,
   topics,
+  image,
 }: {
   title: string
   description: string
@@ -98,6 +111,7 @@ export function ArticleJsonLd({
   updatedAt: Date
   readingMinutes: number
   topics: { name: string }[]
+  image?: string
 }) {
   const url = `${site.url}/articles/${slug}`
   return (
@@ -115,7 +129,7 @@ export function ArticleJsonLd({
         inLanguage: 'fa-IR',
         ...(publishedAt ? { datePublished: publishedAt.toISOString() } : {}),
         dateModified: updatedAt.toISOString(),
-        image: `${site.url}/api/og?title=${encodeURIComponent(title)}`,
+        image: image ?? `${site.url}/api/og?title=${encodeURIComponent(title)}`,
         articleSection: topics.map((t) => t.name),
         timeRequired: `PT${readingMinutes}M`,
       }}

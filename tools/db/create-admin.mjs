@@ -100,7 +100,7 @@ const existing = await db.user.findUnique({ where: { email } })
 
 const user = await db.user.upsert({
   where: { email },
-  update: { passwordHash, name, role: 'ADMIN' },
+  update: { passwordHash, name, role: 'ADMIN', active: true },
   create: { email, name, passwordHash, role: 'ADMIN' },
 })
 

@@ -2,16 +2,18 @@ import Link from 'next/link'
 import { Container } from '@/components/ui/Container'
 import { Icon } from '@/components/ui/Icon'
 import { Logo } from '@/components/ui/Logo'
+import { getIdentity, getMainNav } from '@/lib/cms/site'
 import { MobileNav } from './MobileNav'
 import { NavLinks } from './NavLinks'
 
 /**
- * v3 header: logo, five links, one forest-green button. Nothing else — the
- * command palette and theme switch that used to sit here were removed for the
- * minimal redesign (search is still /search). The theme follows the visitor's
- * system setting.
+ * v3 header: logo, the main links, one forest-green button. Links and the
+ * button come from the CMS (nav.main); an empty button label hides it.
  */
-export function Header() {
+export async function Header() {
+  const [nav, identity] = await Promise.all([getMainNav(), getIdentity()])
+  const cta = nav.cta.label && nav.cta.href ? nav.cta : null
+
   return (
     <header className="site-header sticky top-0 z-50 border-b border-border bg-bg/90 text-text backdrop-blur-md">
       <a
@@ -22,19 +24,21 @@ export function Header() {
       </a>
 
       <Container className="flex h-20 items-center justify-between gap-6">
-        <Logo />
+        <Logo name={identity.name} nameLatin={identity.nameLatin} subline={identity.logoSubline} />
 
-        <NavLinks />
+        <NavLinks items={nav.items} />
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/contact"
-            className="hidden h-11 items-center gap-2 rounded-lg bg-forest px-5 text-300 font-bold text-paper no-underline transition-colors duration-150 hover:bg-emerald hover:text-paper md:inline-flex"
-          >
-            شروع گفت‌وگو
-            <Icon name="arrow" className="text-400" />
-          </Link>
-          <MobileNav />
+          {cta && (
+            <Link
+              href={cta.href}
+              className="hidden h-11 items-center gap-2 rounded-lg bg-forest px-5 text-300 font-bold text-paper no-underline transition-colors duration-150 hover:bg-emerald hover:text-paper md:inline-flex"
+            >
+              {cta.label}
+              <Icon name="arrow" className="text-400" />
+            </Link>
+          )}
+          <MobileNav items={nav.items} cta={cta} title={nav.mobileTitle} />
         </div>
       </Container>
     </header>

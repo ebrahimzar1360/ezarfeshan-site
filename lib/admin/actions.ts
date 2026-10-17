@@ -3,17 +3,20 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { requireAdmin } from '@/lib/auth'
+import { can } from '@/lib/admin/permissions'
+import { audit } from '@/lib/admin/audit'
+import { requirePermission } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 /**
  * Admin write paths, as server actions.
  *
- * Every one calls requireAdmin() first. Server actions are reachable as POST
- * endpoints whether or not a page renders the form, so the check has to live in
- * the action itself — putting it only in the page or the middleware would leave
- * the action callable by anyone who knows its id. Next.js supplies the CSRF
- * protection for actions; authorisation is ours.
+ * Every one calls requirePermission() first. Server actions are reachable as
+ * POST endpoints whether or not a page renders the form, so the check has to
+ * live in the action itself — putting it only in the page or the middleware
+ * would leave the action callable by anyone who knows its id. Next.js supplies
+ * the CSRF protection for actions; authorisation is ours, and it is re-read
+ * from the database each time (lib/auth.ts), not trusted from the cookie.
  */
 
 const articleSchema = z.object({
@@ -30,11 +33,34 @@ const articleSchema = z.object({
   status: z.enum(['DRAFT', 'SCHEDULED', 'PUBLISHED']),
   publishedAt: z.string().optional(),
   featured: z.boolean().optional(),
-  coverImage: z.string().trim().max(500).optional(),
+  coverImage: z.string().trim().max(500).regex(/^\/(?!\/)/, 'تصویر را از کتابخانهٔ رسانه انتخاب کن.').optional(),
+  coverAlt: z.string().trim().max(300).optional(),
+  ogImage: z.string().trim().max(500).regex(/^\/(?!\/)/, 'تصویر را از کتابخانهٔ رسانه انتخاب کن.').optional(),
+  canonicalUrl: z.string().trim().max(500).url('نشانی کامل با https:// بنویس.').optional(),
+  noindex: z.boolean().optional(),
   seoTitle: z.string().trim().max(200).optional(),
   seoDescription: z.string().trim().max(400).optional(),
   topicIds: z.array(z.string()).optional(),
+  /** Autosave writes the row but does not take a revision snapshot. */
+  autosave: z.boolean().optional(),
 })
+
+/** Kept per article; older snapshots are pruned on save. */
+const MAX_REVISIONS = 50
+
+function denied(): ActionResult {
+  return { ok: false, message: 'برای این کار دسترسی نداری.' }
+}
+
+/** Revalidate everything that can show an article: lists, topics, home, feed. */
+function revalidateArticle(slug: string, topicSlugs: string[] = []) {
+  revalidatePath('/')
+  revalidatePath('/articles')
+  revalidatePath(`/articles/${slug}`)
+  revalidatePath('/sitemap.xml')
+  revalidatePath('/rss.xml')
+  for (const t of topicSlugs) revalidatePath(`/topics/${t}`)
+}
 
 export type ActionResult =
   | { ok: true; id?: string; message?: string }
@@ -61,14 +87,31 @@ function readingMinutes(text: string): number {
 }
 
 export async function saveArticle(input: unknown): Promise<ActionResult> {
-  await requireAdmin()
+  const user = await requirePermission('articles.write')
 
   const parsed = articleSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, message: 'اطلاعات کامل نیست.', fields: zodFields(parsed.error) }
   }
 
-  const { id, topicIds, publishedAt, ...rest } = parsed.data
+  const { id, topicIds, publishedAt, autosave, ...rest } = parsed.data
+
+  const existing = id
+    ? await db.article.findUnique({
+        where: { id },
+        select: { authorId: true, status: true, title: true, excerpt: true, body: true, slug: true },
+      })
+    : null
+  if (id && !existing) return { ok: false, message: 'این مقاله دیگر وجود ندارد.' }
+
+  // Authors write their own drafts; publishing, and touching anything already
+  // live, belongs to an editor.
+  if (existing && existing.authorId !== user.id && !can(user.role, 'articles.editAny')) return denied()
+  if (!can(user.role, 'articles.publish')) {
+    if (rest.status !== 'DRAFT' || (existing && existing.status !== 'DRAFT')) {
+      return { ok: false, message: 'انتشار با ویراستار است. مقاله را به‌صورت پیش‌نویس ذخیره کن.' }
+    }
+  }
 
   // A scheduled post needs a date; a published one defaults to now.
   let when: Date | null = publishedAt ? new Date(publishedAt) : null
@@ -84,6 +127,10 @@ export async function saveArticle(input: unknown): Promise<ActionResult> {
   const data = {
     ...rest,
     coverImage: rest.coverImage || null,
+    coverAlt: rest.coverAlt || null,
+    ogImage: rest.ogImage || null,
+    canonicalUrl: rest.canonicalUrl || null,
+    noindex: rest.noindex ?? false,
     seoTitle: rest.seoTitle || null,
     seoDescription: rest.seoDescription || null,
     publishedAt: when,
@@ -92,21 +139,55 @@ export async function saveArticle(input: unknown): Promise<ActionResult> {
   }
 
   try {
+    // Snapshot the version being replaced — only on a deliberate save, and only
+    // when the text actually changed.
+    if (
+      existing &&
+      !autosave &&
+      (existing.title !== data.title || existing.excerpt !== data.excerpt || existing.body !== data.body)
+    ) {
+      await db.articleRevision.create({
+        data: {
+          articleId: id!,
+          title: existing.title,
+          excerpt: existing.excerpt,
+          body: existing.body,
+          authorId: user.id,
+        },
+      })
+      const stale = await db.articleRevision.findMany({
+        where: { articleId: id! },
+        orderBy: { createdAt: 'desc' },
+        skip: MAX_REVISIONS,
+        select: { id: true },
+      })
+      if (stale.length) await db.articleRevision.deleteMany({ where: { id: { in: stale.map((r) => r.id) } } })
+    }
+
     const article = id
       ? await db.article.update({
           where: { id },
           data: { ...data, topics: { set: (topicIds ?? []).map((t) => ({ id: t })) } },
+          include: { topics: { select: { slug: true } } },
         })
       : await db.article.create({
-          data: { ...data, topics: { connect: (topicIds ?? []).map((t) => ({ id: t })) } },
+          data: {
+            ...data,
+            authorId: user.id,
+            topics: { connect: (topicIds ?? []).map((t) => ({ id: t })) },
+          },
+          include: { topics: { select: { slug: true } } },
         })
 
     // ISR caches the public pages; without this the edit is invisible until the
-    // revalidate window expires.
-    revalidatePath('/')
-    revalidatePath('/articles')
-    revalidatePath(`/articles/${article.slug}`)
-    for (const t of topicIds ?? []) revalidatePath(`/topics/${t}`)
+    // revalidate window expires. The old slug too, so a renamed article's old
+    // address stops serving the cached copy.
+    revalidateArticle(article.slug, article.topics.map((t) => t.slug))
+    if (existing && existing.slug !== article.slug) revalidatePath(`/articles/${existing.slug}`)
+
+    if (!autosave) {
+      await audit(user, id ? 'update' : 'create', 'article', article.id, `${article.title} (${article.status})`)
+    }
 
     return { ok: true, id: article.id, message: 'ذخیره شد.' }
   } catch (cause) {
@@ -120,12 +201,11 @@ export async function saveArticle(input: unknown): Promise<ActionResult> {
 }
 
 export async function deleteArticle(id: string): Promise<ActionResult> {
-  await requireAdmin()
+  const user = await requirePermission('articles.publish')
   try {
-    const article = await db.article.delete({ where: { id } })
-    revalidatePath('/')
-    revalidatePath('/articles')
-    revalidatePath(`/articles/${article.slug}`)
+    const article = await db.article.delete({ where: { id }, include: { topics: { select: { slug: true } } } })
+    revalidateArticle(article.slug, article.topics.map((t) => t.slug))
+    await audit(user, 'delete', 'article', id, article.title)
     return { ok: true, message: 'مقاله حذف شد.' }
   } catch (cause) {
     console.error('[admin:deleteArticle]', cause)
@@ -146,7 +226,7 @@ const topicSchema = z.object({
 })
 
 export async function saveTopic(input: unknown): Promise<ActionResult> {
-  await requireAdmin()
+  const user = await requirePermission('topics.manage')
   const parsed = topicSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, message: 'اطلاعات کامل نیست.', fields: zodFields(parsed.error) }
@@ -157,7 +237,9 @@ export async function saveTopic(input: unknown): Promise<ActionResult> {
       ? await db.topic.update({ where: { id }, data })
       : await db.topic.create({ data })
     revalidatePath('/articles')
+    revalidatePath('/topics')
     revalidatePath(`/topics/${topic.slug}`)
+    await audit(user, id ? 'update' : 'create', 'topic', topic.id, topic.name)
     return { ok: true, id: topic.id, message: 'ذخیره شد.' }
   } catch (cause) {
     console.error('[admin:saveTopic]', cause)
@@ -166,7 +248,7 @@ export async function saveTopic(input: unknown): Promise<ActionResult> {
 }
 
 export async function deleteTopic(id: string): Promise<ActionResult> {
-  await requireAdmin()
+  const user = await requirePermission('topics.manage')
   const count = await db.article.count({ where: { topics: { some: { id } } } })
   if (count > 0) {
     return {
@@ -174,8 +256,10 @@ export async function deleteTopic(id: string): Promise<ActionResult> {
       message: `این موضوع به ${count} مقاله وصل است. اول آن‌ها را به موضوع دیگری منتقل کن.`,
     }
   }
-  await db.topic.delete({ where: { id } })
+  const topic = await db.topic.delete({ where: { id } })
   revalidatePath('/articles')
+  revalidatePath('/topics')
+  await audit(user, 'delete', 'topic', id, topic.name)
   return { ok: true, message: 'موضوع حذف شد.' }
 }
 
@@ -186,13 +270,72 @@ const leadUpdateSchema = z.object({
 })
 
 export async function updateLead(input: unknown): Promise<ActionResult> {
-  await requireAdmin()
+  const user = await requirePermission('leads.view')
   const parsed = leadUpdateSchema.safeParse(input)
   if (!parsed.success) return { ok: false, message: 'اطلاعات کامل نیست.' }
   const { id, ...data } = parsed.data
   await db.lead.update({ where: { id }, data: { ...data, note: data.note || null } })
   revalidatePath('/admin/leads')
+  await audit(user, 'update', 'lead', id, data.status)
   return { ok: true, message: 'به‌روز شد.' }
+}
+
+/** Put an older version's text back. The current text becomes a revision itself. */
+export async function restoreRevision(revisionId: string): Promise<ActionResult> {
+  const user = await requirePermission('articles.write')
+  const rev = await db.articleRevision.findUnique({
+    where: { id: revisionId },
+    include: { article: { select: { id: true, authorId: true, status: true, title: true, excerpt: true, body: true, slug: true } } },
+  })
+  if (!rev) return { ok: false, message: 'این نسخه پیدا نشد.' }
+  const a = rev.article
+  if (a.authorId !== user.id && !can(user.role, 'articles.editAny')) return denied()
+  if (a.status !== 'DRAFT' && !can(user.role, 'articles.publish')) return denied()
+
+  await db.$transaction([
+    db.articleRevision.create({
+      data: { articleId: a.id, title: a.title, excerpt: a.excerpt, body: a.body, authorId: user.id },
+    }),
+    db.article.update({
+      where: { id: a.id },
+      data: { title: rev.title, excerpt: rev.excerpt, body: rev.body, readingMinutes: readingMinutes(rev.body) },
+    }),
+  ])
+  revalidateArticle(a.slug)
+  await audit(user, 'restore', 'article', a.id, `نسخهٔ ${rev.createdAt.toISOString()}`)
+  return { ok: true, message: 'نسخهٔ انتخابی برگردانده شد.' }
+}
+
+/** A draft copy — for a series, or to rework a published piece without touching it. */
+export async function duplicateArticle(id: string): Promise<ActionResult> {
+  const user = await requirePermission('articles.write')
+  const a = await db.article.findUnique({ where: { id }, include: { topics: { select: { id: true } } } })
+  if (!a) return { ok: false, message: 'این مقاله پیدا نشد.' }
+  if (a.authorId !== user.id && !can(user.role, 'articles.editAny')) return denied()
+
+  let slug = `${a.slug}-copy`.slice(0, 110)
+  for (let n = 2; await db.article.findUnique({ where: { slug }, select: { id: true } }); n++) {
+    slug = `${a.slug}-copy-${n}`.slice(0, 120)
+  }
+  const copy = await db.article.create({
+    data: {
+      slug,
+      title: `${a.title} (رونوشت)`,
+      excerpt: a.excerpt,
+      body: a.body,
+      coverImage: a.coverImage,
+      coverAlt: a.coverAlt,
+      ogImage: a.ogImage,
+      seoTitle: a.seoTitle,
+      seoDescription: a.seoDescription,
+      readingMinutes: a.readingMinutes,
+      status: 'DRAFT',
+      authorId: user.id,
+      topics: { connect: a.topics },
+    },
+  })
+  await audit(user, 'duplicate', 'article', copy.id, a.title)
+  return { ok: true, id: copy.id, message: 'رونوشت ساخته شد.' }
 }
 
 export async function signOutAdmin() {

@@ -1,20 +1,23 @@
 import { verify } from '@node-rs/argon2'
+import { cache } from 'react'
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { db } from './db'
 import { rateLimit } from './rate-limit'
+import { can, isRole, type Permission, type Role } from './admin/permissions'
 
 /**
  * Admin authentication.
  *
- * One account, one password. There is no signup route, no password reset by
- * email, and no user management screen — the account is created from the
- * command line (`npm run admin:create`). A reset flow would be a second way in
- * for a door only one person ever uses.
+ * There is no public signup and no password reset by email. The first ADMIN is
+ * created from the command line (`npm run admin:create`); further accounts are
+ * created by an ADMIN in /admin/users, which also sets roles and resets
+ * passwords. An email reset flow would be a second way in nobody needs.
  *
- * JWT sessions rather than database sessions: with a single user there is
- * nothing to gain from a sessions table, and a stateless cookie keeps the
- * middleware free of a database round trip on every admin request.
+ * JWT sessions keep the middleware free of a database round trip, but the JWT
+ * is not trusted for authorisation: requireUser() re-reads the account on every
+ * admin request, so a disabled user or a changed role takes effect at once
+ * rather than when the 8-hour cookie expires.
  */
 
 const SESSION_MAX_AGE = 60 * 60 * 8 // 8 hours
@@ -52,7 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           valid = false
         }
 
-        if (!user || !valid) return null
+        if (!user || !valid || !user.active) return null
 
         await db.user.update({
           where: { id: user.id },
@@ -97,9 +100,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 const DUMMY_HASH =
   '$argon2id$v=19$m=19456,t=2,p=1$LSvAP/IIKeYQYAnLWei78w$q7U60hNSaPn9ak/yK4NIG/gli+O0M5aSFsj5Ulmv274'
 
-/** Throws unless a session exists. Every admin page and action calls this. */
-export async function requireAdmin() {
+export type AdminUser = { id: string; email: string; name: string; role: Role }
+
+/**
+ * The signed-in account as the database has it now, or null. Cached per
+ * request so a page and the actions it renders share one lookup.
+ */
+export const currentUser = cache(async (): Promise<AdminUser | null> => {
   const session = await auth()
-  if (!session?.user) throw new Error('UNAUTHENTICATED')
-  return session.user
+  const id = session?.user?.id
+  if (!id) return null
+  const user = await db.user.findUnique({
+    where: { id },
+    select: { id: true, email: true, name: true, role: true, active: true },
+  })
+  if (!user || !user.active || !isRole(user.role)) return null
+  return { id: user.id, email: user.email, name: user.name, role: user.role }
+})
+
+/** Throws unless an active account is signed in. */
+export async function requireUser(): Promise<AdminUser> {
+  const user = await currentUser()
+  if (!user) throw new Error('UNAUTHENTICATED')
+  return user
 }
+
+/** Throws unless the signed-in account holds `permission`. Every admin action calls this. */
+export async function requirePermission(permission: Permission): Promise<AdminUser> {
+  const user = await requireUser()
+  if (!can(user.role, permission)) throw new Error('FORBIDDEN')
+  return user
+}
+
+/** Kept for existing callers: any signed-in, active account. */
+export const requireAdmin = requireUser

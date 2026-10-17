@@ -19,9 +19,13 @@ datasource db {
   // url moved to prisma.config.ts (Prisma 7)
 }
 
+/// ADMIN: everything, including users and site settings.
+/// EDITOR: all content — articles, pages, site copy, media, topics.
+/// AUTHOR: writes own articles as drafts and uploads media; cannot publish.
 enum Role {
   ADMIN
   EDITOR
+  AUTHOR
 }
 
 enum ArticleStatus {
@@ -50,11 +54,17 @@ model User {
   passwordHash String   @map("password_hash")
   role         Role     @default(EDITOR)
   totpSecret   String?  @map("totp_secret")
+  /// A disabled account keeps its history but cannot sign in, and any session
+  /// it already holds stops working on the next request (requireUser re-reads it).
+  active       Boolean  @default(true)
   lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz(3)
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  articles Article[]
+  articles  Article[]
+  media     Media[]
+  revisions ArticleRevision[]
+  auditLogs AuditLog[]
 
   @@map("users")
 }
@@ -67,6 +77,8 @@ model Article {
   /// MDX source. Rendered with an allowlisted component set — never raw HTML.
   body           String
   coverImage     String?       @map("cover_image")
+  /// Alt text for the cover. Empty means decorative (alt="").
+  coverAlt       String?       @map("cover_alt")
   status         ArticleStatus @default(DRAFT)
   publishedAt    DateTime?     @map("published_at") @db.Timestamptz(3)
   readingMinutes Int           @default(0) @map("reading_minutes")
@@ -75,6 +87,9 @@ model Article {
   seoTitle       String? @map("seo_title")
   seoDescription String? @map("seo_description")
   ogImage        String? @map("og_image")
+  /// Absolute URL when the piece was first published elsewhere.
+  canonicalUrl   String? @map("canonical_url")
+  noindex        Boolean @default(false)
 
   /// Denormalised counter. Incremented from the analytics route, never trusted
   /// for anything but display ordering.
@@ -83,6 +98,8 @@ model Article {
   authorId String?  @map("author_id")
   author   User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   topics   Topic[]  @relation("ArticleTopics")
+
+  revisions ArticleRevision[]
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -212,4 +229,89 @@ model Setting {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("settings")
+}
+
+/// Snapshot of an article's text taken before each manual save, so an edit can
+/// be compared and undone. Autosaves do not snapshot — they would bury the
+/// meaningful versions under one row per twenty seconds.
+model ArticleRevision {
+  id        String  @id @default(cuid())
+  articleId String  @map("article_id")
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  title     String
+  excerpt   String
+  body      String
+  authorId  String? @map("author_id")
+  author    User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([articleId, createdAt(sort: Desc)])
+  @@map("article_revisions")
+}
+
+/// Uploaded files. Bytes live in Postgres rather than on the container disk:
+/// the image is rebuilt and replaced on every deploy, and the database volume
+/// is the one thing that is already persistent and backed up.
+model Media {
+  id           String  @id @default(cuid())
+  /// The name as uploaded, for the library only.
+  originalName String  @map("original_name")
+  /// URL-safe file name, served at /media/<id>/<fileName>.
+  fileName     String  @map("file_name")
+  mimeType     String  @map("mime_type")
+  size         Int
+  width        Int?
+  height       Int?
+  /// Required for images in the editor; empty only for decorative use.
+  alt          String  @default("")
+  caption      String?
+  /// SHA-256 of the stored bytes. Uploading the same file twice returns the first.
+  sha256       String  @unique
+  data         Bytes
+
+  uploadedById String? @map("uploaded_by_id")
+  uploadedBy   User?   @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([createdAt(sort: Desc)])
+  @@map("media")
+}
+
+/// Free-standing pages written in the admin (MDX, same renderer as articles).
+/// Served at /<slug>; a page whose slug matches a built-in legal page
+/// (privacy, terms) replaces that page's built-in text.
+model Page {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  lead           String?
+  body           String
+  status         ArticleStatus @default(DRAFT)
+  publishedAt    DateTime?     @map("published_at") @db.Timestamptz(3)
+  seoTitle       String?       @map("seo_title")
+  seoDescription String?       @map("seo_description")
+  ogImage        String?       @map("og_image")
+  noindex        Boolean       @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("pages")
+}
+
+/// Who changed what. Written by every admin mutation; never edited.
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  summary   String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
 }

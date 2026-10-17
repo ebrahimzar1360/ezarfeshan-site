@@ -6,7 +6,8 @@ import { RevealObserver } from '@/components/site/RevealObserver'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
 import { SectionHead } from '@/components/ui/SectionHead'
-import { nav } from '@/lib/site'
+import { getSection } from '@/lib/cms/content'
+import { getMainNav } from '@/lib/cms/site'
 
 /**
  * The only not-found file in the app, and that is deliberate.
@@ -27,14 +28,16 @@ import { nav } from '@/lib/site'
  * middleware and redirected to the login page — and it is a fair trade for every
  * visitor getting a way out.
  *
- * Copy is DESIGN-PLAN §9: what happened, and where to go instead.
+ * Copy is DESIGN-PLAN §9: what happened, and where to go instead. The words
+ * themselves are the CMS's (misc.notFound).
  */
 export const metadata: Metadata = {
   title: 'صفحه پیدا نشد',
   robots: { index: false, follow: true },
 }
 
-export default function NotFound() {
+export default async function NotFound() {
+  const [copy, nav] = await Promise.all([getSection('misc.notFound'), getMainNav()])
   return (
     <>
       <RevealObserver />
@@ -45,22 +48,28 @@ export default function NotFound() {
             <div>
               <SectionHead
                 as="h1"
-                eyebrow="۴۰۴"
-                title="این صفحه وجود ندارد"
-                lead="شاید نشانی اشتباه تایپ شده، یا نوشته‌ای که دنبالش بودی جابه‌جا شده."
+                eyebrow={copy.eyebrow}
+                title={copy.title}
+                lead={copy.lead}
               />
 
               <div className="flex flex-wrap items-center gap-3">
-                <Button href="/articles" size="lg">همهٔ مقالات</Button>
-                <Button href="/" size="lg" variant="outline">
-                  صفحهٔ اصلی
-                </Button>
+                {copy.primary.label && (
+                  <Button href={copy.primary.href} size="lg">
+                    {copy.primary.label}
+                  </Button>
+                )}
+                {copy.secondary.label && (
+                  <Button href={copy.secondary.href} size="lg" variant="outline">
+                    {copy.secondary.label}
+                  </Button>
+                )}
               </div>
 
               <nav aria-label="بخش‌های سایت" className="mt-14 border-t border-border pt-8">
-                <p className="text-200 text-text-subtle">یا از اینجا شروع کن:</p>
+                <p className="text-200 text-text-subtle">{copy.navIntro}</p>
                 <ul className="mt-4 flex flex-wrap gap-x-7 gap-y-3">
-                  {nav.map((item) => (
+                  {nav.items.map((item) => (
                     <li key={item.href}>
                       <Link href={item.href} className="text-300">
                         {item.label}

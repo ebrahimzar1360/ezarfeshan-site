@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
+import { AdminNav } from '@/components/admin/AdminNav'
 import { SignOutButton } from '@/components/admin/SignOutButton'
-import { auth } from '@/lib/auth'
+import { can, ROLE_LABELS, type Permission } from '@/lib/admin/permissions'
+import { currentUser } from '@/lib/auth'
 import { ToastProvider } from '@/components/ui/Toast'
 
 export const metadata = { title: 'مدیریت', robots: { index: false, follow: false } }
@@ -12,25 +14,36 @@ export const metadata = { title: 'مدیریت', robots: { index: false, follow:
  *
  * middleware.ts only checks that a cookie is present — it runs on the edge
  * runtime and cannot reach the database. This layout is a server component, so
- * it can verify the session properly, and every admin page renders inside it.
+ * it verifies the session properly *and* re-reads the account: a disabled user
+ * is out on the next request, not when the cookie expires.
  *
  * The login page must stay OUT of this tree. In the App Router a child layout
  * nests inside its parent rather than replacing it, so app/admin/login/layout.tsx
  * did not exempt the login page — it rendered inside this one, was redirected to
  * itself, and looped. The (protected) route group solves it: it groups the
  * authenticated pages without adding a URL segment, leaving /admin/login outside.
+ *
+ * The menu shows only what the role may open; each page and action still
+ * checks for itself.
  */
-export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const session = await auth()
-  if (!session?.user) redirect('/admin/login')
+const NAV: { href: string; label: string; permission?: Permission; group: string }[] = [
+  { href: '/admin', label: 'داشبورد', group: 'main' },
+  { href: '/admin/articles', label: 'مقالات', permission: 'articles.write', group: 'content' },
+  { href: '/admin/pages', label: 'صفحه‌ها', permission: 'pages.manage', group: 'content' },
+  { href: '/admin/content', label: 'متن‌ها و دکمه‌ها', permission: 'content.edit', group: 'content' },
+  { href: '/admin/media', label: 'رسانه', permission: 'media.upload', group: 'content' },
+  { href: '/admin/topics', label: 'موضوع‌ها', permission: 'topics.manage', group: 'content' },
+  { href: '/admin/leads', label: 'درخواست‌ها', permission: 'leads.view', group: 'people' },
+  { href: '/admin/subscribers', label: 'مشترکین', permission: 'subscribers.view', group: 'people' },
+  { href: '/admin/users', label: 'کاربران و دسترسی', permission: 'users.manage', group: 'system' },
+  { href: '/admin/audit', label: 'گزارش تغییرات', permission: 'audit.view', group: 'system' },
+]
 
-  const nav = [
-    { href: '/admin', label: 'داشبورد' },
-    { href: '/admin/articles', label: 'مقالات' },
-    { href: '/admin/topics', label: 'موضوع‌ها' },
-    { href: '/admin/subscribers', label: 'مشترکین' },
-    { href: '/admin/leads', label: 'درخواست‌ها' },
-  ]
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const user = await currentUser()
+  if (!user) redirect('/admin/login')
+
+  const items = NAV.filter((n) => !n.permission || can(user.role, n.permission))
 
   return (
     <ToastProvider>
@@ -40,22 +53,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <Link href="/admin" className="text-400 font-bold text-text no-underline">
               مدیریت
             </Link>
-            <nav className="flex flex-wrap gap-x-6 gap-y-2">
-              {nav.slice(1).map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-300 text-text-muted no-underline hover:text-text"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="ms-auto flex items-center gap-5">
+            <AdminNav items={items.slice(1).map(({ href, label }) => ({ href, label }))} />
+            <div className="ms-auto flex flex-wrap items-center gap-x-5 gap-y-2">
               <Link href="/" target="_blank" className="text-200 text-text-subtle no-underline hover:text-text">
                 دیدن سایت ↗
               </Link>
-              <span className="text-200 text-text-subtle">{session.user.email}</span>
+              <Link href="/admin/account" className="text-200 text-text-subtle no-underline hover:text-text">
+                {user.name} · {ROLE_LABELS[user.role]}
+              </Link>
               <SignOutButton />
             </div>
           </div>

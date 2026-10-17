@@ -1,4 +1,5 @@
-import { auth } from '@/lib/auth'
+import { can } from '@/lib/admin/permissions'
+import { currentUser } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 export const runtime = 'nodejs'
@@ -12,8 +13,9 @@ export const dynamic = 'force-dynamic'
  * gets a spam complaint.
  */
 export async function GET() {
-  const session = await auth()
-  if (!session?.user) return new Response('Unauthorized', { status: 401 })
+  const user = await currentUser()
+  if (!user) return new Response('Unauthorized', { status: 401 })
+  if (!can(user.role, 'subscribers.view')) return new Response('Forbidden', { status: 403 })
 
   const rows = await db.subscriber.findMany({
     where: { status: 'CONFIRMED' },

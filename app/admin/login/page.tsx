@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { LoginForm } from '@/components/admin/LoginForm'
-import { auth } from '@/lib/auth'
+import { currentUser } from '@/lib/auth'
 
 export const metadata = { title: 'ورود', robots: { index: false, follow: false } }
 export const dynamic = 'force-dynamic'
@@ -15,8 +15,9 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string; error?: string }>
 }) {
-  const session = await auth()
-  if (session?.user) redirect('/admin')
+  // currentUser, not auth(): a disabled account still carries a valid cookie,
+  // and bouncing it back to /admin would loop with the layout's redirect here.
+  if (await currentUser()) redirect('/admin')
 
   const { next, error } = await searchParams
 

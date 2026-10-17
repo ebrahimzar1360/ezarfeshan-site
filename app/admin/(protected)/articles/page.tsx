@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { guard } from '@/lib/admin/guard'
+import { can } from '@/lib/admin/permissions'
 import { getAdminArticles } from '@/lib/admin/queries'
+import { inputClass } from '@/components/ui/FormField'
 import { faNum, formatDate } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
@@ -11,8 +14,17 @@ const STATUS = {
   PUBLISHED: { label: 'منتشرشده', tone: 'text-link' },
 } as const
 
-export default async function AdminArticlesPage() {
-  const articles = await getAdminArticles()
+export default async function AdminArticlesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string; q?: string }>
+}) {
+  const user = await guard('articles.write')
+  const { status, q } = await searchParams
+  // authors see their own; editors and admins see everyone's
+  const mine = !can(user.role, 'articles.editAny')
+  const articles = await getAdminArticles({ authorId: mine ? user.id : undefined, status, q })
+  const filtered = Boolean(status || q)
 
   return (
     <>
@@ -26,7 +38,39 @@ export default async function AdminArticlesPage() {
         </Link>
       </div>
 
-      {articles.length === 0 ? (
+      <form className="mb-6 flex flex-wrap items-end gap-3" role="search">
+        <div className="min-w-56 flex-1">
+          <label htmlFor="q" className="mb-1.5 block text-200 text-text-subtle">
+            جست‌وجو در عنوان یا اسلاگ
+          </label>
+          <input id="q" name="q" type="search" defaultValue={q ?? ''} className={inputClass} />
+        </div>
+        <div>
+          <label htmlFor="st" className="mb-1.5 block text-200 text-text-subtle">
+            وضعیت
+          </label>
+          <select id="st" name="status" defaultValue={status ?? ''} className={`${inputClass} w-44`}>
+            <option value="">همه</option>
+            {Object.entries(STATUS).map(([v, s]) => (
+              <option key={v} value={v}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button type="submit" className="h-12 rounded-md border border-border-strong px-5 text-300 text-text hover:border-accent">
+          اعمال
+        </button>
+        {filtered && (
+          <Link href="/admin/articles" className="h-12 px-2 text-200 leading-[3rem]">
+            پاک کردن فیلتر
+          </Link>
+        )}
+      </form>
+
+      {articles.length === 0 && filtered ? (
+        <p className="rounded-lg border border-border bg-bg p-6 text-300 text-text-muted">مقاله‌ای با این فیلتر پیدا نشد.</p>
+      ) : articles.length === 0 ? (
         <EmptyState
           title="هنوز مقاله‌ای نساخته‌ای"
           body="اولین نوشته را شروع کن. تا وقتی وضعیتش پیش‌نویس است روی سایت دیده نمی‌شود."
@@ -75,6 +119,7 @@ export default async function AdminArticlesPage() {
                 <th className="p-4 text-start font-medium">عنوان</th>
                 <th className="p-4 text-start font-medium">وضعیت</th>
                 <th className="p-4 text-start font-medium">موضوع</th>
+                <th className="p-4 text-start font-medium">نویسنده</th>
                 <th className="p-4 text-start font-medium">تاریخ</th>
                 <th className="p-4 text-start font-medium">بازدید</th>
               </tr>
@@ -99,6 +144,7 @@ export default async function AdminArticlesPage() {
                   <td className="p-4 text-200 text-text-muted">
                     {a.topics.map((t) => t.name).join('، ') || '—'}
                   </td>
+                  <td className="p-4 text-200 text-text-muted">{a.author?.name ?? '—'}</td>
                   <td className="p-4 text-200 text-text-muted">
                     {a.publishedAt ? formatDate(a.publishedAt) : '—'}
                   </td>

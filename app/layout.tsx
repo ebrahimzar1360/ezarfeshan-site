@@ -1,28 +1,36 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
+import { getIdentity } from '@/lib/cms/site'
+import { plainInline } from '@/lib/cms/tokens'
 import { site } from '@/lib/site'
 import './globals.css'
 
-export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
-  title: {
-    default: `${site.name} — ${site.role}`,
-    template: `%s — ${site.name}`,
-  },
-  description: site.description,
-  authors: [{ name: site.name }],
-  icons: {
-    icon: [{ url: '/brand/favicon.svg', type: 'image/svg+xml' }],
-    apple: [{ url: '/brand/icon-maskable.svg' }],
-  },
-  openGraph: {
-    type: 'website',
-    locale: site.locale,
-    siteName: site.name,
-    title: `${site.name} — ${site.role}`,
-    description: site.description,
-  },
-  robots: { index: true, follow: true },
+/**
+ * Site-wide defaults. Name, role and description are the CMS's (site.identity),
+ * so renaming the site in the admin renames every <title> as well.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const identity = await getIdentity()
+  const fallbackTitle = `${identity.name} — ${identity.role}`
+  const description = plainInline(identity.description)
+  return {
+    metadataBase: new URL(site.url),
+    title: { default: fallbackTitle, template: `%s — ${identity.name}` },
+    description,
+    authors: [{ name: identity.name }],
+    icons: {
+      icon: [{ url: '/brand/favicon.svg', type: 'image/svg+xml' }],
+      apple: [{ url: '/brand/icon-maskable.svg' }],
+    },
+    openGraph: {
+      type: 'website',
+      locale: site.locale,
+      siteName: identity.name,
+      title: fallbackTitle,
+      description,
+    },
+    robots: { index: true, follow: true },
+  }
 }
 
 /**

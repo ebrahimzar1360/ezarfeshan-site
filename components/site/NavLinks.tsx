@@ -2,18 +2,19 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { nav } from '@/lib/site'
 
 /**
  * Desktop navigation. The active section gets a gold bar under its label — a
  * mark, not a text colour, so it holds on every ground the header sits on.
  * Hover draws the same bar in, from the reading edge.
  */
-export function NavLinks() {
+export type NavItem = { label: string; href: string }
+
+export function NavLinks({ items }: { items: readonly NavItem[] }) {
   const pathname = usePathname()
   return (
     <nav aria-label="ناوبری اصلی" className="hidden items-center gap-1 md:flex">
-      {nav.map((item) => {
+      {items.map((item) => {
         const active =
           item.href === '/'
             ? pathname === '/'

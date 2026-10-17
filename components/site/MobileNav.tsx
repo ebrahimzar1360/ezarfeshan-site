@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Sheet } from '@/components/ui/Sheet'
-import { nav } from '@/lib/site'
+import type { NavItem } from './NavLinks'
 import { Icon } from '@/components/ui/Icon'
 
 /**
@@ -15,7 +15,15 @@ import { Icon } from '@/components/ui/Icon'
  * navigation. The no-JS path is not lost: the footer carries the same `nav`
  * array, so a visitor without scripts still reaches every section.
  */
-export function MobileNav() {
+export function MobileNav({
+  items,
+  cta,
+  title,
+}: {
+  items: readonly NavItem[]
+  cta: NavItem | null
+  title: string
+}) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
@@ -41,7 +49,7 @@ export function MobileNav() {
       <Sheet open={open} onClose={() => setOpen(false)} label="ناوبری سایت">
         <div className="ms-auto flex h-full w-[min(20rem,85vw)] flex-col border-s border-border bg-bg-raised">
           <div className="flex h-20 shrink-0 items-center justify-between border-b border-border px-5">
-            <p className="text-200 font-medium tracking-wide text-text-subtle">بخش‌ها</p>
+            <p className="text-200 font-medium tracking-wide text-text-subtle">{title}</p>
             <button
               type="button"
               onClick={() => setOpen(false)}
@@ -54,7 +62,7 @@ export function MobileNav() {
 
           <nav aria-label="ناوبری موبایل" className="flex-1 overflow-y-auto p-3">
             <ul>
-              {nav.map((item) => {
+              {items.map((item) => {
                 const active =
           item.href === '/'
             ? pathname === '/'
@@ -81,15 +89,17 @@ export function MobileNav() {
             </ul>
           </nav>
 
-          <div className="shrink-0 border-t border-border p-4">
-            <Link
-              href="/contact"
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-forest text-300 font-bold text-paper no-underline transition-colors duration-150 hover:bg-emerald hover:text-paper"
-            >
-              شروع گفت‌وگو
-              <Icon name="arrow" className="text-400" />
-            </Link>
-          </div>
+          {cta && (
+            <div className="shrink-0 border-t border-border p-4">
+              <Link
+                href={cta.href}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-forest text-300 font-bold text-paper no-underline transition-colors duration-150 hover:bg-emerald hover:text-paper"
+              >
+                {cta.label}
+                <Icon name="arrow" className="text-400" />
+              </Link>
+            </div>
+          )}
         </div>
       </Sheet>
     </div>

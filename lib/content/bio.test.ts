@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
-import { currentJalaliYear, fa, milestones, stats, yearsSince } from './bio'
+import { SECTIONS } from '../cms/registry'
+import { currentJalaliYear, fa, yearsSince } from './bio'
 
 /**
  * The durations on the about page are the site's only numbers. They are computed
@@ -44,17 +45,19 @@ describe('stats', () => {
   it('recomputes on every read rather than freezing at import time', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-08-21T12:00:00Z'))
-    const first = stats[0].value
+    const first = fa(yearsSince(1380))
     vi.setSystemTime(new Date('2028-08-21T12:00:00Z'))
-    expect(stats[0].value).not.toBe(first)
+    expect(fa(yearsSince(1380))).not.toBe(first)
   })
 
   it('renders years without a thousands separator', () => {
-    for (const s of stats) expect(s.value).not.toContain('٬')
+    for (const m of SECTIONS['home.metrics'].defaults.items) expect(fa(yearsSince(m.startYear))).not.toContain('٬')
   })
 })
 
-describe('milestones', () => {
+describe('milestones (CMS defaults)', () => {
+  const milestones = SECTIONS['about.path'].defaults.milestones
+
   it('is ordered oldest first', () => {
     const years = milestones.map((m) => m.year)
     expect([...years].sort((a, b) => a - b)).toEqual(years)
