@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import type { CSSProperties } from 'react'
 import { CmsCta } from '@/components/cms/CmsCta'
 import { CmsImage } from '@/components/cms/CmsImage'
@@ -10,6 +11,7 @@ import { Icon, type IconName } from '@/components/ui/Icon'
 import { getSection } from '@/lib/cms/content'
 import { cmsMetadata } from '@/lib/cms/metadata'
 import { fa, yearsSince } from '@/lib/content/bio'
+import { PAGE_PHOTOS } from '@/lib/content/photos'
 
 export const revalidate = 3600
 
@@ -106,6 +108,23 @@ export default async function AboutPage() {
           </Container>
         </section>
       )}
+
+      {/* the setting of the work, not a picture of the owner: his own portrait stays in the masthead */}
+      <figure className={figuresS.items.length > 0 ? 'pb-14 md:pb-20' : 'py-14 md:py-20'} data-reveal>
+        <Container>
+          <div className="relative overflow-hidden rounded-2xl shadow-[0_24px_48px_-24px_var(--ink-30)]">
+            <Image
+              src={PAGE_PHOTOS.about.src}
+              alt={PAGE_PHOTOS.about.alt}
+              width={PAGE_PHOTOS.about.width}
+              height={PAGE_PHOTOS.about.height}
+              sizes="(min-width: 1280px) 76rem, 94vw"
+              className="aspect-[16/9] w-full object-cover md:aspect-[21/9]"
+            />
+            <span aria-hidden className="absolute inset-x-0 bottom-0 h-1 bg-gold" />
+          </div>
+        </Container>
+      </figure>
 
       <section className="tone-inverse bg-forest-deep py-16 md:py-24">
         <Container className="grid items-center gap-10 md:grid-cols-[auto_1fr] md:gap-16">

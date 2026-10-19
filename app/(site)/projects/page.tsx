@@ -9,6 +9,7 @@ import { Container } from '@/components/ui/Container'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { getSection } from '@/lib/cms/content'
 import { cmsMetadata } from '@/lib/cms/metadata'
+import { PAGE_PHOTOS } from '@/lib/content/photos'
 import { getProjects } from '@/lib/content/projects'
 
 export const revalidate = 3600
@@ -30,6 +31,7 @@ export default async function ProjectsPage() {
       <PageBand
         title={<Inline text={band.title} accentClass="text-gold-light" />}
         lead={band.lead ? <Inline text={band.lead} accentClass="text-gold-light" /> : undefined}
+        photo={PAGE_PHOTOS.projects}
       />
 
       <section className="py-12 md:py-20">

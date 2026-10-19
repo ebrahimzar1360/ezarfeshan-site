@@ -663,8 +663,16 @@ export const SECTIONS = {
           { type: 'boolean', name: 'hidden', label: 'پنهان' },
         ],
       },
+      {
+        type: 'text',
+        name: 'illustrativeNote',
+        label: 'برچسب تصویر مفهومی',
+        max: 40,
+        hint: 'روی تصویر پروژه‌ای که تصویر اختصاصی ندارد و عکس مفهومی نشان می‌دهد؛ تا با اسکرین‌شات واقعی اشتباه نشود.',
+      },
     ],
     defaults: {
+      illustrativeNote: 'تصویر مفهومی',
       items: [
         {
           slug: 'performance-evaluation',

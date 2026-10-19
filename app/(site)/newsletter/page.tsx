@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import type { CSSProperties } from 'react'
 import { NewsletterForm } from '@/components/site/NewsletterForm'
 import { Container } from '@/components/ui/Container'
+import { FramedPhoto } from '@/components/site/FramedPhoto'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PAGE_PHOTOS } from '@/lib/content/photos'
 
 export const metadata: Metadata = {
   title: 'خبرنامه',
@@ -39,9 +41,14 @@ export default function NewsletterPage() {
       />
 
       <Container className="py-16 md:py-24">
-        <p className="max-w-(--container-measure) text-500 leading-normal text-text-muted" data-reveal>
-          اگر مدیری هستی که کسب‌وکارش بدون خودش از حرکت می‌ایستد، این نوشته‌ها برای توست.
-        </p>
+        <div className="grid items-center gap-10 md:grid-cols-[1.2fr_1fr] md:gap-16">
+          <p className="max-w-(--container-measure) text-500 leading-normal text-text-muted" data-reveal>
+            اگر مدیری هستی که کسب‌وکارش بدون خودش از حرکت می‌ایستد، این نوشته‌ها برای توست.
+          </p>
+          <div data-reveal>
+            <FramedPhoto photo={PAGE_PHOTOS.newsletter} sizes="(min-width: 768px) 28rem, 90vw" />
+          </div>
+        </div>
         <h2 className="mt-14 text-600 font-bold" data-reveal>
           چه چیزی دریافت می‌کنی
         </h2>

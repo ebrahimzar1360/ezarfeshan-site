@@ -1,5 +1,6 @@
 import { getSection } from '@/lib/cms/content'
 import type { ImageValue } from '@/lib/cms/fields'
+import { projectPhoto } from './photos'
 
 /**
  * The products on /projects and the homepage preview.
@@ -11,7 +12,8 @@ import type { ImageValue } from '@/lib/cms/fields'
  * public/projects/) or `mock`, which selects the placeholder illustration in
  * components/site/ProjectMock.tsx. The mocks are drawn UI sketches, not
  * screenshots — replace each with a real screenshot when one exists (tracked in
- * docs/OPEN-QUESTIONS.md).
+ * docs/OPEN-QUESTIONS.md). Until then a project with a picture in the image
+ * pack (lib/content/photos.ts) shows that, marked `illustrative`.
  */
 export type ProjectImage = {
   readonly src: string
@@ -22,6 +24,8 @@ export type ProjectImage = {
   readonly fit: 'cover' | 'contain'
   /** frame colour for `contain`, sampled from the picture's own edge */
   readonly bg?: string
+  /** a conceptual picture, not the product: the label that says so on it */
+  readonly illustrative?: string
 }
 
 export type Project = {
@@ -40,12 +44,13 @@ export type Project = {
  * already draw, and drops hidden ones.
  */
 export async function getProjects(): Promise<Project[]> {
-  const { items } = await getSection('projects.items')
+  const { items, illustrativeNote } = await getSection('projects.items')
   return items
     .filter((p) => !p.hidden)
     .map((p) => {
       const image = p.image as ImageValue
       const hasImage = Boolean(image.src && image.width && image.height)
+      const photo = hasImage ? null : projectPhoto(p.slug)
       return {
         slug: p.slug,
         title: p.title,
@@ -63,7 +68,9 @@ export async function getProjects(): Promise<Project[]> {
               // near-white frame for a portrait device shown whole
               bg: p.fit === 'contain' ? 'rgb(250 248 246)' : undefined,
             }
-          : undefined,
+          : photo
+            ? { ...photo, fit: 'cover', illustrative: illustrativeNote || undefined }
+            : undefined,
       }
     })
 }

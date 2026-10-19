@@ -6,6 +6,7 @@ import { Container } from '@/components/ui/Container'
 import { Icon } from '@/components/ui/Icon'
 import { getSection } from '@/lib/cms/content'
 import { cmsMetadata } from '@/lib/cms/metadata'
+import { PAGE_PHOTOS } from '@/lib/content/photos'
 import { getChannels } from '@/lib/cms/site'
 
 export const revalidate = 3600
@@ -32,6 +33,7 @@ export default async function ContactPage() {
       <PageBand
         title={<Inline text={page.title} accentClass="text-gold-light" />}
         lead={page.lead ? <Inline text={page.lead} accentClass="text-gold-light" /> : undefined}
+        photo={PAGE_PHOTOS.contact}
       />
 
       <Container className="py-12 md:py-20">

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { FramedPhoto } from '@/components/site/FramedPhoto'
 import { ArticleGrid } from '@/components/ui/ArticleGrid'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { faNum } from '@/lib/format'
@@ -9,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
 import { TopicChips } from '@/components/ui/TopicChips'
 import { pageCount } from '@/lib/content/pagination'
+import { topicPhoto } from '@/lib/content/photos'
 import { getArticlesByTopicPage, getTopicBySlug, getTopics } from '@/lib/content/queries'
 
 export const revalidate = 3600
@@ -54,6 +56,7 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
   const withArticles = topics
     .filter((t) => t._count.articles > 0)
     .map((t) => ({ slug: t.slug, name: t.name, count: t._count.articles }))
+  const photo = topicPhoto(topic.slug)
 
   return (
     <>
@@ -61,6 +64,7 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
       eyebrow={`موضوع · ${faNum(total)} مقاله`}
       title={topic.name}
       lead={topic.description ?? undefined}
+      aside={photo ? <FramedPhoto photo={photo} priority /> : undefined}
     >
       <div className="mb-8">
       <Breadcrumb

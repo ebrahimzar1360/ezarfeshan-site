@@ -9,6 +9,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { TopicChips } from '@/components/ui/TopicChips'
 import { getSection } from '@/lib/cms/content'
 import { cmsMetadata } from '@/lib/cms/metadata'
+import { PAGE_PHOTOS } from '@/lib/content/photos'
 import { pageCount } from '@/lib/content/pagination'
 import { getPublishedArticlesPage, getTopics } from '@/lib/content/queries'
 
@@ -31,6 +32,7 @@ export default async function ArticlesPage() {
       <PageBand
         title={<Inline text={copy.title} accentClass="text-gold-light" />}
         lead={copy.lead ? <Inline text={copy.lead} accentClass="text-gold-light" /> : undefined}
+        photo={PAGE_PHOTOS.articles}
       />
 
       <Container className="py-12 md:py-16">

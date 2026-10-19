@@ -156,6 +156,11 @@ export function ProjectMock({ project }: { project: Project }) {
               : undefined
           }
         />
+        {image.illustrative && (
+          <span className="absolute bottom-3 start-3 rounded-md bg-forest-deep/75 px-2.5 py-1 text-200 font-bold text-paper backdrop-blur-sm">
+            {image.illustrative}
+          </span>
+        )}
       </div>
     )
   }
