@@ -29,21 +29,21 @@ export default function GlobalError({
     <html lang="fa" dir="rtl">
       <body>
         <style>{`
-          :root { --g-bg:#f5f5f0; --g-text:#1a1a1a; --g-muted:#5a5a5a; --g-border:#dcdcd6; }
+          :root { --g-bg:#f8f4ec; --g-text:#1f2937; --g-muted:#4b5563; --g-border:#e2dbcd; }
           @media (prefers-color-scheme: dark) {
-            :root { --g-bg:#141613; --g-text:#edede8; --g-muted:#a3a39e; --g-border:#2c2f2c; }
+            :root { --g-bg:#121821; --g-text:#f3eee4; --g-muted:#b9b3a8; --g-border:#2a3442; }
           }
           html, body { margin:0; background:var(--g-bg); color:var(--g-text);
             font-family:'Estedad','Segoe UI',system-ui,sans-serif; }
           .g-wrap { min-height:100dvh; display:flex; flex-direction:column;
             align-items:center; justify-content:center; gap:20px; padding:24px; text-align:center; }
-          .g-mark { width:4px; height:44px; background:#c8a84b; border-radius:2px; }
+          .g-mark { width:4px; height:44px; background:#d4af6b; border-radius:2px; }
           .g-h { margin:0; font-size:1.953rem; line-height:1.35; font-weight:700; }
           .g-p { margin:0; max-width:38rem; font-size:1.125rem; line-height:1.9; color:var(--g-muted); }
           .g-btn { appearance:none; cursor:pointer; border:1px solid var(--g-border);
             background:transparent; color:var(--g-text); border-radius:6px;
             padding:10px 20px; font:inherit; font-size:1rem; font-weight:500; }
-          .g-btn:focus-visible { outline:2px solid #c8a84b; outline-offset:2px; }
+          .g-btn:focus-visible { outline:2px solid #d4af6b; outline-offset:2px; }
           .g-code { margin:0; font-size:.8rem; color:var(--g-muted); }
         `}</style>
 

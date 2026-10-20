@@ -9,9 +9,9 @@ import { site } from '@/lib/site'
 // public/ so it is never served to visitors.
 export const runtime = 'nodejs'
 
-const INK = '#1A1A1A'
-const PAPER = '#F5F5F0'
-const GOLD = '#C8A84B'
+const INK = '#1F2937'
+const PAPER = '#F8F4EC'
+const GOLD = '#D4AF6B'
 
 /** Cover art is 3:2; the Open Graph card stays at its required 1200x630. */
 const COVER = { width: 1200, height: 800 }
@@ -86,9 +86,9 @@ function RtlText({
  * list of covers alternates instead of reading as a wall of one colour.
  */
 const GROUNDS = [
-  { bg: '#0E2219', grid: 'rgba(245,245,240,0.06)', text: PAPER, sub: 'rgba(245,245,240,0.62)', accent: '#E2C97E', slab: ['#24533B', '#173828', '#1D4632'], edge: 'rgba(245,245,240,0.22)' },
-  { bg: '#1A3D2B', grid: 'rgba(245,245,240,0.07)', text: PAPER, sub: 'rgba(245,245,240,0.62)', accent: '#E2C97E', slab: ['#3A7C5D', '#22533C', '#2C6649'], edge: 'rgba(245,245,240,0.25)' },
-  { bg: '#ECE7DA', grid: 'rgba(26,26,26,0.06)', text: INK, sub: 'rgba(26,26,26,0.6)', accent: '#1A3D2B', slab: ['#2D6A4F', '#1A3D2B', '#24583F'], edge: 'rgba(245,245,240,0.3)' },
+  { bg: '#0A3229', grid: 'rgba(248,244,236,0.06)', text: PAPER, sub: 'rgba(248,244,236,0.62)', accent: '#E9D3A0', slab: ['#155C4B', '#0c3f33', '#12493C'], edge: 'rgba(248,244,236,0.22)' },
+  { bg: '#0F4D3F', grid: 'rgba(248,244,236,0.07)', text: PAPER, sub: 'rgba(248,244,236,0.62)', accent: '#E9D3A0', slab: ['#2A8069', '#155C4B', '#1C6B58'], edge: 'rgba(248,244,236,0.25)' },
+  { bg: '#EFE7D7', grid: 'rgba(31,41,55,0.06)', text: INK, sub: 'rgba(31,41,55,0.6)', accent: '#0F4D3F', slab: ['#1C6B58', '#0F4D3F', '#155C4B'], edge: 'rgba(248,244,236,0.3)' },
 ] as const
 
 /**
@@ -120,7 +120,7 @@ function stackSvg(seed: string, ground: (typeof GROUNDS)[number], w: number, h: 
   for (let i = 0; i < count; i++) {
     const cy = baseY - b - i * (t + gap) - t
     const gold = i === goldAt
-    const [top, left, right] = gold ? ['#D8BD6A', '#A68A3A', '#C8A84B'] : ground.slab
+    const [top, left, right] = gold ? ['#E9D3A0', '#A8823F', '#D4AF6B'] : ground.slab
     const edge = gold ? 'rgba(243,226,173,0.7)' : ground.edge
     slabs +=
       `<path d="M${cx - a} ${cy} L${cx} ${cy + b} L${cx} ${cy + b + t} L${cx - a} ${cy + t}Z" fill="${left}" stroke="${edge}"/>` +
@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
               flex: 1,
             }}
           >
-            <RtlText text={rawKicker} style={{ fontSize: 26, color: 'rgba(26,26,26,0.55)', marginBottom: 22 }} />
+            <RtlText text={rawKicker} style={{ fontSize: 26, color: 'rgba(31,41,55,0.55)', marginBottom: 22 }} />
             <RtlText text={rawTitle} style={{ fontSize: 62, color: INK, lineHeight: 1.4 }} />
           </div>
           {/* the gold marker, on the inline-start edge — which for this
@@ -249,12 +249,12 @@ export async function GET(request: NextRequest) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderTop: '1px solid rgba(26,26,26,0.14)',
+            borderTop: '1px solid rgba(31,41,55,0.14)',
             paddingTop: 30,
           }}
         >
           {/* Latin, so it must NOT go through RtlText */}
-          <div style={{ fontSize: 24, color: 'rgba(26,26,26,0.45)' }}>{site.nameLatin}</div>
+          <div style={{ fontSize: 24, color: 'rgba(31,41,55,0.45)' }}>{site.nameLatin}</div>
           <RtlText text={site.name} style={{ fontSize: 30, color: INK }} />
         </div>
       </div>

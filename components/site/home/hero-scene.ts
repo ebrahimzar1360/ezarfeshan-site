@@ -71,8 +71,9 @@ const FLIGHT: Record<
 > = {
   spine: { from: [-5, 1.2, -6], turn: [0.4, -1.6, 0.3], spread: [-0.55, 0, -0.7], delay: 0 },
   top: { from: [4.5, 4.5, -2], turn: [1.4, 0.4, -0.6], spread: [0.35, 0.5, -0.35], delay: 1 },
-  mid: { from: [-4, -1.5, 6], turn: [-0.8, 1.2, 0.9], spread: [-0.2, 0.05, 0.15], delay: 2 },
-  bottom: { from: [5, -3.5, -4], turn: [-1.2, -0.7, -1.1], spread: [0.45, -0.4, -0.25], delay: 3 },
+  ribbon: { from: [-6, 4, 3], turn: [-0.6, 1.4, 0.8], spread: [-0.45, 0.25, 0.55], delay: 1.8 },
+  mid: { from: [-4, -1.5, 6], turn: [-0.8, 1.2, 0.9], spread: [-0.2, 0.05, 0.15], delay: 2.6 },
+  bottom: { from: [5, -3.5, -4], turn: [-1.2, -0.7, -1.1], spread: [0.45, -0.4, -0.25], delay: 3.4 },
   z: { from: [0.5, 0.5, 12], turn: [0.3, 0.9, -2.4], spread: [0.1, -0.05, 1.25], delay: 4.4 },
 }
 
@@ -198,7 +199,11 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
     emerald: new Color(),
     deep: new Color(),
     band: new Color(),
+    e300: new Color(),
   }
+  // on a dark band (the home CTA) the lacquer would sink into the ground
+  // behind it, so it is lifted toward the light emerald tint there
+  const onDark = Boolean(host.closest('.tone-inverse'))
 
   const mat = {
     // deep lacquer: a dark studio reflects as crisp strips, not a grey film
@@ -281,7 +286,7 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
         bevelThickness: 0.08,
         bevelSize: 0.045,
         bevelSegments: 4,
-        curveSegments: isZ ? 28 : 4,
+        curveSegments: 28,
       }),
     )
     g.translate(0, 0, -depth / 2)
@@ -333,12 +338,14 @@ export function mountHeroScene({ canvas, host, still, onReady, onLost }: SceneOp
     resolve('var(--color-emerald)', C.emerald)
     resolve('var(--color-forest-deep)', C.deep)
     resolve('var(--bg-band)', C.band)
+    resolve('var(--color-emerald-300)', C.e300)
 
-    const lacquer = C.forest.clone().lerp(C.emerald, 0.55)
+    const lacquer = onDark ? C.emerald.clone().lerp(C.e300, 0.3) : C.forest.clone().lerp(C.emerald, 0.55)
     // polished gold reads darker than its swatch; lift it toward gold-light
     const polished = C.gold.clone().lerp(C.goldLight, 0.35)
     mat.eFace.color.copy(lacquer)
     mat.eFace.emissive.copy(C.emerald)
+    mat.eFace.emissiveIntensity = onDark ? 0.32 : 0.14
     mat.eSide.color.copy(polished)
     mat.zFace.color.copy(polished)
     mat.zSide.color.copy(C.gold).multiplyScalar(0.72)

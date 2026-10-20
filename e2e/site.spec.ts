@@ -67,14 +67,14 @@ test('the header carries the five links and one button, and nothing else', async
 })
 
 test('gold is never text on a light background', async ({ page }) => {
-  // #C8A84B measures 2.10:1 against paper. The design rule is surfaces and
+  // Gold #D4AF6B measures 1.89:1 against ivory. The design rule is surfaces and
   // marks only, and this is the check that keeps it true as pages are added.
   await page.goto('/')
   const violations = await page.evaluate(() => {
     const found: string[] = []
     for (const el of document.querySelectorAll('body *')) {
       const style = getComputedStyle(el)
-      if (style.color.replace(/\s/g, '') !== 'rgb(200,168,75)') continue
+      if (style.color.replace(/\s/g, '') !== 'rgb(212,175,107)') continue
       if (!(el.textContent ?? '').trim()) continue
 
       // walk up for the nearest painted background
@@ -88,8 +88,8 @@ test('gold is never text on a light background', async ({ page }) => {
         }
         node = node.parentElement
       }
-      // paper #F5F5F0
-      if (bg.replace(/\s/g, '') === 'rgb(245,245,240)') {
+      // ivory #F8F4EC
+      if (bg.replace(/\s/g, '') === 'rgb(248,244,236)') {
         found.push(`${el.tagName}: ${(el.textContent ?? '').trim().slice(0, 30)}`)
       }
     }

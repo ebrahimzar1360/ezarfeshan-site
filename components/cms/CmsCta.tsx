@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { CtaBand } from '@/components/site/CtaBand'
 import { getSection } from '@/lib/cms/content'
 import { Inline } from './Inline'
@@ -5,7 +6,7 @@ import { Inline } from './Inline'
 type CtaKey = 'home.cta' | 'about.cta' | 'projects.cta'
 
 /** The closing invitation, from a CMS section. An empty primary label hides the band. */
-export async function CmsCta({ section }: { section: CtaKey }) {
+export async function CmsCta({ section, aside }: { section: CtaKey; aside?: ReactNode }) {
   const s = await getSection(section)
   if (!s.title) return null
   const primary = s.primary.label && s.primary.href ? s.primary : null
@@ -17,6 +18,7 @@ export async function CmsCta({ section }: { section: CtaKey }) {
       text={s.text ? <Inline text={s.text} accentClass="text-gold-light" /> : undefined}
       primary={primary}
       secondary={secondary}
+      aside={aside}
     />
   )
 }

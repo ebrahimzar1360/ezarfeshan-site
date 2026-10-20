@@ -12,13 +12,13 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 
 const P = {
-  paper: '#f5f5f0',
-  sand: '#ece7da',
-  forest: '#1a3d2b',
-  emerald: '#2d6a4f',
-  gold: '#c8a84b',
-  goldLight: '#e2c97e',
-  deep: '#0e2219',
+  paper: '#f8f4ec',
+  sand: '#efe7d7',
+  forest: '#0f4d3f',
+  emerald: '#1c6b58',
+  gold: '#d4af6b',
+  goldLight: '#e9d3a0',
+  deep: '#0a3229',
 }
 
 function rng(seed) {

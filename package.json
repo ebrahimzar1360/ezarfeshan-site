@@ -11,7 +11,7 @@
     "lint:brand": "node tools/audit/classes.mjs",
     "postinstall": "prisma generate",
     "fonts": "node tools/fonts/fetch-fonts.js",
-    "logo": "node tools/logo/build-logo.js",
+    "logo": "node tools/logo/build-logo.mjs && node tools/logo/crop-sheet.mjs",
     "photos": "powershell -ExecutionPolicy Bypass -File tools/photos/build-photos.ps1",
     "renders": "node tools/render/render.mjs",
     "db": "powershell -ExecutionPolicy Bypass -File tools/db/pg.ps1",

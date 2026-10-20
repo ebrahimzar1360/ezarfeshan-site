@@ -45,7 +45,6 @@ const EXEMPT = {
     'app/layout.tsx',
     'app/api/og/route.tsx',
     'app/global-error.tsx',
-    'components/ui/logo-mark.generated.ts',
   ],
 }
 

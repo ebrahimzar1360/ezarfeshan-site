@@ -21,27 +21,32 @@
    matching Tailwind utilities (bg-ink, text-gold, p-6, text-700 ...).
    ============================================================ */
 @theme {
-  /* palette — exactly the five from the brand guide, nothing invented */
-  --color-ink: #1a1a1a;
-  --color-paper: #f5f5f0;
-  --color-gold: #c8a84b;
-  --color-forest: #1a3d2b;
-  --color-emerald: #2d6a4f;
+  /* palette — the brand sheet v4 (1405/07/28): Deep Emerald, Warm Gold, Warm
+     Ivory, Charcoal. The other tones are derived from those four and measured
+     (docs/DESIGN-PLAN.md §14); nothing else is invented. */
+  --color-ink: #1f2937;      /* Charcoal */
+  --color-paper: #f8f4ec;    /* Warm Ivory */
+  --color-gold: #d4af6b;     /* Warm Gold */
+  --color-forest: #0f4d3f;   /* Deep Emerald */
+  /* lighter emerald for links and hovers on light grounds: 5.81:1 on ivory,
+     5.19:1 on sand */
+  --color-emerald: #1c6b58;
 
-  /* the one derived colour: emerald is 2.85:1 on the dark ground and fails AA,
-     so dark mode links use this lightened tint (6.46:1). */
-  --color-emerald-300: #5fa88a;
-  --color-emerald-200: #7dbfa2;
+  /* emerald tints for dark grounds, where the brand emerald is too dark to read:
+     300 is 6.93:1 on the dark-mode ground */
+  --color-emerald-300: #5fb39b;
+  --color-emerald-200: #86c9b4;
 
-  /* v2 additions — measured, see docs/DESIGN-PLAN.md §13.
-     forest-deep: the hero/night ground. paper on it 15.22:1, gold 7.26:1.
-     gold-light: gold as *text* on dark grounds — 10.22:1 on forest-deep,
-       7.38:1 on forest. Still never text on a light ground.
-     sand: a warm alternate light surface for banding. ink 14.10:1,
-       emerald 5.18:1, the 65% subtle tint 4.93:1. */
-  --color-forest-deep: #0e2219;
-  --color-gold-light: #e2c97e;
-  --color-sand: #ece7da;
+  /* forest-deep: the night ground and the darkest stop of the emerald gradient.
+       ivory on it 12.75:1, gold 6.76:1.
+     gold-light: gold as *text* on dark grounds — 9.52:1 on forest-deep,
+       6.64:1 on forest. Never text on a light ground (gold on ivory 1.89:1).
+     gold-dark: the shadow stop of the metallic gradient, never text.
+     sand: the warm light band. charcoal 11.94:1, emerald 5.19:1. */
+  --color-forest-deep: #0a3229;
+  --color-gold-light: #e9d3a0;
+  --color-gold-dark: #a8823f;
+  --color-sand: #efe7d7;
 
   --font-sans: 'Estedad', 'Segoe UI', system-ui, sans-serif;
   --font-latin: 'Inter', 'Estedad', system-ui, sans-serif;
@@ -92,16 +97,17 @@
 
   --ink-90: color-mix(in oklab, var(--color-ink) 90%, transparent);
   --ink-70: color-mix(in oklab, var(--color-ink) 70%, transparent);
-  /* 65%, not 55%. The design plan checked the five brand colours but never the
-     tints derived from them: 55% ink on paper measures 3.78:1 and fails AA for
-     body text. 65% is 5.18:1. Lighthouse found it on every article date. */
-  --ink-55: color-mix(in oklab, var(--color-ink) 65%, transparent);
+  /* 70%, not 55%. Tints derived from the palette need measuring too: 55% ink
+     on paper failed AA (Lighthouse found it on every article date); with the
+     v4 charcoal even 65% fails on sand (4.34:1). 70% is 5.29:1 on ivory and
+     5.01:1 on sand. */
+  --ink-55: color-mix(in oklab, var(--color-ink) 70%, transparent);
   --ink-30: color-mix(in oklab, var(--color-ink) 30%, transparent);
   --ink-12: color-mix(in oklab, var(--color-ink) 12%, transparent);
   --ink-06: color-mix(in oklab, var(--color-ink) 6%, transparent);
 
   --bg: var(--color-paper);
-  --bg-raised: #ffffff;
+  --bg-raised: #fffdf9;
   --bg-sunken: color-mix(in oklab, var(--color-paper) 94%, var(--color-ink));
   --bg-inverse: var(--color-forest);
   --bg-band: var(--color-sand);
@@ -117,6 +123,19 @@
   --focus: var(--color-emerald);
   --shadow: 0 1px 2px var(--ink-06), 0 8px 24px var(--ink-06);
 
+  /* The sheet's two finishes: brushed metallic gold and a deep emerald that
+     darkens toward one corner. Every solid gold or forest surface carries them
+     (§ BRAND FINISH below); tints such as bg-gold/20 stay flat. */
+  --metal-gold: linear-gradient(
+    135deg,
+    var(--color-gold-light) 0%,
+    var(--color-gold) 38%,
+    var(--color-gold-dark) 72%,
+    var(--color-gold-light) 100%
+  );
+  --metal-emerald: linear-gradient(150deg, var(--color-emerald) 0%, var(--color-forest) 48%, var(--color-forest-deep) 100%);
+  --metal-emerald-deep: linear-gradient(160deg, var(--color-forest) 0%, var(--color-forest-deep) 65%);
+
   /* Solid controls invert against the page, so they need their own pair rather
      than a `dark:` override scattered through components. */
   --solid-bg: var(--color-ink);
@@ -129,19 +148,19 @@
   :root:not([data-theme='light']) {
     color-scheme: dark;
 
-    --ink-90: color-mix(in oklab, #edede8 90%, transparent);
-    --ink-70: color-mix(in oklab, #edede8 72%, transparent);
-    --ink-55: color-mix(in oklab, #edede8 55%, transparent);
-    --ink-30: color-mix(in oklab, #edede8 28%, transparent);
-    --ink-12: color-mix(in oklab, #edede8 14%, transparent);
-    --ink-06: color-mix(in oklab, #edede8 8%, transparent);
+    --ink-90: color-mix(in oklab, #f3eee4 90%, transparent);
+    --ink-70: color-mix(in oklab, #f3eee4 72%, transparent);
+    --ink-55: color-mix(in oklab, #f3eee4 55%, transparent);
+    --ink-30: color-mix(in oklab, #f3eee4 28%, transparent);
+    --ink-12: color-mix(in oklab, #f3eee4 14%, transparent);
+    --ink-06: color-mix(in oklab, #f3eee4 8%, transparent);
 
-    --bg: #141613;
-    --bg-raised: #1c1f1c;
-    --bg-sunken: #101210;
-    --bg-band: #181c18;
+    --bg: #121821;
+    --bg-raised: #1b2330;
+    --bg-sunken: #0e131a;
+    --bg-band: #161d28;
     --bg-inverse: var(--color-forest);
-    --text: #edede8;
+    --text: #f3eee4;
     --text-muted: var(--ink-70);
     --text-subtle: var(--ink-55);
     --border: var(--ink-12);
@@ -149,8 +168,8 @@
     --link: var(--color-emerald-300);
     --link-hover: var(--color-emerald-200);
     --focus: var(--color-emerald-300);
-    --solid-bg: #edede8;
-    --solid-text: #141613;
+    --solid-bg: #f3eee4;
+    --solid-text: #121821;
     --solid-bg-hover: var(--color-emerald-200);
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.3);
   }
@@ -160,18 +179,18 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --ink-90: color-mix(in oklab, #edede8 90%, transparent);
-  --ink-70: color-mix(in oklab, #edede8 72%, transparent);
-  --ink-55: color-mix(in oklab, #edede8 55%, transparent);
-  --ink-30: color-mix(in oklab, #edede8 28%, transparent);
-  --ink-12: color-mix(in oklab, #edede8 14%, transparent);
-  --ink-06: color-mix(in oklab, #edede8 8%, transparent);
+  --ink-90: color-mix(in oklab, #f3eee4 90%, transparent);
+  --ink-70: color-mix(in oklab, #f3eee4 72%, transparent);
+  --ink-55: color-mix(in oklab, #f3eee4 55%, transparent);
+  --ink-30: color-mix(in oklab, #f3eee4 28%, transparent);
+  --ink-12: color-mix(in oklab, #f3eee4 14%, transparent);
+  --ink-06: color-mix(in oklab, #f3eee4 8%, transparent);
 
-  --bg: #141613;
-  --bg-raised: #1c1f1c;
-  --bg-sunken: #101210;
-  --bg-band: #181c18;
-  --text: #edede8;
+  --bg: #121821;
+  --bg-raised: #1b2330;
+  --bg-sunken: #0e131a;
+  --bg-band: #161d28;
+  --text: #f3eee4;
   --text-muted: var(--ink-70);
   --text-subtle: var(--ink-55);
   --border: var(--ink-12);
@@ -333,7 +352,7 @@ samp {
   /* 2. A styled backdrop. The UA default is a flat black wash that ignores the
         theme; ink at 55% sits correctly under both grounds. */
   .sheet::backdrop {
-    background: color-mix(in oklab, #1a1a1a 55%, transparent);
+    background: color-mix(in oklab, var(--color-ink) 55%, transparent);
   }
 
   /* 3. An entrance. `display` is discrete, so the dialog cannot transition in
@@ -550,6 +569,21 @@ samp {
    One orchestrated moment in the hero; everything else under 200ms.
    ============================================================ */
 @layer utilities {
+  /* BRAND FINISH — the sheet's metallic gold and emerald on every solid gold
+     and forest surface. The flat colour stays underneath as the fallback, and
+     a hover that names another background (hover:bg-emerald,
+     hover:bg-gold-light) drops the finish so its colour shows. On links and
+     buttons the gold catches the light instead: the gradient is oversized and
+     slides on hover. */
+  .bg-gold { background-image: var(--metal-gold); background-size: 180% 180%; background-position: 0% 0%; }
+  .bg-forest { background-image: var(--metal-emerald); }
+  .bg-forest-deep { background-image: var(--metal-emerald-deep); }
+  :is(a, button).bg-gold { transition-property: color, background-color, background-position, box-shadow; transition-duration: 450ms; }
+  :is(a, button).bg-gold:hover { background-position: 100% 100%; }
+  .hover\:bg-emerald:hover,
+  .group:hover .group-hover\:bg-emerald,
+  .hover\:bg-solid-bg-hover:hover { background-image: none; }
+
   .enter {
     animation: enter 240ms var(--ease-brand) both;
   }
@@ -753,7 +787,7 @@ samp {
   /* Gold underline that draws in under a phrase (dark grounds pair it with
      gold-light text; on light grounds the text stays ink). */
   .ink-sweep {
-    background-image: linear-gradient(var(--accent), var(--accent));
+    background-image: var(--metal-gold);
     background-repeat: no-repeat;
     background-position: 100% 92%;
     background-size: 100% 0.12em;
@@ -871,6 +905,109 @@ samp {
   .fill-sand-d2 { fill: color-mix(in oklab, var(--color-sand) 78%, var(--color-ink)); }
   .fill-gold-d1 { fill: color-mix(in oklab, var(--color-gold) 78%, var(--color-ink)); }
   .fill-gold-d2 { fill: color-mix(in oklab, var(--color-gold) 90%, var(--color-ink)); }
+
+  /* ---- hero photograph (Hero.tsx) ---------------------------------
+     media: leans away from the pointer (--mx/--my from HeroParallax);
+     photo: arrives out of a soft blur, settles, then drifts for half a minute
+       and back; mirrored by its wrapper so the keyframes own `scale` alone;
+     sweep: a band of gold light crossing every few seconds;
+     motes: gold dust rising through the window light, on the end side;
+     cue: a thin line with a bead running down it, at the foot. */
+  .hp-media {
+    position: absolute;
+    inset: -3%;
+    transform: translate3d(calc(var(--mx, 0) * -14px), calc(var(--my, 0) * -10px), 0);
+    transition: transform 1200ms var(--ease-brand);
+  }
+  .hp-mirror { position: absolute; inset: 0; transform: scaleX(-1); }
+  .hp-photo {
+    animation:
+      hp-settle 3000ms cubic-bezier(0.3, 0.7, 0.2, 1) both,
+      hp-drift 32s ease-in-out 3000ms infinite alternate;
+  }
+  .hp-sweep {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 38%,
+      color-mix(in oklab, var(--color-gold-light) 34%, transparent) 50%,
+      transparent 62%
+    );
+    background-size: 260% 100%;
+    background-position: 130% 0;
+    mix-blend-mode: soft-light;
+    animation: hp-sweep 9s ease-in-out 1400ms infinite;
+  }
+  .hp-motes { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .hp-mote {
+    position: absolute;
+    bottom: -12px;
+    inset-inline-end: var(--x);
+    width: var(--s);
+    height: var(--s);
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-gold-light), transparent 70%);
+    mix-blend-mode: screen;
+    opacity: 0;
+    animation: hp-rise var(--t) linear var(--d) infinite;
+  }
+  .hp-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(120% 95% at 35% 45%, transparent 55%, color-mix(in oklab, var(--color-forest-deep) 60%, transparent));
+  }
+  .hp-rule {
+    display: block;
+    width: 4.5rem;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--metal-gold);
+  }
+  .hp-cue {
+    position: absolute;
+    bottom: 1.4rem;
+    inset-inline: 0;
+    margin-inline: auto;
+    width: 1px;
+    height: 2.6rem;
+    background: color-mix(in oklab, var(--color-paper) 30%, transparent);
+    overflow: hidden;
+  }
+  .hp-cue::after {
+    content: '';
+    position: absolute;
+    inset-inline: -1px;
+    top: 0;
+    height: 0.8rem;
+    border-radius: 2px;
+    background: var(--metal-gold);
+    animation: hp-cue 2.4s var(--ease-brand) 2s infinite;
+  }
+  @keyframes hp-settle {
+    from { scale: 1.16; filter: blur(8px) brightness(0.55) saturate(0.8); }
+    to { scale: 1.04; filter: none; }
+  }
+  @keyframes hp-drift {
+    from { scale: 1.04; translate: 0 0; }
+    to { scale: 1.11; translate: 1.5% -1%; }
+  }
+  @keyframes hp-sweep {
+    0% { background-position: 130% 0; }
+    55%, 100% { background-position: -30% 0; }
+  }
+  @keyframes hp-rise {
+    0% { transform: translate3d(0, 0, 0); opacity: 0; }
+    12% { opacity: 0.85; }
+    80% { opacity: 0.5; }
+    100% { transform: translate3d(var(--dx), -75vh, 0); opacity: 0; }
+  }
+  @keyframes hp-cue {
+    0% { transform: translateY(-100%); }
+    70%, 100% { transform: translateY(330%); }
+  }
 
   /* ---- hero art -------------------------------------------------- */
   .ha-in { animation: ha-in 1000ms var(--ease-brand) var(--dl, 0s) both; }
@@ -1058,6 +1195,10 @@ samp {
 }
 @media (prefers-reduced-motion: reduce) {
   .ha-in, .ha-float, .ha-spin, .ha-pulse, .ha-glow, .hero-rise { animation: none; }
+  .hp-photo { animation: none; scale: 1.04; }
+  .hp-sweep, .hp-cue::after { animation: none; }
+  .hp-motes { display: none; }
+  .hp-media { transform: none; transition: none; }
   .pj-poster, .pj-canvas, .pj-step { transition: none; }
   .tilt { transform: none !important; }
   .ha-draw { animation: none; stroke-dashoffset: 0; }

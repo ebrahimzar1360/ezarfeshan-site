@@ -92,11 +92,11 @@ export function htmlWrap(bodyText: string): string {
 
   return (
     `<!doctype html><html dir="rtl" lang="fa"><meta charset="utf-8">` +
-    `<body style="margin:0;padding:24px;background:#f5f5f0;color:#1a1a1a;` +
+    `<body style="margin:0;padding:24px;background:#f8f4ec;color:#1f2937;` +
     `font:16px/1.9 Tahoma,Arial,sans-serif">` +
     `<div style="max-width:560px;margin:0 auto;background:#fff;padding:28px;` +
-    `border:1px solid rgba(26,26,26,.12);border-radius:6px">` +
-    `<div style="border-inline-start:4px solid #c8a84b;padding-inline-start:14px;margin-bottom:22px">` +
+    `border:1px solid rgba(31,41,55,.12);border-radius:6px">` +
+    `<div style="border-inline-start:4px solid #d4af6b;padding-inline-start:14px;margin-bottom:22px">` +
     `<strong style="font-size:18px">${escapeHtml(site.name)}</strong></div>` +
     paragraphs +
     `</div></body></html>`

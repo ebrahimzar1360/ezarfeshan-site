@@ -123,7 +123,7 @@ Three rules that are easy to break and were broken at least once each:
   property names (`inset-inline-start`, `border-inline-start`) are **not** class
   names and silently produce nothing.
 - **Gold is never text on a light background** — 2.10:1, fails AA. It is a surface,
-  a rule, or a mark. It *is* allowed as text on `--forest` (5.24:1).
+  a rule, or a mark. It *is* allowed as text on `--forest` (4.71:1).
 - **Dark sections need `.tone-inverse`**, which redefines the semantic roles for a
   dark ground. Hand-picking colours there produces unreadable muted text.
 
@@ -139,14 +139,25 @@ bands). Five pages and a five-link nav: خانه · درباره من · پرو�
 تماس. `/consult` still exists, out of the nav, because the chatbot's knowledge
 (`lib/chat/knowledge.ts`) quotes it.
 
-- **Hero** (since 1405/07/28, owner's choice) has a full-width photograph as
-  its ground: `home-hero` from the image pack (`lib/content/photos.ts`),
-  mirrored, under `.photo-scrim`, with the CMS copy as real text, the gold
-  button, and the 3D monogram (HeroArt, below) opposite the copy.
+- **Hero** (since 1405/07/28, owner's choice) is the photograph alone:
+  `home-hero` (`lib/content/photos.ts`), mirrored, under `.photo-scrim`, with
+  CSS-only motion (`.hp-*` in globals.css: blur-in settle, slow drift, gold
+  light sweep, rising dust motes, scroll cue) and a pointer lean from
+  `HeroParallax`. All of it stops under reduced motion. **No 3D in the hero** —
+  the 3D monogram (HeroArt, below) closes the homepage, in the `home.cta` band.
+- **Brand sheet v4** (`brand-source/logo-sheet-v4.webp`) is the source of the
+  logo, palette and finishes: Deep Emerald `#0F4D3F`, Warm Gold `#D4AF6B`, Warm
+  Ivory `#F8F4EC`, Charcoal `#1F2937`. Solid `bg-gold`/`bg-forest`/
+  `bg-forest-deep` carry the sheet's metallic gold / emerald gradients
+  (`--metal-*`, § BRAND FINISH in globals.css); tints stay flat. The raster
+  logo is cut by `tools/logo/crop-sheet.mjs`; the vector outlines in
+  `monogram-shapes.ts` feed the 3D scene and the SVG favicons
+  (`npm run logo`).
 - **Image pack**: `public/site-images/`, placed only via `lib/content/photos.ts`
   (page mastheads, topic pages, projects without a CMS image — marked
   «تصویر مفهومی»). `photos.test.ts` checks every declared size against its file.
-- **Hero art** (`components/site/home/HeroArt.tsx`) is one inline SVG: isometric
+- **Hero art** (`components/site/home/HeroArt.tsx`, now mounted in the home
+  CTA band, not the hero) is one inline SVG: isometric
   slab, the EZ monogram, four floating glass cards, nodes and lines. Motion is CSS
   only (`.ha-*` in globals.css §13) and all of it stops under reduced motion.
   Colours come from tokens; shades for solids are `.fill-sand-d1`, `.fill-gold-d1`…

@@ -3,6 +3,7 @@ import { CmsCta } from '@/components/cms/CmsCta'
 import { ArticlesPreview } from '@/components/site/home/ArticlesPreview'
 import { Experience } from '@/components/site/home/Experience'
 import { Hero } from '@/components/site/home/Hero'
+import { HeroArt } from '@/components/site/home/HeroArt'
 import { Metrics } from '@/components/site/home/Metrics'
 import { Pillars } from '@/components/site/home/Pillars'
 import { ProjectsPreview } from '@/components/site/home/ProjectsPreview'
@@ -36,7 +37,8 @@ export default async function HomePage() {
       <ProjectsPreview />
       <ArticlesPreview articles={recent} />
       <Metrics />
-      <CmsCta section="home.cta" />
+      {/* the 3D monogram closes the page (owner, 1405/07/28): the hero is the photograph */}
+      <CmsCta section="home.cta" aside={<HeroArt />} />
     </>
   )
 }

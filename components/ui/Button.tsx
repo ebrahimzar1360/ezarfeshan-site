@@ -16,9 +16,10 @@ const variants: Record<Variant, string> = {
   outline: 'border border-border-strong text-text hover:border-accent hover:bg-accent/8',
   text: 'text-link underline underline-offset-4 hover:text-link-hover',
   // v3: the forest-green primary on light grounds, and its gold twin on dark
-  // bands. Gold sits behind ink, never in front of paper (2.10:1).
+  // bands. Gold sits behind ink, never in front of paper (1.89:1). The gold is
+  // the sheet's metallic finish; its hover is the light sliding across it.
   brand: 'bg-forest text-paper hover:bg-emerald hover:text-paper',
-  gold: 'bg-gold text-forest-deep hover:bg-gold-light hover:text-forest-deep',
+  gold: 'bg-gold text-forest-deep hover:text-forest-deep',
 }
 
 const sizes: Record<Size, string> = {

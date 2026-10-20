@@ -1,11 +1,13 @@
 /**
- * The EZ monogram as vector outlines, traced by hand over the raster cut from
- * the owner's logo sheet (public/brand/ez-monogram.webp, 640×596). The 3D hero
- * extrudes these; the raster stays the logo everywhere else.
+ * The EZ monogram of the brand sheet v4 (brand-source/logo-sheet-v4.webp,
+ * 1405/07/28) as vector outlines, traced by hand over a 640 px enlargement of
+ * the sheet's large mark (sheet pixels 160–520 × 30–390, ×16/9). The 3D hero
+ * extrudes these and tools/logo/mark-svg.mjs draws the favicons from them; the
+ * raster cut (public/brand/ez-monogram.webp) stays the logo everywhere else.
  *
- * Coordinates are the raster's pixels. The E is four separate solids — its
- * spine and three arms are distinct facets on the sheet — so the hero can
- * assemble them; the Z is one stroke and sits in front of the E, as drawn.
+ * Six solids, as the sheet draws them: four emerald (`letter: 'e'`) — the top
+ * arm, the spine, the middle arm and the half-round cap — and two gold
+ * (`letter: 'z'`) — the ribbon between arm and spine, and the Z itself.
  */
 
 export type Cmd =
@@ -14,78 +16,97 @@ export type Cmd =
   | ['C', number, number, number, number, number, number]
 
 export type Piece = {
-  id: 'spine' | 'top' | 'mid' | 'bottom' | 'z'
+  id: 'top' | 'ribbon' | 'spine' | 'mid' | 'bottom' | 'z'
   letter: 'e' | 'z'
   path: Cmd[]
 }
 
 /** centre of the traced bounds; the scene puts the monogram's origin here */
-export const ORIGIN = { x: 318, y: 295 } as const
+export const ORIGIN = { x: 335, y: 318 } as const
 
 export const PIECES: Piece[] = [
+  {
+    id: 'top',
+    letter: 'e',
+    // the top arm, rounding over into the head of the spine
+    path: [
+      ['M', 45, 212],
+      ['C', 45, 110, 110, 32, 216, 31],
+      ['L', 540, 32],
+      ['L', 457, 112],
+      ['L', 243, 111],
+      ['C', 160, 113, 90, 150, 45, 212],
+    ],
+  },
+  {
+    id: 'ribbon',
+    letter: 'z',
+    // the gold ribbon that runs between the top arm and the spine
+    path: [
+      ['M', 298, 120],
+      ['L', 243, 115],
+      ['C', 160, 118, 92, 152, 50, 214],
+      ['C', 40, 240, 38, 300, 38, 432],
+      ['C', 46, 350, 70, 295, 110, 244],
+      ['C', 160, 180, 225, 136, 298, 120],
+    ],
+  },
   {
     id: 'spine',
     letter: 'e',
     // its foot is cut on the diagonal the Z runs along
     path: [
-      ['M', 60, 25],
-      ['L', 165, 25],
-      ['L', 165, 410],
-      ['L', 60, 505],
-    ],
-  },
-  {
-    id: 'top',
-    letter: 'e',
-    path: [
-      ['M', 165, 25],
-      ['L', 462, 25],
-      ['L', 385, 105],
-      ['L', 165, 105],
+      ['M', 178, 183],
+      ['L', 182, 192],
+      ['L', 182, 450],
+      ['L', 46, 560],
+      ['L', 45, 432],
+      ['C', 52, 345, 90, 268, 178, 183],
     ],
   },
   {
     id: 'mid',
     letter: 'e',
+    // the middle arm, its end turned down toward the diagonal
     path: [
-      ['M', 172, 222],
-      ['L', 350, 222],
-      ['L', 285, 296],
-      ['L', 172, 296],
+      ['M', 195, 255],
+      ['L', 404, 255],
+      ['L', 338, 320],
+      ['Q', 322, 336, 300, 336],
+      ['L', 195, 336],
     ],
   },
   {
     id: 'bottom',
     letter: 'e',
+    // the half-round cap that sits on the Z's base
     path: [
-      ['M', 330, 425],
-      ['L', 485, 425],
-      ['L', 530, 495],
-      ['L', 265, 495],
+      ['M', 348, 495],
+      ['L', 425, 424],
+      ['Q', 445, 411, 475, 411],
+      ['L', 515, 411],
+      ['C', 565, 413, 598, 450, 598, 488],
+      ['Q', 598, 505, 580, 505],
+      ['L', 360, 505],
     ],
   },
   {
     id: 'z',
     letter: 'z',
+    // top stroke, diagonal and base in one ribbon, as drawn
     path: [
-      // the thin tip at the top-left, then the top edge out to the corner
-      ['M', 212, 200],
-      ['C', 250, 165, 330, 150, 420, 146],
-      ['L', 610, 135],
-      // the diagonal's lower edge, ending in the calligraphic notch
-      ['L', 280, 500],
-      ['L', 176, 543],
-      ['Q', 240, 535, 285, 506],
-      // the base: top edge, the upturned hook, the underside
-      ['L', 470, 503],
-      ['C', 510, 503, 540, 495, 556, 486],
-      ['C', 552, 515, 530, 545, 480, 560],
-      ['C', 440, 568, 380, 565, 300, 565],
-      ['L', 25, 565],
-      // the diagonal's upper edge and the underside of the top stroke
-      ['L', 440, 178],
-      ['L', 320, 180],
-      ['C', 270, 182, 235, 190, 212, 200],
+      ['M', 280, 226],
+      ['C', 320, 185, 370, 147, 415, 145],
+      ['L', 600, 144],
+      ['C', 625, 148, 632, 170, 628, 195],
+      ['C', 624, 212, 618, 220, 612, 228],
+      ['L', 330, 507],
+      ['L', 597, 507],
+      ['C', 602, 545, 578, 598, 500, 605],
+      ['L', 50, 601],
+      ['L', 470, 233],
+      ['L', 340, 226],
+      ['Q', 300, 224, 280, 226],
     ],
   },
 ]
