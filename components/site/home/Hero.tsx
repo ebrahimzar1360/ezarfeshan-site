@@ -6,6 +6,7 @@ import { Container } from '@/components/ui/Container'
 import { Icon } from '@/components/ui/Icon'
 import { getSection } from '@/lib/cms/content'
 import { PAGE_PHOTOS } from '@/lib/content/photos'
+import { HeroArt } from './HeroArt'
 
 const rise = (s: number) => ({ '--dl': `${s}s` }) as CSSProperties
 
@@ -20,8 +21,9 @@ const rise = (s: number) => ({ '--dl': `${s}s` }) as CSSProperties
  * where the copy covers the whole picture. On it the accent is gold-light
  * (allowed on forest) and the button is the gold variant.
  *
- * Copy comes from the CMS (home.hero). The 3D monogram (HeroArt/HeroStage)
- * is no longer mounted but kept, so the decision is one import away.
+ * Opposite the copy stands the 3D monogram (HeroArt → HeroStage), as before
+ * the photograph arrived (owner, 1405/07/28): the picture is the ground, the
+ * mark is the figure. Copy comes from the CMS (home.hero).
  */
 export async function Hero() {
   const hero = await getSection('home.hero')
@@ -39,7 +41,7 @@ export async function Hero() {
       />
       <span aria-hidden className="photo-scrim absolute inset-0 -z-10" />
 
-      <Container className="flex min-h-[clamp(32rem,78svh,44rem)] items-end pb-14 pt-24 md:items-center md:py-24">
+      <Container className="grid min-h-[clamp(32rem,78svh,44rem)] items-center gap-8 pb-14 pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:py-20">
         <div className="max-w-[36rem]">
           <h1 className="text-[clamp(2.2rem,3.5vw,3.3rem)] font-black leading-[1.3] tracking-tight text-paper">
             <span className="hero-rise block" style={rise(0.05)}>
@@ -69,6 +71,10 @@ export async function Hero() {
               </Button>
             </div>
           )}
+        </div>
+
+        <div className="mx-auto w-full max-w-[26rem] lg:max-w-none">
+          <HeroArt />
         </div>
       </Container>
     </section>
