@@ -687,6 +687,30 @@ samp {
   .glow-gold { background: color-mix(in oklab, var(--color-gold) 32%, transparent); }
   .glow-emerald { background: color-mix(in oklab, var(--color-emerald) 55%, transparent); }
 
+  /* Legibility scrim for copy set on a photograph (the homepage hero). Dark
+     under the copy, clear where the picture should read: from the foot on
+     small screens, where the copy spans the width; from the reading side
+     (right, RTL) from md up. A gradient here is function, not decoration. */
+  .photo-scrim {
+    --s: var(--color-forest-deep);
+    background: linear-gradient(
+      to top,
+      color-mix(in oklab, var(--s) 95%, transparent),
+      color-mix(in oklab, var(--s) 75%, transparent) 55%,
+      color-mix(in oklab, var(--s) 35%, transparent)
+    );
+  }
+  @media (min-width: 48rem) {
+    .photo-scrim {
+      background: linear-gradient(
+        to left,
+        color-mix(in oklab, var(--s) 90%, transparent),
+        color-mix(in oklab, var(--s) 60%, transparent) 45%,
+        transparent 85%
+      );
+    }
+  }
+
   /* Panels — the v2 card. Hairline first, shadow only on lift. */
   .panel {
     border: 1px solid var(--border);

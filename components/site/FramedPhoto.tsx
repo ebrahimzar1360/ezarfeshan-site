@@ -4,8 +4,7 @@ import type { SitePhoto } from '@/lib/content/photos'
 /**
  * A picture from the image pack in the site's one photo frame: plain rounded
  * corners with a gold rule offset behind, as on the homepage's experience
- * photo, at 16:9 — the pack's own ratio, so nothing is cropped. A faint forest
- * wash at the foot ties it to the band it sits on.
+ * photo, at 16:9 — the pack's own ratio, so nothing is cropped.
  *
  * `priority` for a masthead (above the fold, a likely LCP); everything else
  * loads lazily.
@@ -34,7 +33,6 @@ export function FramedPhoto({
           priority={priority}
           className="aspect-[16/9] w-full object-cover"
         />
-        <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-forest-deep/30 via-transparent to-transparent" />
       </div>
     </div>
   )

@@ -5,15 +5,14 @@
  * product — project pictures are marked «تصویر مفهومی» where they appear.
  *
  * Where each one goes is decided here, so a page only asks for its slot:
- *   pages     the inner-page mastheads (PageBand / PageHeader aside)
+ *   pages     the homepage hero and the inner-page mastheads
  *   topics    the topic pages' mastheads
  *   projects  stands in for a project with no picture of its own in the CMS;
  *             a screenshot uploaded in the admin always wins
  *
  * Not used, on purpose: budget-planning and gam-journey-optional. بودجه‌یار
  * and گام keep their approved designs, and a second picture on the same card
- * would only compete with them. home-hero is not on the homepage either: the
- * hero is the 3D monogram the owner asked for (see docs/OPEN-QUESTIONS.md).
+ * would only compete with them.
  */
 export type SitePhoto = {
   readonly src: string
@@ -45,8 +44,9 @@ export const PHOTOS = {
 
 /** inner pages that carry a picture in their masthead or body */
 export const PAGE_PHOTOS = {
+  home: PHOTOS.homeHero,
   about: PHOTOS.aboutWorkplace,
-  projects: PHOTOS.homeHero,
+  projects: PHOTOS.systems,
   articles: PHOTOS.articles,
   contact: PHOTOS.contact,
   newsletter: PHOTOS.newsletter,

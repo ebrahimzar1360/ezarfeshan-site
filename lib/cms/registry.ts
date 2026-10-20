@@ -240,10 +240,10 @@ export const SECTIONS = {
     key: 'home.hero',
     group: 'home',
     label: 'هیرو',
-    description: 'تیتر اصلی، جملهٔ زیر آن و دکمه. تصویر متحرک کنار آن ثابت است.',
+    description: 'تیتر اصلی، جملهٔ زیر آن و دکمه، روی تصویر تمام‌عرض. خود تصویر ثابت است.',
     fields: [
       { type: 'text', name: 'line1', label: 'خط اول تیتر', required: true, max: 80 },
-      { type: 'text', name: 'line2', label: 'خط دوم تیتر', max: 80, hint: 'عبارت بین دو ستاره (*…*) سبز و خط‌دار می‌شود.' },
+      { type: 'text', name: 'line2', label: 'خط دوم تیتر', max: 80, hint: 'عبارت بین دو ستاره (*…*) طلایی و خط‌دار می‌شود.' },
       { type: 'textarea', name: 'lead', label: 'جملهٔ زیر تیتر', max: 300, rows: 2 },
       { type: 'link', name: 'button', label: 'دکمه', optional: true },
     ],

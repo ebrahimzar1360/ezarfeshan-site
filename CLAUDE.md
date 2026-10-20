@@ -139,7 +139,15 @@ bands). Five pages and a five-link nav: خانه · درباره من · پرو�
 تماس. `/consult` still exists, out of the nav, because the chatbot's knowledge
 (`lib/chat/knowledge.ts`) quotes it.
 
-- **Hero art** (`components/site/home/HeroArt.tsx`) is one inline SVG: isometric
+- **Hero** (since 1405/07/28, owner's choice) is a full-width photograph,
+  `home-hero` from the image pack (`lib/content/photos.ts`), mirrored, under a
+  forest wash, with the CMS copy as real text and the gold button. The 3D
+  monogram below is no longer mounted but kept intact; restoring it is one
+  import in `Hero.tsx`.
+- **Image pack**: `public/site-images/`, placed only via `lib/content/photos.ts`
+  (page mastheads, topic pages, projects without a CMS image — marked
+  «تصویر مفهومی»). `photos.test.ts` checks every declared size against its file.
+- *(not mounted)* **Hero art** (`components/site/home/HeroArt.tsx`) is one inline SVG: isometric
   slab, the EZ monogram, four floating glass cards, nodes and lines. Motion is CSS
   only (`.ha-*` in globals.css §13) and all of it stops under reduced motion.
   Colours come from tokens; shades for solids are `.fill-sand-d1`, `.fill-gold-d1`…
