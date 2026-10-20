@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
  * argument is not the bytes, it is control over three things a third-party set
  * cannot decide for us:
  *
- * - `stroke-width: 1.75`. Lucide ships 2, which reads heavy beside Vazirmatn's
+ * - `stroke-width: 1.75`. Lucide ships 2, which reads heavy beside the text face's
  *   700 weight.
  * - `width: 1em`. Icons scale with whatever type token the surrounding control
  *   uses, instead of being pinned to a `size-4` that only matches one button.

@@ -27,6 +27,9 @@ function hash(seed: string): number {
   return h
 }
 
+// Share images and covers stay in Vazirmatn while the site's text face is
+// Estedad: Satori's font parser rejects Estedad's TTF (GSUB lookup type 6,
+// format 1 — "not yet supported") and the route throws.
 let fontCache: Buffer | null = null
 function vazirmatn(): Buffer {
   fontCache ??= readFileSync(join(process.cwd(), 'assets', 'fonts', 'vazirmatn-700.ttf'))

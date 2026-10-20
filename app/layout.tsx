@@ -59,10 +59,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        {/* The Persian face is on the critical path for every page. */}
+        {/* The Persian text face and the heading naskh are on the critical path
+            for every page; preloading the naskh keeps headings from reflowing. */}
         <link
           rel="preload"
-          href="/fonts/vazirmatn-arabic.woff2"
+          href="/fonts/estedad-arabic.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/fonts/noto-naskh-arabic.woff2"
           as="font"
           type="font/woff2"
           crossOrigin="anonymous"

@@ -34,7 +34,7 @@ export default function GlobalError({
             :root { --g-bg:#141613; --g-text:#edede8; --g-muted:#a3a39e; --g-border:#2c2f2c; }
           }
           html, body { margin:0; background:var(--g-bg); color:var(--g-text);
-            font-family:'Vazirmatn','Segoe UI',system-ui,sans-serif; }
+            font-family:'Estedad','Segoe UI',system-ui,sans-serif; }
           .g-wrap { min-height:100dvh; display:flex; flex-direction:column;
             align-items:center; justify-content:center; gap:20px; padding:24px; text-align:center; }
           .g-mark { width:4px; height:44px; background:#c8a84b; border-radius:2px; }

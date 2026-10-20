@@ -43,8 +43,11 @@
   --color-gold-light: #e2c97e;
   --color-sand: #ece7da;
 
-  --font-sans: 'Vazirmatn', 'Segoe UI', system-ui, sans-serif;
-  --font-latin: 'Inter', 'Vazirmatn', system-ui, sans-serif;
+  --font-sans: 'Estedad', 'Segoe UI', system-ui, sans-serif;
+  --font-latin: 'Inter', 'Estedad', system-ui, sans-serif;
+  /* h1/h2 only: a naskh for the formal voice (owner, 1405/07/28). Its heaviest
+     weight is 700, so font-black headings render at 700, never synthesised. */
+  --font-display: 'Noto Naskh Arabic', 'Estedad', 'Segoe UI', serif;
 
   /* type scale — ratio 1.25 (major third) anchored at 1rem */
   --text-200: 0.8rem;
@@ -227,6 +230,7 @@
     text-wrap: balance;
   }
   h1 { line-height: var(--leading-tight); }
+  h1, h2 { font-family: var(--font-display); }
 
   p { text-wrap: pretty; }
 
@@ -267,7 +271,7 @@
    An unlayered rule beats every layered rule regardless of specificity, and
    browser extensions inject their stylesheets unlayered. One of them sets a
    plain `html { font-family: ui-sans-serif, system-ui, … }`, which silently
-   replaced Vazirmatn with the system fallback — Tahoma on Windows — on every
+   replaced the Persian face (then Vazirmatn) with the system fallback — Tahoma on Windows — on every
    page. `html` inside @layer base could not win that, no matter how specific.
    Restating the family here, on `body` as well as `html`, puts it back:
    a rule that matches body directly beats anything body merely inherits. */

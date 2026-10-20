@@ -1,4 +1,5 @@
-// Downloads Vazirmatn + Inter woff2 files from Google Fonts and emits a
+// Downloads Estedad, Noto Naskh Arabic and Inter woff2 files from Google Fonts
+// (all OFL-1.1) and emits a
 // self-hosted @font-face stylesheet. Nothing hits Google at runtime.
 //
 //   node tools/fonts/fetch-fonts.js
@@ -16,12 +17,18 @@ const CSS_OUT = path.join(__dirname, '..', '..', 'app', 'fonts.css')
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 
-// Both families ship as variable fonts on Google Fonts: one woff2 per subset carries
+// Estedad is the text face; Noto Naskh Arabic sets h1/h2 only, so it keeps the
+// Arabic subset alone (Latin in a heading falls through to Estedad/Inter). Chosen by
+// the owner 1405/07/28 for a more formal voice; FontIran's "free" faces were ruled
+// out because their licence does not cover embedding on a website.
+//
+// All three families ship as variable fonts on Google Fonts: one woff2 per subset carries
 // every weight. Requesting a range (not a list) makes that explicit, and each face is
 // declared once with a font-weight RANGE. Declaring the same file three times with
 // fixed weights would pin the browser to a single instance and defeat the variable axis.
 const FAMILIES = [
-  { name: 'Vazirmatn', spec: 'Vazirmatn:wght@100..900', keep: ['arabic', 'latin'], range: '100 900' },
+  { name: 'Estedad', spec: 'Estedad:wght@100..900', keep: ['arabic', 'latin'], range: '100 900' },
+  { name: 'Noto Naskh Arabic', file: 'noto-naskh', spec: 'Noto+Naskh+Arabic:wght@400..700', keep: ['arabic'], range: '400 700' },
   { name: 'Inter', spec: 'Inter:wght@100..900', keep: ['latin'], range: '100 900' },
 ]
 
@@ -61,7 +68,7 @@ async function download(url, dest) {
       const range = body.match(/unicode-range:\s*([^;]+);/)?.[1]
       if (!url || !range) continue
 
-      const file = `${fam.name.toLowerCase()}-${subset}.woff2`
+      const file = `${fam.file ?? fam.name.toLowerCase()}-${subset}.woff2`
       if (seen.has(file)) continue
       seen.add(file)
 
