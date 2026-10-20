@@ -128,7 +128,7 @@
 
 ## ۳. تایپوگرافی
 
-**فارسی:** Vazirmatn ۴۰۰/۵۰۰/۷۰۰ — self-hosted، ساب‌ست‌شده، `font-display: swap`.
+**فارسی:** متن Estedad (متغیر ۱۰۰–۹۰۰) و تیترهای h1/h2 با Noto Naskh Arabic (۴۰۰–۷۰۰) — هر دو OFL، self-hosted، `font-display: swap` (از ۱۴۰۵/۰۷/۲۸؛ پیش از آن Vazirmatn). جزئیات: OPEN-QUESTIONS §۲۰.
 **لاتین و برچسب UI:** Inter (این یکی از فایل خراب سالم بیرون آمد).
 **اعداد:** فارسی در متن روایی، لاتین در داده، کد، تاریخ ISO و شمارنده‌ها.
 
