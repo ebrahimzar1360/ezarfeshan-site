@@ -1,0 +1,121 @@
+name: Database backup (encrypted)
+
+# Pre-deploy backup of the production database, with a restore test, run from
+# GitHub so nobody needs the server's SSH key: it uses the same VM_* secrets as
+# deploy.yml, which GitHub hands to the runner and masks in the log.
+#
+# The repository is public, so its Actions logs and artifacts are readable by
+# others. Therefore:
+#   - the log carries no data and no row counts (BACKUP_QUIET=1): file name,
+#     size, hash check and ok / MISMATCH per table only
+#   - the dump leaves the server only encrypted. It is streamed from the VM
+#     through gpg (AES-256, passphrase = secret BACKUP_PASSPHRASE) on the runner;
+#     the plain dump is never written to the runner's disk
+#   - the artifact (the .gpg file and the plain dump's SHA-256) is kept 7 days
+#
+# On the server it writes /opt/ezarfeshan/backups/<name>.dump (+ .sha256) and,
+# for the restore test, creates and drops one throwaway database. The live
+# database is only read (deploy/backup.sh runs every query against it with
+# default_transaction_read_only=on).
+#
+# How to run (no SSH needed):
+#   1. once: Settings -> Secrets and variables -> Actions -> New repository
+#      secret: BACKUP_PASSPHRASE = a long passphrase you keep in your password
+#      manager. Without it the workflow stops before touching the server.
+#   2. push any commit to the branch ops/db-backup (or, once this file is on
+#      main: Actions -> Database backup (encrypted) -> Run workflow)
+#   3. download the artifact from the run page, then in Git Bash:
+#        gpg --output <name>.dump --decrypt <name>.dump.gpg
+#        sha256sum -c <name>.dump.sha256
+
+on:
+  push:
+    branches: [ops/db-backup]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Require the encryption passphrase
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ "${#BACKUP_PASSPHRASE}" -lt 16 ]; then
+            echo "::error::secret BACKUP_PASSPHRASE is missing or shorter than 16 characters — nothing was done"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_HOST_KEY: ${{ secrets.VM_HOST_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VM_HOST_KEY" > ~/.ssh/known_hosts
+          printf 'Host vm\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  IdentitiesOnly yes\n  StrictHostKeyChecking yes\n' \
+            "$VM_HOST" "${{ secrets.VM_USER }}" > ~/.ssh/config
+
+      - name: Back up on the server, with restore test
+        id: backup
+        run: |
+          set -o pipefail
+          tr -d '\r' < deploy/backup.sh | ssh vm 'BACKUP_QUIET=1 sh -s -- --restore-test' | tee backup.log
+          grep -q 'restore test passed' backup.log
+          remote=$(sed -n 's/^  file   //p' backup.log)
+          case "$remote" in /opt/ezarfeshan/backups/ezarfeshan-*.dump) ;; *) echo "::error::unexpected file path"; exit 1 ;; esac
+          echo "remote=$remote" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$remote")" >> "$GITHUB_OUTPUT"
+
+      - name: Copy off the server, encrypted
+        env:
+          REMOTE: ${{ steps.backup.outputs.remote }}
+          NAME: ${{ steps.backup.outputs.name }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -o pipefail
+          umask 077
+          mkdir -p out
+          ssh vm "cat '$REMOTE.sha256'" > "out/$NAME.sha256"
+          want=$(cut -d' ' -f1 "out/$NAME.sha256")
+          # the plain dump only flows through this pipe, into gpg; it never lands on disk
+          ssh vm "cat '$REMOTE'" \
+            | gpg --batch --yes --quiet --pinentry-mode loopback --passphrase-fd 3 \
+                  --symmetric --cipher-algo AES256 --output "out/$NAME.gpg" 3<<<"$BACKUP_PASSPHRASE"
+          # decrypting must give back exactly the server's file (same SHA-256)
+          back=$(gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 --decrypt "out/$NAME.gpg" 3<<<"$BACKUP_PASSPHRASE" | sha256sum | cut -d' ' -f1)
+          [ "$want" = "$back" ] || { echo "::error::the encrypted copy does not match the server's file"; exit 1; }
+          size=$(sed -n 's/^  size   //p' backup.log)
+          {
+            echo "### Database backup"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| file | \`$NAME\` |"
+            echo "| size | $size |"
+            echo "| SHA-256 (server ↔ copy ↔ decrypted) | OK |"
+            echo "| restore test | passed — $(grep -c ' ok$' backup.log) tables, row counts equal |"
+            echo "| artifact | \`$NAME.gpg\` + \`.sha256\`, kept 7 days |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.backup.outputs.name }}
+          path: out/
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Remove the key from the runner
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

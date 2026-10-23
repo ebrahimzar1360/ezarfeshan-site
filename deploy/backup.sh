@@ -24,12 +24,17 @@
 # default_transaction_read_only=on, so a slip in this script cannot write to it.
 #   4. Writes a SHA-256 next to it, for checking the off-server copy.
 #
+# BACKUP_QUIET=1 drops the numbers too (for a log anyone can read, such as
+# GitHub Actions on a public repository): each table is reported only as
+# present / ok / MISMATCH.
+#
 # It prints file names, sizes and row counts only — never rows, never the
 # password. The file itself holds personal data (leads, subscribers) and the
 # admin password hashes: keep the off-server copy encrypted (docs/DEPLOY.md).
 set -eu
 
 DB_CONTAINER=${DB_CONTAINER:-ezarfeshan-db}
+QUIET=${BACKUP_QUIET:-0}
 DB_USER=${DB_USER:-ezarfeshan}
 DB_NAME=${DB_NAME:-ezarfeshan}
 BACKUP_DIR=${BACKUP_DIR:-/opt/ezarfeshan/backups}
@@ -76,7 +81,8 @@ rm -f "$FILE.toc"
 
 echo "== row counts (live)"
 for t in $TABLES; do
-  printf '  %-20s %s\n' "$t" "$(psql_ro "$DB_NAME" "SELECT count(*) FROM \"$t\"")"
+  n=$(psql_ro "$DB_NAME" "SELECT count(*) FROM \"$t\"")
+  if [ "$QUIET" = 1 ]; then printf '  %-20s present\n' "$t"; else printf '  %-20s %s\n' "$t" "$n"; fi
 done
 echo "  last migration       $(psql_ro "$DB_NAME" "SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1")"
 
@@ -115,8 +121,9 @@ if [ "$RESTORE_TEST" = yes ]; then
   for t in $TABLES; do
     a=$(psql_ro "$DB_NAME" "SELECT count(*) FROM \"$t\"")
     b=$(psql_ro "$CHECK_DB" "SELECT count(*) FROM \"$t\"")
-    if [ "$a" = "$b" ]; then printf '  %-20s %s = %s  ok\n' "$t" "$a" "$b"
-    else printf '  %-20s %s ≠ %s  MISMATCH\n' "$t" "$a" "$b"; MISMATCH=1; fi
+    if [ "$QUIET" = 1 ]; then shown_a=; shown_b=; sep=; else shown_a=$a; shown_b=$b; sep=' = '; fi
+    if [ "$a" = "$b" ]; then printf '  %-20s %s%s%s  ok\n' "$t" "$shown_a" "$sep" "$shown_b"
+    else printf '  %-20s %s%s%s  MISMATCH\n' "$t" "$shown_a" "${sep:+ ≠ }" "$shown_b"; MISMATCH=1; fi
   done
   drop_check_db
   trap - EXIT INT TERM
