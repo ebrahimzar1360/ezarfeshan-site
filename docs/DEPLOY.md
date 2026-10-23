@@ -1,175 +1,218 @@
-# راه‌اندازی روی سرور
+# استقرار و نگه‌داری روی سرور
 
-سه فایل کار را انجام می‌دهند: `Dockerfile`، `docker-compose.yml`، `Caddyfile`.
-سرویس‌ها: اپ + PostgreSQL + Caddy (برای HTTPS خودکار).
+سایت روی سرور مشترک آروان (`hoosh-vm-01`) اجرا می‌شود و با هر push روی `main`
+خودکار منتشر می‌شود. پیکربندی واقعی سه فایل است:
 
-> **این پیکربندی روی این ماشین اجرا نشده.** داکر نصب نیست و نصبش ۶۲۹MB روی
-> اتصالی با سرعت ~۷۵KB/s است. فایل‌ها نوشته و بازبینی شده‌اند ولی اولین
-> `docker compose up` روی سرور، اولین اجرای واقعی‌شان است. بخش
-> [اگر چیزی خراب شد](#اگر-چیزی-خراب-شد) را کنار دستت داشته باش.
+| فایل | نقش |
+|---|---|
+| `.github/workflows/deploy.yml` | آزمون، ساخت ایمیج، انتقال به سرور، راه‌اندازی، بازگشت خودکار |
+| `deploy/docker-compose.arvan.yml` | همان compose روی سرور (در `/opt/ezarfeshan/docker-compose.yml` کپی می‌شود) |
+| `deploy/backup.sh` | پشتیبان پیش از انتشار، با بررسی و آزمون بازگردانی |
+
+`docker-compose.yml` و `Caddyfile` ریشهٔ مخزن برای راه‌اندازی مستقل روی سروری
+دیگرند ([پایین صفحه](#راه‌اندازی-مستقل-روی-سرور-دیگر))؛ روی سرور آروان استفاده
+نمی‌شوند.
 
 ---
 
-## پیش‌نیازها
+## معماری روی سرور
 
-- سروری با داکر و پلاگین compose
-- دامنه‌ای که رکورد `A` آن به IP همان سرور اشاره کند — **قبل از** بالا آوردن،
-  وگرنه Caddy نمی‌تواند گواهی بگیرد
-- پورت‌های ۸۰ و ۴۴۳ باز
+سرور با محصولات دیگر مشترک است؛ این پروژه فقط به `/opt/ezarfeshan` و کانتینرهای
+`ezarfeshan-*` دست می‌زند.
 
-## گام یک — متغیرها
-
-```bash
-cp .env.example .env
-```
-
-`.env` را پر کن. این پنج مورد اجباری‌اند و compose بدونشان بالا نمی‌آید:
-
-| متغیر | مقدار |
+| بخش | جزئیات |
 |---|---|
-| `SITE_DOMAIN` | `ezarfeshan.com` — بدون `https://` |
-| `NEXT_PUBLIC_SITE_URL` | `https://ezarfeshan.com` — **با** `https://` |
-| `POSTGRES_PASSWORD` | یک گذرواژهٔ تصادفی بلند |
-| `AUTH_SECRET` | خروجی دستور زیر |
-| `MAIL_FROM` | `ابراهیم زرفشان <hello@ezarfeshan.com>` |
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
-
-**`AUTH_SECRET` را هرگز در گیت commit نکن.** عوض کردنش همهٔ نشست‌های باز را
-باطل می‌کند، که همان کار درست هنگام مشکوک شدن است.
-
-## گام دو — ایمیل
-
-بدون این، فرم خبرنامه ثبت‌نام را می‌پذیرد ولی هیچ ایمیل تأییدی نمی‌رسد.
+| پروژهٔ compose | `ezarfeshan` در `/opt/ezarfeshan` |
+| `ezarfeshan-db` | `postgres:17-alpine`، ولوم `ezarfeshan_pgdata`، سقف حافظه ۳۸۴MB، بدون پورت بیرونی |
+| `ezarfeshan-web` | ایمیج `ezarfeshan-web:latest` (در CI ساخته می‌شود)، پورت داخلی ۳۰۰۰، سقف حافظه ۶۴۰MB، لاگ ۳×۱۰MB |
+| شبکه | `default` خود پروژه، و فقط وب روی `vm_default` |
+| HTTPS | Caddy مشترک سرور (روی شبکهٔ `vm_default`، خارج از این مخزن) دامنه را به `ezarfeshan-web:3000` می‌فرستد |
+| مهاجرت دیتابیس | هنگام استارت وب: `npx prisma migrate deploy && node server.js` |
+| سلامت | `HEALTHCHECK` در `Dockerfile` (هر ۳۰ ثانیه، `/api/health`) |
 
 ```
-MAIL_DRIVER="smtp"
-SMTP_HOST="smtp.example.com"
-SMTP_PORT="587"
-SMTP_USER="hello@ezarfeshan.com"
-SMTP_PASS="..."
+/opt/ezarfeshan/
+  docker-compose.yml   ← با هر انتشار از deploy/docker-compose.arvan.yml بازنویسی می‌شود
+  .env                 ← فقط روی سرور؛ هرگز در گیت
+  prisma/init/         ← اسکریپت ساخت pg_trgm برای اولین راه‌اندازی ولوم (دستی کپی شده)
+  backups/             ← خروجی deploy/backup.sh (۷۰۰، فقط root)
 ```
 
-**فرستنده باید روی دامنهٔ خودت باشد، نه جی‌میل.** روی `gmail.com` نمی‌شود
-SPF/DKIM تنظیم کرد و ایمیل تأیید به اسپم می‌رود. جی‌میل به‌عنوان *نشانی تماس*
-روی سایت مشکلی ندارد — به‌عنوان *فرستنده* نه.
+`prisma/init/` با workflow منتقل نمی‌شود؛ فقط بار اولی که ولوم خالی است اجرا
+می‌شود. روی ولوم موجود بی‌اثر است.
 
-بعد از راه‌اندازی، این سه رکورد DNS را اضافه کن:
+## متغیرها
 
-| نوع | نام | مقدار |
+### `/opt/ezarfeshan/.env` (روی سرور)
+
+compose آن را خودکار می‌خواند.
+
+| متغیر | اجباری | توضیح |
 |---|---|---|
-| TXT | `@` | `v=spf1 include:<سرویس ایمیلت> ~all` |
-| TXT | `<selector>._domainkey` | کلید DKIM که سرویس می‌دهد |
-| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:hello@ezarfeshan.com` |
+| `POSTGRES_PASSWORD` | بله | گذرواژهٔ دیتابیس؛ هم دیتابیس و هم `DATABASE_URL` وب از آن ساخته می‌شوند |
+| `NEXT_PUBLIC_SITE_URL` | بله | نشانی کامل با `https://`؛ canonical، نقشهٔ سایت، OG و لینک ایمیل‌ها |
+| `AUTH_SECRET` | بله | ۳۲ بایت تصادفی (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`)؛ عوض کردنش همهٔ نشست‌ها را باطل می‌کند |
+| `MAIL_DRIVER` | نه | پیش‌فرض `console` (ایمیل فقط در لاگ وب) |
+| `MAIL_FROM` | نه | فرستندهٔ ایمیل‌ها |
+| `OPENROUTER_API_KEY` | نه | چت‌بات؛ خالی باشد چت‌بات پیام «در دسترس نیست» می‌دهد |
 
-`p=none` شروع درستی است: گزارش می‌گیری بدون اینکه ایمیل‌های سالم رد شوند.
-بعد از چند هفته که گزارش‌ها تمیز بود، `p=quarantine`.
+> ⚠️ **ایمیل واقعی هنوز ممکن نیست.** compose آروان `SMTP_HOST`، `SMTP_PORT`،
+> `SMTP_USER` و `SMTP_PASS` را به کانتینر وب نمی‌دهد؛ پس حتی با
+> `MAIL_DRIVER=smtp` ایمیلی فرستاده نمی‌شود. برای فعال‌کردن، این چهار خط باید
+> مثل `docker-compose.yml` ریشه به بخش `environment` وب اضافه شوند، و فرستنده
+> روی دامنهٔ خود سایت باشد با SPF/DKIM/DMARC (جی‌میل نمی‌تواند فرستنده باشد).
+> تا آن موقع اعلان درخواست‌ها و تأیید خبرنامه فقط در `docker logs ezarfeshan-web`
+> چاپ می‌شوند.
 
-## گام سه — بالا آوردن
+### رازهای GitHub Actions
+
+Settings → Secrets and variables → Actions:
+
+| راز | مقدار |
+|---|---|
+| `VM_HOST` | نشانی سرور |
+| `VM_USER` | کاربر SSH (`root`) |
+| `VM_SSH_KEY` | کلید خصوصی deploy key |
+| `VM_HOST_KEY` | خط `ssh-ed25519` سرور (`ssh-keyscan -t ed25519 <ip>`) |
+
+## هر انتشار چه می‌کند
+
+push روی `main` (یا اجرای دستی workflow «Deploy to Arvan»):
+
+1. **test** — `npm ci`، `prisma generate`، `typecheck`، `npm test`. شکست = توقف.
+2. **build** — ایمیج روی runner با یک Postgres موقت ساخته می‌شود (build صفحه‌های
+   ایستا را از دیتابیس می‌خواند؛ دیتابیس واقعی هیچ‌وقت به CI وصل نمی‌شود).
+3. **ship** — compose کپی می‌شود، ایمیج فعلی برچسب `previous` می‌گیرد و ایمیج تازه
+   با `docker load` روی سرور می‌رود.
+4. **restart** — `docker compose up -d`؛ وب هنگام استارت مهاجرت‌ها را اجرا می‌کند.
+5. **verify** — تا ۲ دقیقه منتظر `healthy`. اگر نشد، ایمیج `previous` برمی‌گردد.
+
+> **بازگشت خودکار فقط ایمیج را برمی‌گرداند، نه دیتابیس را.** مهاجرتی که اجرا شده
+> برنمی‌گردد. برای همین هر انتشاری که migration تازه دارد، **پیش از merge** پشتیبان
+> لازم دارد.
+
+## چک‌لیست انتشار
+
+1. آزمون‌ها روی شاخه سبز باشند (typecheck، `npm test`، build، e2e).
+2. اگر `prisma/migrations/` تغییر کرده: پشتیبان با آزمون بازگردانی
+   ([بخش بعد](#پشتیبان‌گیری))، و یک نسخه بیرون از سرور.
+3. merge روی `main` و دنبال کردن اجرای «Deploy to Arvan» در Actions تا
+   `deploy finished: healthy`.
+4. بررسی بعد از انتشار:
+   ```bash
+   curl -s https://<دامنه>/api/health          # {"ok":true,"db":"up"}
+   ssh root@<VM> 'docker logs --tail 50 ezarfeshan-web'
+   ssh root@<VM> "docker exec ezarfeshan-db psql -U ezarfeshan -d ezarfeshan -Atc \
+     'SELECT migration_name FROM _prisma_migrations ORDER BY finished_at DESC LIMIT 1'"
+   ```
+5. یک بار مسیر اصلی را دستی امتحان کن (مثلاً یک درخواست آزمایشی در `/services`
+   و دیدنش در «درخواست‌ها»).
+
+## پشتیبان‌گیری
+
+### گرفتن (پیش از هر انتشار با migration)
+
+از کامپیوتر خودت، بدون کپی کردن اسکریپت روی سرور:
 
 ```bash
-docker compose up -d --build
+ssh root@<VM> 'sh -s -- --restore-test' < deploy/backup.sh
 ```
 
-بار اول چند دقیقه طول می‌کشد. مهاجرت‌های دیتابیس **هنگام استارت کانتینر** اجرا
-می‌شوند نه هنگام ساخت ایمیج — ساخت ایمیج به دیتابیس پروداکشن دسترسی ندارد و
-نباید داشته باشد.
+اسکریپت:
 
-بررسی:
+- `pg_dump` با فرمت custom (فشرده) در `/opt/ezarfeshan/backups/ezarfeshan-<زمان UTC>.dump`
+  — روی دیسک سرور، بیرون از کانتینر و ولوم؛ پوشه ۷۰۰ و فایل ۶۰۰
+- آرشیو را دوباره می‌خواند و وجود جدول‌های اصلی را بررسی می‌کند؛ فایل ناخوانا پاک
+  می‌شود و اسکریپت با خطا تمام می‌شود
+- با `--restore-test` فایل را در دیتابیس موقت `ezarfeshan_restore_check` بازمی‌گرداند،
+  تعداد ردیف هر جدول را با دیتابیس زنده مقایسه می‌کند و دیتابیس موقت را پاک می‌کند
+- اندازه، SHA-256 و فضای خالی دیسک را چاپ می‌کند؛ هیچ داده یا گذرواژه‌ای چاپ نمی‌شود
+
+### نسخهٔ بیرون از سرور
 
 ```bash
-curl -s https://<دامنه>/api/health     # {"ok":true,"db":"up"}
-docker compose logs -f app
+scp 'root@<VM>:/opt/ezarfeshan/backups/ezarfeshan-<زمان>.dump*' .
+sha256sum -c ezarfeshan-<زمان>.dump.sha256        # باید OK بگوید
 ```
 
-## گام چهار — حساب مدیر
+فایل شامل اطلاعات شخصی (درخواست‌ها، مشترکین) و هش گذرواژهٔ مدیرهاست: **رمزگذاری‌شده
+نگهش دار** (مثلاً 7-Zip با AES-256 و گذرواژهٔ جدا، یا دیسک رمزگذاری‌شده) و در
+گیت، ایمیل یا پیام‌رسان نگذار.
+
+### بازگرداندن
 
 ```bash
-docker compose exec app node tools/db/create-admin.mjs \
-  you@example.com "ابراهیم زرفشان" "یک-گذرواژهٔ-بلند"
+# ۱. وب را متوقف کن تا در حین بازگردانی چیزی ننویسد
+ssh root@<VM> 'cd /opt/ezarfeshan && docker compose stop ezarfeshan-web'
+# ۲. دیتابیس را از فایل بازگردان (جدول‌های موجود جایگزین می‌شوند)
+ssh root@<VM> 'docker exec -i ezarfeshan-db pg_restore -U ezarfeshan -d ezarfeshan \
+  --clean --if-exists --no-owner --no-privileges' < ezarfeshan-<زمان>.dump
+# ۳. اگر ایمیج قبلی لازم است، همان را بالا بیاور؛ وگرنه:
+ssh root@<VM> 'cd /opt/ezarfeshan && docker compose up -d'
 ```
 
-روی سرور آروان (استقرار خودکار با GitHub Actions) کانتینر `ezarfeshan-web` نام دارد و
-`DATABASE_URL` را از قبل دارد:
+اگر نسخهٔ کد هم باید برگردد، `main` را به commit قبلی برگردان (revert) تا workflow
+همان را منتشر کند؛ وگرنه وب تازه دوباره migration را روی دیتابیس بازگردانده اجرا می‌کند.
+
+### خودکار
+
+```
+0 3 * * * sh /opt/ezarfeshan/backup.sh >> /opt/ezarfeshan/backups/cron.log 2>&1
+```
+
+(اسکریپت را یک بار با `scp deploy/backup.sh root@<VM>:/opt/ezarfeshan/` روی سرور
+بگذار.) فایل‌های قدیمی را هم دوره‌ای پاک کن، مثلاً
+`find /opt/ezarfeshan/backups -name '*.dump*' -mtime +30 -delete`.
+
+## حساب مدیر
 
 ```bash
-ssh root@188.121.125.13
+ssh root@<VM>
 docker exec ezarfeshan-web node tools/db/create-admin.mjs \
   you@example.com "ابراهیم زرفشان" "یک-گذرواژهٔ-بلند"
 ```
 
-حساب‌های بعدی (ویراستار، نویسنده) از داخل پنل، بخش «کاربران و دسترسی» ساخته می‌شوند.
-
-حداقل ۱۲ کاراکتر. **مسیر بازیابی گذرواژه با ایمیل وجود ندارد** — همین دستور با
-همان ایمیل، گذرواژه را عوض می‌کند و همان مسیر بازیابی است.
-
-> ⚠️ گذرواژه‌ای که در توسعه استفاده شد در تاریخچهٔ ترمینال مانده. **قبل از
-> اولین ورود واقعی عوضش کن.**
-
-## گام پنج — محتوای اولیه
-
-```bash
-docker compose exec app npx prisma db seed
-```
-
-شش مقالهٔ نمونه با موضوع‌هایشان اضافه می‌شود. **همه با نشان «متن نمونه»** روی
-صفحه دیده می‌شوند. پیش از معرفی سایت به کسی، یا بازنویسی‌شان کن یا حذفشان کن.
-
----
-
-## به‌روزرسانی
-
-```bash
-git pull
-docker compose up -d --build
-```
-
-مهاجرت‌های جدید خودکار اعمال می‌شوند. اگر مهاجرت شکست بخورد کانتینر بالا
-نمی‌آید — که بهتر از بالا آمدن با اسکیمای ناسازگار است.
-
-## پشتیبان‌گیری
-
-```bash
-# گرفتن
-docker compose exec -T db pg_dump -U ezarfeshan ezarfeshan | gzip > backup-$(date +%F).sql.gz
-
-# بازگرداندن
-gunzip -c backup-1405-05-30.sql.gz | docker compose exec -T db psql -U ezarfeshan ezarfeshan
-```
-
-خودکارش کن. یک خط در crontab:
-
-```
-0 3 * * * cd /srv/ezarfeshan && docker compose exec -T db pg_dump -U ezarfeshan ezarfeshan | gzip > /backups/ez-$(date +\%F).sql.gz
-```
-
-پشتیبانی که بازگرداندنش را امتحان نکرده‌ای، پشتیبان نیست. **یک بار روی یک
-دیتابیس آزمایشی امتحانش کن.**
+یا بدون SSH: workflow دستی **Set admin password** در Actions (فقط هش Argon2id
+می‌گیرد، نه خود گذرواژه — `tools/db/set-admin-hash.mjs`). حساب‌های بعدی از پنل،
+«کاربران و دسترسی». حداقل ۱۲ کاراکتر؛ مسیر بازیابی با ایمیل وجود ندارد.
 
 ## اگر چیزی خراب شد
 
-| نشانه | علت محتمل |
+| نشانه | علت محتمل و کار |
 |---|---|
-| `ECONNREFUSED` هنگام `admin:create` | دیتابیس خاموش است. محلی: `npm run db start`. روی سرور: کانتینر `db` بالا نیست |
-| Caddy گواهی نمی‌گیرد | رکورد `A` هنوز به این سرور اشاره نمی‌کند، یا پورت ۸۰ بسته است. Caddy برای اعتبارسنجی به ۸۰ نیاز دارد حتی برای HTTPS |
-| اپ بالا می‌آید و بعد می‌افتد | مهاجرت شکست خورده. `docker compose logs app` |
-| `/api/health` می‌گوید `db: down` | `POSTGRES_PASSWORD` بین `db` و `app` یکی نیست |
-| ثبت‌نام کار می‌کند ولی ایمیل نمی‌رسد | `MAIL_DRIVER` هنوز `console` است — در لاگ اپ چاپ می‌شود |
-| جست‌وجو خطا می‌دهد | افزونهٔ `pg_trgm` نصب نشده. اگر ولوم دیتابیس از قبل وجود داشته، `prisma/init/` اجرا نشده: `docker compose exec db psql -U ezarfeshan -d ezarfeshan -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"` |
-| تصویر OG خالی یا خطا | فونت در `assets/fonts/` جا نیفتاده. `outputFileTracingIncludes` در `next.config.ts` باید آن را کپی کند |
-| مقالهٔ تازه ۴۰۴ می‌دهد | نباید بدهد — `dynamicParams` روشن است و فیلتر انتشار در هر کوئری زمان را دوباره می‌خواند. اگر دیدی، باگ است |
+| Actions: `new version is unhealthy - rolling back` | معمولاً migration شکست خورده؛ ایمیج قبلی برگشته. `docker logs ezarfeshan-web`. اگر migration نیمه‌کاره ثبت شده، از پشتیبان بازگردان |
+| `/api/health` می‌گوید `db: down` | `ezarfeshan-db` بالا نیست یا `POSTGRES_PASSWORD` در `.env` با ولوم موجود نمی‌خواند (گذرواژهٔ ولوم فقط بار اول تنظیم می‌شود) |
+| compose بالا نمی‌آید: `required` | یکی از سه متغیر اجباری در `/opt/ezarfeshan/.env` نیست |
+| سایت از بیرون باز نمی‌شود ولی کانتینر سالم است | Caddy مشترک سرور یا شبکهٔ `vm_default`؛ `docker network inspect vm_default` |
+| ایمیل نمی‌رسد | طبیعی است تا SMTP به compose اضافه شود ([متغیرها](#متغیرها))؛ متن در `docker logs ezarfeshan-web` است |
+| جست‌وجو خطا می‌دهد | `pg_trgm` نصب نیست: `docker exec ezarfeshan-db psql -U ezarfeshan -d ezarfeshan -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"` |
+| تصویر OG خطا می‌دهد | فونت `assets/fonts/` در ایمیج نیست؛ `outputFileTracingIncludes` در `next.config.ts` |
+| حافظه | وب ۶۴۰MB و دیتابیس ۳۸۴MB سقف دارند؛ `docker stats ezarfeshan-web ezarfeshan-db` |
+
+## چه چیزی در ایمیج نیست
+
+`.dockerignore`: `docs/`، `brand-source/`، `e2e/`، `tools/audit/`، `.env`. پوشهٔ
+`tools/db/` می‌ماند چون `create-admin.mjs` روی سرور لازم است.
+
+---
+
+## راه‌اندازی مستقل روی سرور دیگر
+
+`docker-compose.yml` و `Caddyfile` ریشه یک پشتهٔ کامل‌اند (اپ + Postgres + Caddy
+با HTTPS خودکار) برای سروری که این پروژه تنها ساکنش است. روی آروان استفاده
+نمی‌شوند و نام سرویس‌هایشان (`app`، `db`) با کانتینرهای آروان فرق دارد.
+
+```bash
+cp .env.example .env     # SITE_DOMAIN، NEXT_PUBLIC_SITE_URL، POSTGRES_PASSWORD، AUTH_SECRET، MAIL_FROM
+docker compose up -d --build
+docker compose exec app node tools/db/create-admin.mjs you@example.com "نام" "گذرواژه"
+docker compose exec -T db pg_dump -U ezarfeshan -Fc ezarfeshan > backup.dump   # پشتیبان
+```
+
+رکورد `A` دامنه باید پیش از بالا آوردن به سرور اشاره کند و پورت‌های ۸۰ و ۴۴۳ باز
+باشند، وگرنه Caddy گواهی نمی‌گیرد. این compose متغیرهای SMTP را به اپ می‌دهد.
 
 ## Vercel — کنار گذاشته شد (۱۴۰۵/۰۷/۲۵)
 
-سایت فقط روی سرور آروان اجرا می‌شود (`.github/workflows/deploy.yml`). `vercel.json`
-فقط برای این در مخزن مانده که `git.deploymentEnabled: false` دیپلوی خودکار ورسل را با
-هر پوش خاموش کند، تا وقتی پروژه در داشبورد ورسل قطع یا حذف شود. بعد از حذف پروژه در
-ورسل، این فایل هم می‌تواند پاک شود.
-
-## چه چیزی روی سرور نیست و نباید باشد
-
-`brand-source/` (فایل‌های خام برند)، `docs/`، `e2e/`، `tools/audit/` — همه در
-`.dockerignore` هستند. `tools/db/` و `tools/logo/` می‌مانند چون
-`create-admin.mjs` روی سرور لازم است.
+`vercel.json` فقط برای این مانده که `git.deploymentEnabled: false` دیپلوی خودکار
+ورسل را خاموش نگه دارد، تا وقتی پروژه در داشبورد ورسل حذف شود.
