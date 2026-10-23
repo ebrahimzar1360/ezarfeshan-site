@@ -1,0 +1,109 @@
+name: Production smoke check
+
+# After a deploy, checks the live site from inside the server — useful because
+# the site may not be reachable from GitHub's or other foreign networks. Uses
+# the same VM_* secrets as deploy.yml.
+#
+# Runs when a commit is pushed to the branch ops/smoke-check (or, once on
+# main, from Actions -> Run workflow).
+#
+# The repository is public: the log shows only PASS / FAIL, HTTP statuses and
+# migration names — no content, no counts, no personal data.
+#
+# What it touches: it sends ONE request through /api/leads (the services
+# form's own endpoint) with a unique test address, checks the stored row, then
+# deletes exactly that row (matched by that address). Nothing else is written.
+
+on:
+  push:
+    branches: [ops/smoke-check]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure SSH
+        env:
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_HOST_KEY: ${{ secrets.VM_HOST_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VM_HOST_KEY" > ~/.ssh/known_hosts
+          printf 'Host vm\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  IdentitiesOnly yes\n  StrictHostKeyChecking yes\n' \
+            "$VM_HOST" "${{ secrets.VM_USER }}" > ~/.ssh/config
+
+      - name: Check the live site from inside the server
+        run: |
+          ssh vm bash -s <<'REMOTE'
+          set -u
+          FAIL=0
+          pass() { echo "PASS  $*"; }
+          fail() { echo "FAIL  $*"; FAIL=1; }
+          sql() { docker exec ezarfeshan-db psql -U ezarfeshan -d ezarfeshan -Atq -v ON_ERROR_STOP=1 -c "$1"; }
+          # HTTP status of a path, fetched inside the web container (no redirects followed)
+          status() {
+            docker exec ezarfeshan-web node -e '
+              fetch("http://127.0.0.1:3000" + process.argv[1], { redirect: "manual" })
+                .then((r) => console.log(r.status)).catch(() => console.log(0))' "$1"
+          }
+
+          s=$(docker inspect -f '{{.State.Health.Status}}' ezarfeshan-web 2>/dev/null)
+          [ "$s" = healthy ] && pass "container ezarfeshan-web is healthy" || fail "container ezarfeshan-web is $s"
+
+          h=$(docker exec ezarfeshan-web node -e 'fetch("http://127.0.0.1:3000/api/health").then(r=>r.text()).then(console.log).catch(()=>console.log("error"))')
+          [ "$h" = '{"ok":true,"db":"up"}' ] && pass "/api/health ok, database up" || fail "/api/health: $h"
+
+          for p in / /services /about /projects /articles /contact /consult /sitemap.xml; do
+            c=$(status "$p"); [ "$c" = 200 ] && pass "GET $p -> 200" || fail "GET $p -> $c"
+          done
+          c=$(status "/services?service=tama"); [ "$c" = 200 ] && pass "GET /services?service=tama -> 200" || fail "deep link -> $c"
+          c=$(status /admin/leads); case "$c" in 307|302|303) pass "/admin/leads without login -> $c (to login)";; *) fail "/admin/leads without login -> $c";; esac
+
+          html=$(docker exec ezarfeshan-web node -e 'fetch("http://127.0.0.1:3000/services").then(r=>r.text()).then(console.log)')
+          for t in 'عارضه‌یابی' 'تاما' 'سیستم‌سازی و داشبورد' 'کارگاه کاربردی هوش مصنوعی'; do
+            case "$html" in *"$t"*) pass "/services shows «$t»";; *) fail "/services is missing «$t»";; esac
+          done
+          case "$html" in *'href="/services"'*) pass "the header links to /services";; *) fail "no /services link in the header";; esac
+
+          for m in 20261023000000_lead_service_source 20261023010000_dealership_start_1390; do
+            n=$(sql "SELECT count(*) FROM _prisma_migrations WHERE migration_name = '$m' AND finished_at IS NOT NULL AND rolled_back_at IS NULL")
+            [ "$n" = 1 ] && pass "migration $m applied" || fail "migration $m not applied"
+          done
+          n=$(sql "SELECT count(*) FROM information_schema.columns WHERE table_name = 'leads' AND column_name IN ('service','source')")
+          [ "$n" = 2 ] && pass "leads.service and leads.source exist" || fail "lead columns: $n of 2"
+          n=$(sql "SELECT count(*) FROM leads WHERE source IS NULL")
+          [ "$n" = 0 ] && pass "every earlier request has a source" || fail "requests without a source remain"
+          n=$(sql "SELECT count(*) FROM settings WHERE key = 'content:nav.main' AND value::text NOT LIKE '%/services%'")
+          [ "$n" = 0 ] && pass "a saved menu (if any) carries «خدمات»" || fail "the saved menu lacks /services"
+          n=$(sql "SELECT count(*) FROM settings WHERE key LIKE 'content:%' AND (value::text LIKE '%{{years:1389}}%' OR value::text LIKE '%\"startYear\": 1389%')")
+          [ "$n" = 0 ] && pass "no saved copy still counts management from 1389" || fail "saved copy still uses 1389"
+
+          # one real request through the services endpoint, then remove exactly that row
+          addr="smoke-$(date -u +%Y%m%d%H%M%S)-$RANDOM@example.invalid"
+          body=$(printf '{"service":"tama","name":"آزمون انتشار","phone":"۰۹۱۲۳۴۵۶۷۸۹","email":"%s","need":"درخواست آزمایشی خودکار پس از انتشار؛ حذف می‌شود."}' "$addr")
+          r=$(docker exec ezarfeshan-web node -e '
+            fetch("http://127.0.0.1:3000/api/leads", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": "smoke-check-" + Date.now() }, body: process.argv[1] })
+              .then(async (r) => console.log(r.status, (await r.json()).ok)).catch(() => console.log("0 false"))' "$body")
+          [ "$r" = "200 true" ] && pass "POST /api/leads (service request) -> 200" || fail "POST /api/leads -> $r"
+          row=$(sql "SELECT concat_ws('|', source, phone, status, service LIKE 'تاما%') FROM leads WHERE email = '$addr'")
+          [ "$row" = "services|09123456789|NEW|t" ] && pass "the request was stored: source services, phone normalised, status NEW, service title" || fail "stored row differs"
+          d=$(sql "DELETE FROM leads WHERE email = '$addr' RETURNING 1" | wc -l)
+          [ "$d" = 1 ] && pass "the test request was removed again" || fail "test request removal: $d rows"
+
+          exit $FAIL
+          REMOTE
+
+      - name: Remove the key from the runner
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
