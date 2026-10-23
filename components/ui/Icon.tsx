@@ -25,6 +25,8 @@ const PATHS = {
   whatsapp: <><path d="M3 21l1.65-4.9A8.5 8.5 0 1 1 8 19.4Z" /><path d="M9 10c0 3 2 5 5 5l1.2-1.4-1.9-1-.9.7a3 3 0 0 1-1.6-1.6l.7-.9-1-1.9Z" /></>,
   instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><path d="M17.5 6.5v.01" /></>,
   arrow: <><path d="M19 12H5" /><path d="m11 18-6-6 6-6" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  tag: <><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4Z" /><path d="M7.5 7.5h.01" /></>,
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" /></>,
   car: <><path d="M5 16l1.5-5.5A2 2 0 0 1 8.4 9h7.2a2 2 0 0 1 1.9 1.5L19 16" /><rect x="3" y="16" width="18" height="4" rx="1.5" /><path d="M7 18h.01M17 18h.01" /></>,
   box: <><path d="M21 8 12 3 3 8v8l9 5 9-5Z" /><path d="m3 8 9 5 9-5" /><path d="M12 13v8" /></>,

@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
         email: isEmail ? input.contact : '',
         phone: isEmail ? null : input.contact.slice(0, 20),
         challenge: `موضوع: ${input.subject}\nراه ارتباطی: ${input.contact}\n\n${input.message}`,
+        source: 'contact',
       },
     })
 

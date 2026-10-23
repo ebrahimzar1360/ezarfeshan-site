@@ -28,6 +28,7 @@ test('the homepage follows the briefed order', async ({ page }) => {
   const headings = await page.getByRole('heading', { level: 2 }).allInnerTexts()
   expect(headings).toEqual([
     'از شفافیت تا هوشمندی',
+    'خدمات',
     'تجربه‌ای از دل کسب‌وکار واقعی',
     'پروژه‌های در حال توسعه',
     'یادداشت‌ها و تجربه‌ها',

@@ -94,6 +94,58 @@ export const contactSchema = z.object({
   website: honeypot,
 })
 
+/**
+ * Persian (۰–۹) and Arabic-Indic (٠–٩) digits to Latin, so a number typed on a
+ * Persian keyboard validates and is stored in one form.
+ */
+export function latinDigits(value: string): string {
+  return value
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+}
+
+/**
+ * An Iranian mobile number in any of the ways people write one —
+ * ۰۹۱۲ ۳۴۵ ۶۷۸۹, 0912-345-6789, +98 912 345 6789, 0098912…, 912… — as
+ * 09xxxxxxxxx, or null when it is not one.
+ */
+export function normalizeIranMobile(value: string): string | null {
+  const digits = latinDigits(value).replace(/[\s\-().\u200c]/g, '')
+  const m = /^(?:\+98|0098|98|0)?(9\d{9})$/.exec(digits)
+  return m ? `0${m[1]}` : null
+}
+
+const iranMobile = z
+  .string()
+  .trim()
+  .min(1, 'شمارهٔ موبایلت را وارد کن.')
+  .max(24, 'شماره بیش از حد طولانی است.')
+  .refine((v) => normalizeIranMobile(v) !== null, 'شمارهٔ موبایل معتبر نیست. مثال: ۰۹۱۲۳۴۵۶۷۸۹')
+  .transform((v) => normalizeIranMobile(v)!)
+
+/**
+ * A request from /services. `service` is the slug of one of the CMS services;
+ * the server checks it against the list and stores the service's title.
+ */
+export const serviceRequestSchema = z.object({
+  service: z
+    .string()
+    .trim()
+    .min(1, 'یک خدمت انتخاب کن.')
+    .max(60)
+    .regex(/^[a-z0-9-]+$/, 'خدمت انتخاب‌شده معتبر نیست.'),
+  name: z.string().trim().min(2, 'نام و نام خانوادگی را وارد کن.').max(80, 'نام بیش از حد طولانی است.'),
+  business: z.string().trim().max(120, 'نام کسب‌وکار بیش از حد طولانی است.').optional().or(z.literal('')),
+  phone: iranMobile,
+  email,
+  need: z
+    .string()
+    .trim()
+    .min(10, 'مهم‌ترین مشکل یا نیازت را در یکی دو جمله بنویس.')
+    .max(2000, 'توضیح بیش از حد طولانی است. خلاصه‌ترش کن.'),
+  website: honeypot,
+})
+
 export const downloadSchema = z.object({
   email,
   website: honeypot,
@@ -119,5 +171,6 @@ export const chatSchema = z.object({
 export type SubscribeInput = z.infer<typeof subscribeSchema>
 export type LeadInput = z.infer<typeof leadSchema>
 export type ContactInput = z.infer<typeof contactSchema>
+export type ServiceRequestInput = z.input<typeof serviceRequestSchema>
 export type DownloadInput = z.infer<typeof downloadSchema>
 export type ChatInput = z.infer<typeof chatSchema>

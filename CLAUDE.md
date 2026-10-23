@@ -201,6 +201,16 @@ bands). Five pages and a five-link nav: خانه · درباره من · پرو�
   `lib/content/projects.ts`. A project without an image shows a drawn mock.
 - **Contact** has four channels and a four-field form → `/api/contact`, stored as a
   `Lead`. No phone, no address anywhere (removed on purpose).
+- **Services** (`/services`, in the nav): four cards from the CMS
+  (`services.*`, `getServices()` in `lib/content/services.ts`), one request
+  dialog (`ServicesBoard` → `ServiceRequestForm`), deep-linkable with
+  `?service=<slug>` (the homepage `ServicesPreview` buttons use it). The form
+  posts to **`/api/leads`** — a body with `service` takes the services branch:
+  `serviceRequestSchema` (Iranian mobile in Persian or Latin digits, normalised
+  to `09…`), honeypot, its own limit (5/hour/address), the slug checked against
+  the CMS list, stored as a `Lead` with `source: 'services'` and the service
+  title. Every lead has a `source` (services | consult | contact);
+  `/admin/leads` is the one inbox, with a tab per source.
 - Biography copy (CMS sections `about.*`) feeds /about, the JSON-LD *and* the
   chatbot — change it once, in the admin.
 

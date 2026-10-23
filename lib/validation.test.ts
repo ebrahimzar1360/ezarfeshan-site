@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { downloadSchema, leadSchema, subscribeSchema } from './validation'
+import { downloadSchema, leadSchema, normalizeIranMobile, serviceRequestSchema, subscribeSchema } from './validation'
 
 /**
  * These cover the rules that are easy to break silently and expensive when they
@@ -79,5 +79,57 @@ describe('leadSchema', () => {
 describe('downloadSchema', () => {
   it('normalises the address the same way as signup', () => {
     expect(downloadSchema.parse({ email: ' A@B.COM ' }).email).toBe('a@b.com')
+  })
+})
+
+describe('normalizeIranMobile', () => {
+  it.each([
+    ['09123456789', '09123456789'],
+    ['۰۹۱۲۳۴۵۶۷۸۹', '09123456789'],
+    ['٠٩١٢٣٤٥٦٧٨٩', '09123456789'],
+    ['۰۹۱۲ ۳۴۵ ۶۷۸۹', '09123456789'],
+    ['0912-345-6789', '09123456789'],
+    ['+98 912 345 6789', '09123456789'],
+    ['00989123456789', '09123456789'],
+    ['9123456789', '09123456789'],
+  ])('accepts %s', (input, out) => {
+    expect(normalizeIranMobile(input)).toBe(out)
+  })
+
+  it.each(['0212345678', '0912345678', '091234567890', '08123456789', 'abc', ''])('rejects %s', (input) => {
+    expect(normalizeIranMobile(input)).toBeNull()
+  })
+})
+
+describe('serviceRequestSchema', () => {
+  const valid = {
+    service: 'dealership-diagnosis',
+    name: 'علی رضایی',
+    business: '',
+    phone: '۰۹۱۲۳۴۵۶۷۸۹',
+    email: 'Ali@Example.com',
+    need: 'گزارش‌های واحد فروش هر ماه دیر و ناقص می‌رسد.',
+  }
+
+  it('normalises the phone and the email', () => {
+    const r = serviceRequestSchema.parse(valid)
+    expect(r.phone).toBe('09123456789')
+    expect(r.email).toBe('ali@example.com')
+  })
+
+  it('requires name, phone, email and need', () => {
+    const r = serviceRequestSchema.safeParse({ service: 'x' })
+    expect(r.success).toBe(false)
+    const paths = r.success ? [] : r.error.issues.map((i) => i.path[0])
+    expect(paths).toEqual(expect.arrayContaining(['name', 'phone', 'email', 'need']))
+  })
+
+  it('refuses a landline and a service slug with odd characters', () => {
+    expect(serviceRequestSchema.safeParse({ ...valid, phone: '02112345678' }).success).toBe(false)
+    expect(serviceRequestSchema.safeParse({ ...valid, service: '../admin' }).success).toBe(false)
+  })
+
+  it('lets a filled honeypot through, for the route to drop quietly', () => {
+    expect(serviceRequestSchema.safeParse({ ...valid, website: 'http://spam' }).success).toBe(true)
   })
 })

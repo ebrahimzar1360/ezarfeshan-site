@@ -7,6 +7,7 @@ import { HeroArt } from '@/components/site/home/HeroArt'
 import { Metrics } from '@/components/site/home/Metrics'
 import { Pillars } from '@/components/site/home/Pillars'
 import { ProjectsPreview } from '@/components/site/home/ProjectsPreview'
+import { ServicesPreview } from '@/components/site/home/ServicesPreview'
 import { getSection } from '@/lib/cms/content'
 import { cmsMetadata } from '@/lib/cms/metadata'
 import { getPublishedArticles } from '@/lib/content/queries'
@@ -33,6 +34,7 @@ export default async function HomePage() {
     <>
       <Hero />
       <Pillars />
+      <ServicesPreview />
       <Experience />
       <ProjectsPreview />
       <ArticlesPreview articles={recent} />

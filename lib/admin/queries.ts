@@ -127,8 +127,30 @@ export async function getSubscribers() {
   })
 }
 
-export async function getLeads() {
-  return db.lead.findMany({ orderBy: { createdAt: 'desc' } })
+export const LEAD_SOURCES = ['services', 'consult', 'contact'] as const
+export type LeadSource = (typeof LEAD_SOURCES)[number]
+
+/** Newest first; `source` narrows to one form. */
+export async function getLeads(source?: LeadSource) {
+  return db.lead.findMany({ where: source ? { source } : undefined, orderBy: { createdAt: 'desc' } })
+}
+
+/** How many requests each form has, and how many of them are still new. */
+export async function getLeadCounts() {
+  const rows = await db.lead.groupBy({ by: ['source', 'status'], _count: { _all: true } })
+  const total = { all: 0, new: 0 }
+  const bySource: Record<string, { all: number; new: number }> = {}
+  for (const r of rows) {
+    const key = r.source ?? 'consult'
+    bySource[key] ??= { all: 0, new: 0 }
+    bySource[key].all += r._count._all
+    total.all += r._count._all
+    if (r.status === 'NEW') {
+      bySource[key].new += r._count._all
+      total.new += r._count._all
+    }
+  }
+  return { total, bySource }
 }
 
 export async function getLead(id: string) {

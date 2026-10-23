@@ -24,6 +24,7 @@ export function Dialog({
   children,
   footer,
   wide = false,
+  form = false,
 }: {
   open: boolean
   onClose: () => void
@@ -33,6 +34,9 @@ export function Dialog({
   footer?: ReactNode
   /** For pickers and previews that need room; most dialogs are a sentence and two buttons. */
   wide?: boolean
+  /** A form: a column wide enough for two fields side by side, whose body
+   * scrolls inside the dialog when it is taller than the screen. */
+  form?: boolean
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
@@ -79,7 +83,13 @@ export function Dialog({
         <div className="grid h-full place-items-center p-5">
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`${wide ? 'flex max-h-[90dvh] w-[min(64rem,100%)] flex-col' : 'w-[min(30rem,100%)]'} rounded-lg border border-border bg-bg-raised p-6 shadow-(--shadow)`}
+            className={`${
+              wide
+                ? 'flex max-h-[90dvh] w-[min(64rem,100%)] flex-col'
+                : form
+                  ? 'flex max-h-[92dvh] w-[min(38rem,100%)] flex-col'
+                  : 'w-[min(30rem,100%)]'
+            } rounded-lg border border-border bg-bg-raised p-6 shadow-(--shadow)`}
           >
             <div className="flex items-start justify-between gap-4">
               <h2 id={titleId} className="text-500 font-bold text-text">

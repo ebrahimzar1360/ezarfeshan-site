@@ -14,6 +14,7 @@ const VIEW: Record<GroupKey, string> = {
   home: '/',
   about: '/about',
   projects: '/projects',
+  services: '/services',
   contact: '/contact',
   articles: '/articles',
   misc: '/articles',

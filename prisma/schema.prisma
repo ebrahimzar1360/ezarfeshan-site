@@ -175,6 +175,12 @@ model Lead {
   teamSize    String?    @map("team_size")
   challenge   String
   budgetRange String?    @map("budget_range")
+  /// The service asked for on /services, as its title read at the time of the
+  /// request (a later rename in the CMS does not rewrite old requests).
+  service     String?
+  /// Which form it came from: services | consult | contact. Older rows were
+  /// backfilled by the migration that added the column.
+  source      String?
   status      LeadStatus @default(NEW)
   note        String?
 
@@ -182,6 +188,7 @@ model Lead {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([status, createdAt(sort: Desc)])
+  @@index([source, createdAt(sort: Desc)])
   @@map("leads")
 }
 

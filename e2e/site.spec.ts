@@ -51,11 +51,11 @@ test('no page scrolls sideways', async ({ page }) => {
   }
 })
 
-test('the header carries the five links and one button, and nothing else', async ({ page, isMobile }) => {
+test('the header carries the six links and one button, and nothing else', async ({ page, isMobile }) => {
   await page.goto('/')
   if (!isMobile) {
     const nav = page.getByRole('navigation', { name: 'ناوبری اصلی' })
-    for (const label of ['خانه', 'درباره من', 'پروژه‌ها', 'یادداشت‌ها', 'تماس']) {
+    for (const label of ['خانه', 'درباره من', 'خدمات', 'پروژه‌ها', 'یادداشت‌ها', 'تماس']) {
       await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible()
     }
     await expect(page.getByRole('banner').getByRole('link', { name: 'شروع گفت‌وگو' })).toBeVisible()

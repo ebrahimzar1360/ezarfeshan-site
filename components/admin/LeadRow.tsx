@@ -12,10 +12,18 @@ type Lead = {
   teamSize: string | null
   budgetRange: string | null
   challenge: string
+  service: string | null
+  source: 'services' | 'consult' | 'contact'
   status: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CLOSED'
   note: string | null
   createdAt: string
 }
+
+const SOURCES = {
+  services: 'درخواست خدمت',
+  consult: 'مشاوره',
+  contact: 'پیام تماس',
+} as const
 
 const STATUSES = {
   NEW: 'جدید',
@@ -29,6 +37,10 @@ export function LeadRow({ lead }: { lead: Lead }) {
   const [note, setNote] = useState(lead.note ?? '')
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
+  // New requests start open. After that the row stays as the reader left it:
+  // tying `open` to the status closed it the moment the status changed, before
+  // the follow-up note could be written.
+  const [isOpen, setOpen] = useState(lead.status === 'NEW')
 
   async function save(nextStatus = status, nextNote = note) {
     setBusy(true)
@@ -41,31 +53,58 @@ export function LeadRow({ lead }: { lead: Lead }) {
   }
 
   return (
-    <details className="rounded-lg border border-border bg-bg" open={lead.status === 'NEW'}>
+    <details
+      className="rounded-lg border border-border bg-bg"
+      open={isOpen}
+      onToggle={(e) => setOpen(e.currentTarget.open)}
+    >
       <summary className="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 p-5">
         <span className="text-400 font-medium text-text">{lead.name}</span>
-        <a href={`mailto:${lead.email}`} className="latin text-200" onClick={(e) => e.stopPropagation()}>
-          {lead.email}
-        </a>
-        <span className={`text-200 ${status === 'NEW' ? 'text-accent' : 'text-text-subtle'}`}>
+        <span className="rounded-sm bg-bg-sunken px-2 py-0.5 text-200 text-text-muted">{SOURCES[lead.source]}</span>
+        {lead.service && (
+          <span className="rounded-sm bg-forest/10 px-2 py-0.5 text-200 font-bold text-forest dark:text-emerald-300">
+            {lead.service}
+          </span>
+        )}
+        <span className={`text-200 ${status === 'NEW' ? 'font-bold text-text' : 'text-text-subtle'}`}>
           {STATUSES[status]}
         </span>
         <time className="ms-auto text-200 text-text-subtle" dateTime={lead.createdAt}>
-          {new Date(lead.createdAt).toLocaleDateString('fa-IR')}
+          {new Date(lead.createdAt).toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short' })}
         </time>
       </summary>
 
       <div className="border-t border-border p-5">
         <dl className="mb-5 grid gap-x-8 gap-y-2 text-200 sm:grid-cols-2">
+          {lead.service && (
+            <div className="flex gap-2 sm:col-span-2">
+              <dt className="text-text-subtle">خدمت انتخاب‌شده:</dt>
+              <dd className="font-bold text-text">{lead.service}</dd>
+            </div>
+          )}
           {lead.phone && (
             <div className="flex gap-2">
-              <dt className="text-text-subtle">تلفن:</dt>
-              <dd className="latin text-text">{lead.phone}</dd>
+              <dt className="text-text-subtle">شماره تماس:</dt>
+              <dd>
+                <a href={`tel:${lead.phone}`} className="latin" dir="ltr">
+                  {lead.phone}
+                </a>
+              </dd>
+            </div>
+          )}
+          {lead.email && (
+            <div className="flex gap-2">
+              <dt className="text-text-subtle">ایمیل:</dt>
+              <dd>
+                <a href={`mailto:${lead.email}`} className="latin">
+                  {lead.email}
+                </a>
+              </dd>
             </div>
           )}
           {lead.company && (
             <div className="flex gap-2">
-              <dt className="text-text-subtle">کسب‌وکار:</dt>
+              <dt className="text-text-subtle">نمایندگی یا کسب‌وکار:</dt>
               <dd className="text-text">{lead.company}</dd>
             </div>
           )}
@@ -83,6 +122,7 @@ export function LeadRow({ lead }: { lead: Lead }) {
           )}
         </dl>
 
+        <p className="mb-1 text-200 text-text-subtle">{lead.source === 'services' ? 'مهم‌ترین مشکل یا نیاز:' : 'متن درخواست:'}</p>
         <p className="mb-5 whitespace-pre-wrap rounded-md bg-bg-sunken p-4 text-300 leading-prose text-text-muted">
           {lead.challenge}
         </p>
@@ -112,7 +152,7 @@ export function LeadRow({ lead }: { lead: Lead }) {
 
           <div className="min-w-60 flex-1">
             <label htmlFor={`n-${lead.id}`} className="mb-2 block text-200 text-text-subtle">
-              یادداشت
+              یادداشت پیگیری
             </label>
             <input
               id={`n-${lead.id}`}
